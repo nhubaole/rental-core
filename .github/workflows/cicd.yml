@@ -16,6 +16,8 @@ jobs:
             - name: Login to docker hub
               run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             - name: Build docker image
+              run:  docker build -t khanghoang1210/smart-rental .
+            - name: Push image to docker hub
               run: docker push khanghoang1210/smart-rental:latest
     deploy:
         needs: build
