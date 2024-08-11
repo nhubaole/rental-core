@@ -13,7 +13,7 @@ func NewRouter(uc *controllers.AuthenController) *gin.Engine {
 	baseRouter := r.Group("/api/v1")
 	authRouter := baseRouter.Group("/authen")
 	authRouter.POST("", uc.Register)
-	authRouter.POST("hello", uc.Hello)
+	authRouter.GET("hello", uc.Hello)
 
 	return r
 }
