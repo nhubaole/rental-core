@@ -1,0 +1,29 @@
+name: Deploy Smart Rental House Application
+
+on: 
+    push: 
+        branches: 
+            - master
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Create .env file
+              run: echo "PORT=${{ secrets.PORT }}" >> .env
+            - name: Login to docker hub
+              run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            - name: Build docker image
+              run: docker push khanghoang1210/smart-rental:latest
+    deploy:
+        needs: build
+        runs-on: self-hosted
+        steps:
+          - name: Pull docker image
+            run: docker pull khanghoang1210/smart-rental:latest
+          - name: Delete old container
+            run: docker rm -f smart-rental-container
+          - name: Run docker container
+            run: docker run -d -p 8080:8080 --name smart-rental-container khanghoang1210/smart-rental
