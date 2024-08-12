@@ -28,4 +28,4 @@ jobs:
           - name: Delete old container
             run: docker rm -f smart-rental-container
           - name: Run docker container
-            run: docker run -d -p 8080:8080 --name smart-rental-container khanghoang1210/smart-rental
+            run: docker run -d -p 8080:8080 --name smart-rental-container khanghoang1210/smart-rental 
