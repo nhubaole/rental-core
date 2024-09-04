@@ -1,6 +1,10 @@
 # Simple Makefile for a Go project
-
-# Build the application
+# Load environment variables from .env
+include .env
+# Variables from .env will be available here
+GOOSE_DRIVER=postgres
+GOOSE_DBSTRING=$(CONN_STRING)
+GOOSE_MIGRATION_DIR=internal/migration
 all: build
 
 build:
@@ -12,9 +16,6 @@ build:
 # Run the application
 run:
 	@go run cmd/server/main.go
-
-migrate:
-	@go run internal/migration/migration.go
 
 
 # Create DB container
@@ -58,5 +59,19 @@ clean:
 watch:
 	@air
 
+up:
+	@set GOOSE_DRIVER=$(GOOSE_DRIVER)&& set GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) up
 
-.PHONY: all build run test clean watch
+down:
+	@set GOOSE_DRIVER=$(GOOSE_DRIVER)&& set GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) down
+
+create-migration:
+	cd $(GOOSE_MIGRATION_DIR) && goose create $(name) sql
+	
+sqlc-gen:	
+	@sqlc generate
+
+wire:
+	cd internal/wire && wire
+
+.PHONY: all build run test clean watch up down create-migration

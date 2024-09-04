@@ -8,17 +8,19 @@ package wire
 
 import (
 	"smart-rental/internal/controllers"
-	"smart-rental/internal/database"
-	"smart-rental/internal/repo"
 	"smart-rental/internal/services"
 )
 
-// Injectors from authen.go:
+// Injectors from wire.go:
 
 func InitAuthenRouterHandler() *controllers.AuthenController {
-	db := database.DatabaseConnection()
-	authenRepo := repo.NewAuthenRepoImpl(db)
-	authenService := services.NewAuthenSerivceImpl(authenRepo)
+	authenService := services.NewAuthenSerivceImpl()
 	authenController := controllers.NewAuthController(authenService)
 	return authenController
+}
+
+func InitUserRouterHandler() *controllers.UserController {
+	userService := services.NewUserServiceImpl()
+	userController := controllers.NewUserController(userService)
+	return userController
 }

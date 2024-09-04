@@ -4,11 +4,9 @@ import "time"
 
 type UserResponse struct {
 	Id        uint      `json:"id"`
-	UserName  string    `json:"userName"`
+	PhoneNumber  string    `json:"phoneNumber"`
 	FullName  string    `json:"fullName"`
-	Email     string    `json:"email"`
-	Title     string    `json:"title"`
+	Address     string    `json:"address"`
 	Gender    string    `json:"gender"`
-	AvatarUrl string    `json:"avatarUrl"`
 	CreatedAt time.Time `json:"createdAt"`
 }

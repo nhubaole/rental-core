@@ -6,14 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(uc *controllers.AuthenController) *gin.Engine {
+func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController) *gin.Engine {
 	r := gin.Default()
-
 
 	baseRouter := r.Group("/api/v1")
 	authRouter := baseRouter.Group("/authen")
-	authRouter.POST("", uc.Register)
-	authRouter.GET("hello", uc.Hello)
+	authRouter.POST("", ac.Register)
+
+	userRouter := baseRouter.Group("/users")
+	userRouter.GET("", uc.GetAll)
 
 	return r
 }

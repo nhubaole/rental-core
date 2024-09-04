@@ -1,37 +1,36 @@
 package services
 
 import (
+	"context"
 	"net/http"
-	"smart-rental/internal/models"
-	"smart-rental/internal/repo"
-	"smart-rental/pkg/responses"
+	"smart-rental/initialize"
+	"smart-rental/internal/dataaccess"
 
-	"golang.org/x/crypto/bcrypt"
+	"smart-rental/pkg/responses"
 )
 
 type AuthenServiceImpl struct {
-	repo repo.AuthenRepo
+	repo *dataaccess.Queries
 }
 
-func NewAuthenSerivceImpl(repo repo.AuthenRepo) AuthenService{
+func NewAuthenSerivceImpl() AuthenService {
 	return &AuthenServiceImpl{
-		repo: repo,
+		repo: dataaccess.New(initialize.DB),
 	}
 }
 
-func(as *AuthenServiceImpl)Register(user *models.User) *responses.ResponseData{
-	passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
-	if errHash != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Fail to hash password",
-			Data:       false,
-		}
-	}
+func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *responses.ResponseData {
+	//passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(string(user.Password)), 10)
+	// if errHash != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "Fail to hash password",
+	// 		Data:       false,
+	// 	}
+	// }
 
-	user.Password = string(passwordHash)
-
-	result, err := as.repo.CreateUser(user)
+	//user.Password = string(passwordHash)
+	err := as.repo.CreateUser(context.Background(), *user)
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -44,7 +43,7 @@ func(as *AuthenServiceImpl)Register(user *models.User) *responses.ResponseData{
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       result,
+		Data:       true,
 	}
 
 }
