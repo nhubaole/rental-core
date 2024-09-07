@@ -1,8 +1,0 @@
-server:
-  port: 8080
-db:
-  port: 5432
-  db_user: khangnnhu
-  db_host: 13.229.83.248
-  db_password: nha4NguoiVoic@nM3o
-  db_name: postgres
