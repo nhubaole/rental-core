@@ -26,7 +26,8 @@ func InitUserRouterHandler() *controllers.UserController {
 }
 
 func InitRoomRouterHandler() *controllers.RoomController {
-	roomService := services.NewRoomServiceImpl()
+	storageSerivce := services.NewStorageServiceImpl()
+	roomService := services.NewRoomServiceImpl(storageSerivce)
 	roomController := controllers.NewRoomController(roomService)
 	return roomController
 }

@@ -38,6 +38,7 @@ func InitUserRouterHandler() *controllers.UserController {
 func InitRoomRouterHandler() *controllers.RoomController {
 	wire.Build(
 		services.NewRoomServiceImpl,
+		services.NewStorageServiceImpl,
 		controllers.NewRoomController,
 	)
 	return &controllers.RoomController{}

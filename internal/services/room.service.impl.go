@@ -10,12 +10,14 @@ import (
 
 type RoomServiceImpl struct {
 	repo *dataaccess.Queries
+	storageService StorageSerivce
 }
 
 
-func NewRoomServiceImpl() RoomService {
+func NewRoomServiceImpl(storage StorageSerivce) RoomService {
 	return &RoomServiceImpl{
 		repo: dataaccess.New(global.Db),
+		storageService: storage,
 	}
 }
 
