@@ -8,13 +8,159 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Billing struct {
+	ID           int32              `json:"id"`
+	Code         string             `json:"code"`
+	ContractID   int32              `json:"contract_id"`
+	IndexID      int32              `json:"index_id"`
+	AdditionFee  *int32             `json:"addition_fee"`
+	AdditionNote *string            `json:"addition_note"`
+	TotalAmount  float64            `json:"total_amount"`
+	Month        int32              `json:"month"`
+	Year         int32              `json:"year"`
+	PaidTime     pgtype.Timestamptz `json:"paid_time"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Contract struct {
+	ID                    int32              `json:"id"`
+	Code                  string             `json:"code"`
+	PartyA                int32              `json:"party_a"`
+	PartyB                int32              `json:"party_b"`
+	RequestID             int32              `json:"request_id"`
+	RoomID                int32              `json:"room_id"`
+	ActualPrice           float64            `json:"actual_price"`
+	PaymentMethod         *string            `json:"payment_method"`
+	ElectricityMethod     string             `json:"electricity_method"`
+	ElectricityCost       float64            `json:"electricity_cost"`
+	WaterMethod           string             `json:"water_method"`
+	WaterCost             float64            `json:"water_cost"`
+	InternetCost          float64            `json:"internet_cost"`
+	ParkingFee            *float64           `json:"parking_fee"`
+	Deposit               float64            `json:"deposit"`
+	BeginDate             pgtype.Date        `json:"begin_date"`
+	EndDate               pgtype.Date        `json:"end_date"`
+	ResponsibilityA       string             `json:"responsibility_a"`
+	ResponsibilityB       string             `json:"responsibility_b"`
+	GeneralResponsibility *string            `json:"general_responsibility"`
+	SignatureA            string             `json:"signature_a"`
+	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
+	SignatureB            string             `json:"signature_b"`
+	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt             pgtype.Timestamp   `json:"deleted_at"`
+}
+
+type Index struct {
+	ID               int32   `json:"id"`
+	WaterIndex       float64 `json:"water_index"`
+	ElectricityIndex float64 `json:"electricity_index"`
+	RoomID           int32   `json:"room_id"`
+	Month            int32   `json:"month"`
+	Year             int32   `json:"year"`
+}
+
+type Like struct {
+	ID        int32              `json:"id"`
+	RoomID    int32              `json:"room_id"`
+	UserID    int32              `json:"user_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Payment struct {
+	ID         int32   `json:"id"`
+	Code       string  `json:"code"`
+	SenderID   int32   `json:"sender_id"`
+	BillID     int32   `json:"bill_id"`
+	ContractID int32   `json:"contract_id"`
+	Amount     float64 `json:"amount"`
+	Status     int32   `json:"status"`
+}
+
+type ProcessTracking struct {
+	ID        int32              `json:"id"`
+	Actor     int32              `json:"actor"`
+	Action    string             `json:"action"`
+	IssuedAt  pgtype.Timestamptz `json:"issued_at"`
+	RequestID int32              `json:"request_id"`
+}
+
+type RentalRequest struct {
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	RoomID          int32              `json:"room_id"`
+	SuggestedPrice  *float64           `json:"suggested_price"`
+	NumOfPerson     *int32             `json:"num_of_person"`
+	BeginDate       pgtype.Timestamptz `json:"begin_date"`
+	EndDate         pgtype.Timestamptz `json:"end_date"`
+	AdditionRequest *string            `json:"addition_request"`
+	Status          int32              `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Room struct {
+	ID              int32              `json:"id"`
+	Title           string             `json:"title"`
+	Address         []string           `json:"address"`
+	RoomNumber      int32              `json:"room_number"`
+	RoomImages      []string           `json:"room_images"`
+	Utilities       []string           `json:"utilities"`
+	Description     string             `json:"description"`
+	RoomType        *string            `json:"room_type"`
+	Owner           int32              `json:"owner"`
+	Capacity        int32              `json:"capacity"`
+	Gender          *int32             `json:"gender"`
+	Area            float64            `json:"area"`
+	TotalPrice      *float64           `json:"total_price"`
+	Deposit         float64            `json:"deposit"`
+	ElectricityCost float64            `json:"electricity_cost"`
+	WaterCost       float64            `json:"water_cost"`
+	InternetCost    float64            `json:"internet_cost"`
+	IsParking       bool               `json:"is_parking"`
+	ParkingFee      *float64           `json:"parking_fee"`
+	Status          int32              `json:"status"`
+	IsRent          bool               `json:"is_rent"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Tenant struct {
+	ID        int32              `json:"id"`
+	RoomID    int32              `json:"room_id"`
+	TenantID  int32              `json:"tenant_id"`
+	BeginDate pgtype.Timestamptz `json:"begin_date"`
+	EndDate   pgtype.Timestamptz `json:"end_date"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Transaction struct {
+	ID              int32   `json:"id"`
+	PaymentID       int32   `json:"payment_id"`
+	SenderID        int32   `json:"sender_id"`
+	Amount          float64 `json:"amount"`
+	Status          int32   `json:"status"`
+	TransactionType *int32  `json:"transaction_type"`
+	GatewayResponse *string `json:"gateway_response"`
+}
+
 type User struct {
-	ID          int32            `json:"id"`
-	PhoneNumber string           `json:"phone_number"`
-	FullName    string           `json:"full_name"`
-	Password    string           `json:"password"`
-	Address     *string          `json:"address"`
-	Role        int32            `json:"role"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
+	ID          int32              `json:"id"`
+	PhoneNumber string             `json:"phone_number"`
+	FullName    string             `json:"full_name"`
+	Password    string             `json:"password"`
+	Address     *string            `json:"address"`
+	Role        int32              `json:"role"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
 }

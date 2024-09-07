@@ -3,10 +3,12 @@ package services
 import (
 	"context"
 	"net/http"
-	"smart-rental/initialize"
+	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
 
 	"smart-rental/pkg/responses"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthenServiceImpl struct {
@@ -15,21 +17,21 @@ type AuthenServiceImpl struct {
 
 func NewAuthenSerivceImpl() AuthenService {
 	return &AuthenServiceImpl{
-		repo: dataaccess.New(initialize.DB),
+		repo: dataaccess.New(global.Db),
 	}
 }
 
 func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *responses.ResponseData {
-	//passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(string(user.Password)), 10)
-	// if errHash != nil {
-	// 	return &responses.ResponseData{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Message:    "Fail to hash password",
-	// 		Data:       false,
-	// 	}
-	// }
+	passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(string(user.Password)), 10)
+	if errHash != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Fail to hash password",
+			Data:       false,
+		}
+	}
 
-	//user.Password = string(passwordHash)
+	user.Password = string(passwordHash)
 	err := as.repo.CreateUser(context.Background(), *user)
 
 	if err != nil {

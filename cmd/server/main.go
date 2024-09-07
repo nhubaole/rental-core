@@ -1,7 +1,10 @@
 package main
 
 import (
-	"smart-rental/initialize"
+	"fmt"
+
+	"smart-rental/global"
+	"smart-rental/internal/initialize"
 	"smart-rental/internal/routers"
 	"smart-rental/internal/wire"
 
@@ -9,13 +12,12 @@ import (
 )
 
 func main() {
-	initialize.DatabaseConnection()
-	// db := dataaccess.New(initialize.DB)
-	// as := services.NewAuthenSerivceImpl(db)
-	// ac := controllers.NewAuthController(as)
-
+	initialize.Run()
+    fmt.Println("DB ConnString:", global.Db)
 	ac := wire.InitAuthenRouterHandler()
 	uc := wire.InitUserRouterHandler()
 	r := routers.NewRouter(ac, uc)
+	fmt.Println("============",global.Config.Server.Port)
+
 	r.Run()
 }

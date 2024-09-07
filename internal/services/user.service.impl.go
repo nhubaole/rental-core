@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"net/http"
-	"smart-rental/initialize"
+	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/pkg/responses"
 )
@@ -14,7 +14,7 @@ type UserServiceImpl struct {
 
 func NewUserServiceImpl() UserService {
 	return &UserServiceImpl{
-		repo: dataaccess.New(initialize.DB),
+		repo: dataaccess.New(global.Db),
 	}
 }
 

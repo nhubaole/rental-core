@@ -1,6 +1,6 @@
 # Simple Makefile for a Go project
 # Load environment variables from .env
-include .env
+include app.env
 # Variables from .env will be available here
 GOOSE_DRIVER=postgres
 GOOSE_DBSTRING=$(CONN_STRING)
