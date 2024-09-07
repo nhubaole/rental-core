@@ -12,8 +12,10 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            - name: Create .env file
+            - name: Create config file
               run: |
+                  mkdir -p configs
+                  touch configs/local.yaml
                   echo '${{ secrets.CONFIG }}' > configs/local.yaml
 
             - name: Set up Docker Buildx
