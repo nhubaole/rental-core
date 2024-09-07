@@ -47,11 +47,13 @@ jobs:
                 cache-to: type=local,dest=/tmp/.buildx-cache/${{ github.event.repository.name }},mode=max
     deploy:
         needs: build
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         steps:
-          - name: Pull docker image
-            run: docker pull ${{ secrets.DOCKER_USERNAME }}/smart-rental:latest
-          - name: Delete old container
-            run: docker rm -f smart-rental-container
-          - name: Run docker container 
-            run: docker run -d -p 8080:8080 --name smart-rental-container ${{ secrets.DOCKER_USERNAME }}/smart-rental
+          - name: Executing remote ssh commands using ssh key
+            uses: appleboy/ssh-action@v1.0.3
+            with:
+              host: ${{ secrets.HOST }}
+              username: ${{ secrets.USERNAME }}
+              key: ${{ secrets.KEY }}
+              script: |
+                sudo bash running.sh
