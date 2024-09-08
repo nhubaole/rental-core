@@ -1,10 +1,10 @@
 package services
 
 import (
-	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 )
 
 type RoomService interface {
-	CreateRoom(req dataaccess.CreateRoomParams) *responses.ResponseData
+	CreateRoom(req requests.CreateRoomForm) *responses.ResponseData
 }

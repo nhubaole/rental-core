@@ -1,13 +1,17 @@
 package controllers
 
 import (
-	"fmt"
-	"smart-rental/internal/dataaccess"
+
 	"smart-rental/internal/services"
+
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 
 	"github.com/gin-gonic/gin"
 )
+
+
+
 
 type RoomController struct {
 	roomService services.RoomService
@@ -20,14 +24,18 @@ func NewRoomController(service services.RoomService) *RoomController {
 }
 
 func (rc RoomController) Create(ctx *gin.Context) {
-	newRoom := dataaccess.CreateRoomParams{}
-	if err := ctx.ShouldBindJSON(&newRoom); err != nil {
-		fmt.Println(err)
+	//newRoom := dataaccess.CreateRoomParams{}
+	var formData requests.CreateRoomForm
+	if err := ctx.ShouldBind(&formData); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
 
-	result := rc.roomService.CreateRoom(newRoom)
+	// var params dataaccess.CreateRoomParams
+	// common.MapStruct(formData, &params)
+
+	result := rc.roomService.CreateRoom(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 
 }
+

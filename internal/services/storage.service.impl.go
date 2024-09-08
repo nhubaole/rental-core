@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io"
 	"smart-rental/global"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -27,23 +28,37 @@ func NewStorageServiceImpl() StorageSerivce {
 }
 
 // UploadFile implements StorageSerivce.
-func (s *StorageSerivceImpl) UploadFile(bucketName string, objectKey string, fileName string) error {
-	file, err := os.Open(fileName)
-	if err != nil {
-		fmt.Printf("Couldn't open file %v to upload. Here's why: %v\n", fileName, err)
-	} else {
-		defer file.Close()
-		_, err = s.storage.PutObject(context.TODO(), &s3.PutObjectInput{
+func (s *StorageSerivceImpl) UploadFile(bucketName string, objectKey string, data io.Reader, contentType string) (string, error) {
+	// file, err := os.Open(fileName)
+	// if err != nil {
+	// 	fmt.Printf("Couldn't open file %v to upload. Here's why: %v\n", fileName, err)
+	// } else {
+		//defer file.Close()
+		_, err := s.storage.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket: aws.String(bucketName),
 			Key:    aws.String(objectKey),
-			Body:   file,
+			Body:   data,
+			ContentType: &contentType,
 		})
 		if err != nil {
-			fmt.Printf("Couldn't upload file %v to %v:%v. Here's why: %v\n",
-				fileName, bucketName, objectKey, err)
+			fmt.Printf("Couldn't upload file to %v:%v. Here's why: %v\n",
+				bucketName, objectKey, err)
 		}
-	}
-	return err
+	//}
+	
+	presignClient := s3.NewPresignClient(s.storage)
+	presignUrl, err := presignClient.PresignGetObject(context.Background(),
+        &s3.GetObjectInput{
+            Bucket: aws.String(bucketName),
+            Key:    aws.String(objectKey)},
+
+    )
+    if err != nil {
+        // If there's an error getting the presigned URL, return the error.
+        return "", err
+    }
+	urlList := strings.Split(presignUrl.URL, "?")
+    return urlList[0], nil
 }
 
 func (s *StorageSerivceImpl) CreateBucket(bucketName string) error {
