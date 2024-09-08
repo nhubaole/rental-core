@@ -16,24 +16,22 @@ import (
 )
 
 type RoomServiceImpl struct {
-	repo *dataaccess.Queries
+	repo           *dataaccess.Queries
 	storageService StorageSerivce
 }
 
-
 func NewRoomServiceImpl(storage StorageSerivce) RoomService {
 	return &RoomServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:           dataaccess.New(global.Db),
 		storageService: storage,
 	}
 }
 
-
 // CreateRoom implements RoomService.
 func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.ResponseData {
-	if exist,_ := r.storageService.IsBucketExists(constants.BUCKET_NAME); !exist {
-		err :=	r.storageService.CreateBucket(constants.BUCKET_NAME)
-		if  err != nil {
+	if exist, _ := r.storageService.IsBucketExists(constants.BUCKET_NAME); !exist {
+		err := r.storageService.CreateBucket(constants.BUCKET_NAME)
+		if err != nil {
 			return &responses.ResponseData{
 				StatusCode: http.StatusInternalServerError,
 				Message:    err.Error(),
@@ -41,7 +39,7 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 			}
 		}
 	}
-	
+
 	var urls []string
 	for _, fileName := range req.RoomImages {
 		f, _ := fileName.Open()
@@ -87,7 +85,7 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 
 	common.MapStruct(req, &params)
 	params.RoomImages = urls
-	err := r.repo.CreateRoom(context.Background(),params)
+	err := r.repo.CreateRoom(context.Background(), params)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -99,5 +97,41 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
 		Data:       true,
+	}
+}
+
+// GetRooms implements RoomService.
+func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
+	rooms, err := r.repo.GetRooms(context.Background())
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       rooms,
+	}
+}
+
+// GetRoomByID implements RoomService.
+func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
+	room, err := r.repo.GetRoomByID(context.Background(), int32(id))
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       room,
 	}
 }
