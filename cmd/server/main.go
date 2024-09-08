@@ -1,7 +1,8 @@
 package main
 
 import (
-
+	"fmt"
+	"smart-rental/global"
 	"smart-rental/internal/initialize"
 	"smart-rental/internal/routers"
 	"smart-rental/internal/wire"
@@ -11,7 +12,7 @@ import (
 
 func main() {
 	initialize.Run()
-
+	fmt.Println("====", global.S3)
 	ac := wire.InitAuthenRouterHandler()
 	uc := wire.InitUserRouterHandler()
 	rc := wire.InitRoomRouterHandler()

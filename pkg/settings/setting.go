@@ -21,5 +21,7 @@ type Server struct {
 }
 
 type AWS struct {
-	Region string `mapstructure:"region"`
+	Region      string `mapstructure:"region"`
+	AccessKeyID string `mapstructure:"aws_access_key_id"`
+	SecretKey   string `mapstructure:"aws_secret_access_key"`
 }
