@@ -281,3 +281,105 @@ func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
 	}
 	return items, nil
 }
+
+const searchRoomByAddress = `-- name: SearchRoomByAddress :many
+SELECT 
+    id, 
+    title, 
+    address, 
+    room_number, 
+    room_images, 
+    utilities, 
+    description, 
+    room_type, 
+    owner, 
+    capacity, 
+    gender, 
+    area, 
+    total_price, 
+    deposit, 
+    electricity_cost, 
+    water_cost, 
+    internet_cost, 
+    is_parking, 
+    parking_fee, 
+    status, 
+    is_rent, 
+    created_at, 
+    updated_at
+FROM 
+    PUBLIC.rooms
+WHERE 
+    deleted_at IS NULL
+    AND array_to_string(address, ', ') ILIKE '%' || $1 || '%'
+`
+
+type SearchRoomByAddressRow struct {
+	ID              int32              `json:"id"`
+	Title           string             `json:"title"`
+	Address         []string           `json:"address"`
+	RoomNumber      int32              `json:"room_number"`
+	RoomImages      []string           `json:"room_images"`
+	Utilities       []string           `json:"utilities"`
+	Description     string             `json:"description"`
+	RoomType        *string            `json:"room_type"`
+	Owner           int32              `json:"owner"`
+	Capacity        int32              `json:"capacity"`
+	Gender          *int32             `json:"gender"`
+	Area            float64            `json:"area"`
+	TotalPrice      *float64           `json:"total_price"`
+	Deposit         float64            `json:"deposit"`
+	ElectricityCost float64            `json:"electricity_cost"`
+	WaterCost       float64            `json:"water_cost"`
+	InternetCost    float64            `json:"internet_cost"`
+	IsParking       bool               `json:"is_parking"`
+	ParkingFee      *float64           `json:"parking_fee"`
+	Status          int32              `json:"status"`
+	IsRent          bool               `json:"is_rent"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]SearchRoomByAddressRow, error) {
+	rows, err := q.db.Query(ctx, searchRoomByAddress, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchRoomByAddressRow
+	for rows.Next() {
+		var i SearchRoomByAddressRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Address,
+			&i.RoomNumber,
+			&i.RoomImages,
+			&i.Utilities,
+			&i.Description,
+			&i.RoomType,
+			&i.Owner,
+			&i.Capacity,
+			&i.Gender,
+			&i.Area,
+			&i.TotalPrice,
+			&i.Deposit,
+			&i.ElectricityCost,
+			&i.WaterCost,
+			&i.InternetCost,
+			&i.IsParking,
+			&i.ParkingFee,
+			&i.Status,
+			&i.IsRent,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

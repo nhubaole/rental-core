@@ -89,3 +89,34 @@ FROM
 WHERE 
     deleted_at IS NULL 
     AND id = $1;
+
+-- name: SearchRoomByAddress :many
+SELECT 
+    id, 
+    title, 
+    address, 
+    room_number, 
+    room_images, 
+    utilities, 
+    description, 
+    room_type, 
+    owner, 
+    capacity, 
+    gender, 
+    area, 
+    total_price, 
+    deposit, 
+    electricity_cost, 
+    water_cost, 
+    internet_cost, 
+    is_parking, 
+    parking_fee, 
+    status, 
+    is_rent, 
+    created_at, 
+    updated_at
+FROM 
+    PUBLIC.rooms
+WHERE 
+    deleted_at IS NULL
+    AND array_to_string(address, ', ') ILIKE '%' || $1 || '%';  

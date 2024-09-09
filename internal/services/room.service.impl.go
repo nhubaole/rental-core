@@ -135,3 +135,21 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 		Data:       room,
 	}
 }
+
+// SearchRoomByAddress implements RoomService.
+func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.ResponseData {
+	rooms, err := r.repo.SearchRoomByAddress(context.Background(), &address)
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       rooms,
+	}
+}

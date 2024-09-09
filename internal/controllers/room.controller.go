@@ -55,3 +55,10 @@ func (rc RoomController) GetByID(ctx *gin.Context) {
 	result := rc.roomService.GetRoomByID(id)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (rc RoomController) SearchByAddress(ctx *gin.Context) {
+	searchParam := ctx.Query("search")
+
+	result := rc.roomService.SearchRoomByAddress(searchParam)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
