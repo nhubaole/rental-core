@@ -27,3 +27,8 @@ WHERE deleted_at IS NULL
 SELECT id, phone_number, full_name, address, created_at
 FROM PUBLIC.USERS
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- -- name: GetCurrentUser :one
+-- SELECT id, phone_number, full_name, address, created_at
+-- FROM PUBLIC.USERS
+-- WHERE id = $1 AND deleted_at IS NULL;

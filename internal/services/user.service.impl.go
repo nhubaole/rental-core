@@ -42,7 +42,7 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData{
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
+			Message:    "This user can't be found",
 			Data:       nil,
 		}
 	}
