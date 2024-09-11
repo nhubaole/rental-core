@@ -46,13 +46,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT phone_number, full_name, address, created_at
+SELECT id, phone_number, full_name, address, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1
 `
 
 type GetUserByPhoneRow struct {
+	ID          int32              `json:"id"`
 	PhoneNumber string             `json:"phone_number"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
@@ -63,6 +64,7 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 	row := q.db.QueryRow(ctx, getUserByPhone, phoneNumber)
 	var i GetUserByPhoneRow
 	err := row.Scan(
+		&i.ID,
 		&i.PhoneNumber,
 		&i.FullName,
 		&i.Address,
