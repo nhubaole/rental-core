@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"fmt"
 	"smart-rental/global"
 
 	"github.com/spf13/viper"
@@ -21,6 +22,7 @@ func LoadConfig() (err error) {
 	}
 
 	err = viper.Unmarshal(&global.Config)
+	fmt.Printf("Cấu hình đang được tìm ở: %s", viper.ConfigFileUsed())
 	return
 }
 

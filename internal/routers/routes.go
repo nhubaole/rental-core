@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController) *gin.Engine {
+func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController, rc *controllers.RoomController) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -15,6 +15,12 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController)
 
 	userRouter := baseRouter.Group("/users")
 	userRouter.GET("", uc.GetAll)
+
+	roomRouter := baseRouter.Group("/rooms")
+	roomRouter.POST("", rc.Create)
+	roomRouter.GET("", rc.GetAll)
+	roomRouter.GET("/:id", rc.GetByID)
+	roomRouter.GET("/search-by-address", rc.SearchByAddress)
 
 	return r
 }

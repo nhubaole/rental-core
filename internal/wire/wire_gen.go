@@ -24,3 +24,10 @@ func InitUserRouterHandler() *controllers.UserController {
 	userController := controllers.NewUserController(userService)
 	return userController
 }
+
+func InitRoomRouterHandler() *controllers.RoomController {
+	storageSerivce := services.NewStorageServiceImpl()
+	roomService := services.NewRoomServiceImpl(storageSerivce)
+	roomController := controllers.NewRoomController(roomService)
+	return roomController
+}

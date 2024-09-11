@@ -1,6 +1,8 @@
 package initialize
 
-func Run(){
+func Run() {
 	LoadConfig()
 	InitPostgre()
+	InitRedis()
+	InitS3()
 }
