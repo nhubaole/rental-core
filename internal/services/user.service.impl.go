@@ -35,3 +35,21 @@ func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 		Data:       users,
 	}
 }
+
+func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData{
+	user, err := userRepo.repo.GetUserByID(context.Background(), int32(id))
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       user,
+	}
+}
+// done ?

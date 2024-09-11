@@ -22,4 +22,8 @@ SELECT phone_number, full_name, address, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
-    
+
+-- name: GetUserByID :one
+SELECT id, phone_number, full_name, address, created_at
+FROM PUBLIC.USERS
+WHERE id = $1 AND deleted_at IS NULL;

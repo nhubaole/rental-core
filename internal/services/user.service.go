@@ -4,4 +4,5 @@ import "smart-rental/pkg/responses"
 
 type UserService interface {
 	GetAll() *responses.ResponseData
+	GetUserByID(ID int) *responses.ResponseData 
 }

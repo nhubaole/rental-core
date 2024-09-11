@@ -15,6 +15,7 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 
 	userRouter := baseRouter.Group("/users")
 	userRouter.GET("", uc.GetAll)
+	userRouter.GET("/:id", uc.GetUserByID)
 
 	roomRouter := baseRouter.Group("/rooms")
 	roomRouter.POST("", rc.Create)
