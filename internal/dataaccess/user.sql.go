@@ -33,6 +33,13 @@ type CreateUserParams struct {
 	Password    string  `json:"password"`
 	Role        int32   `json:"role"`
 }
+type UpdateUserParam struct {
+	ID					string	`json:"id"`
+	PhoneNumber string  `json:"phone_number"`
+	FullName    string  `json:"full_name"`
+	Address     *string `json:"address"`
+	Role        int32   `json:"role"`
+}
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.Exec(ctx, createUser,
@@ -134,4 +141,20 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `
+-- name: UpdateUser :exec
+UPDATE users
+SET
+    phone_number = COALESCE($2, phone_number),
+    full_name = COALESCE($3, full_name),
+    address = COALESCE($4, address),
+		role = COALESCE($5, role)
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, phone_number, full_name, address, role::text, created_at
+`;
+func (q *Queries) UpdateUser(ctx context.Context, user *UpdateUserParam) error {
+	_,err := q.db.Exec(ctx, updateUser, user.ID, user.PhoneNumber, user.FullName, user.Address, user.Role)
+	return err
 }

@@ -36,7 +36,7 @@ func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 	}
 }
 
-func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData{
+func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 	user, err := userRepo.repo.GetUserByID(context.Background(), int32(id))
 
 	if err != nil {
@@ -52,4 +52,19 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData{
 		Data:       user,
 	}
 }
-// done ?
+
+func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParam) *responses.ResponseData {
+	err := userRepo.repo.UpdateUser(context.Background(), body)
+	if err != nil {
+		println(string(err.Error()))
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to finish your request",
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusNoContent,
+		Message:    responses.StatusSuccess,
+	}
+}
