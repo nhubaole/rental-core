@@ -46,7 +46,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, phone_number, full_name, address, created_at
+SELECT id, phone_number, password, role, full_name, address, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1
@@ -55,6 +55,8 @@ WHERE deleted_at IS NULL
 type GetUserByPhoneRow struct {
 	ID          int32              `json:"id"`
 	PhoneNumber string             `json:"phone_number"`
+	Password    string             `json:"password"`
+	Role        int32              `json:"role"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
@@ -66,6 +68,8 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 	err := row.Scan(
 		&i.ID,
 		&i.PhoneNumber,
+		&i.Password,
+		&i.Role,
 		&i.FullName,
 		&i.Address,
 		&i.CreatedAt,

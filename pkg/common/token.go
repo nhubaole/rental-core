@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 	"smart-rental/global"
-	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/responses"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(user dataaccess.User) (string, error) {
+func GenerateToken(user responses.UserResponse) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"full_name":  user.FullName,
 		"sub":       user.PhoneNumber,

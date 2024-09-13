@@ -7,7 +7,7 @@ const (
 	StatusUserExist = "user already exists"
 	StatusResourceNotFound = "resource not found"
 	StatusUnAuthorize = "unauthorize"
-	StatusAuthorizeFail = "invalid username or password"
+	StatusAuthorizeFail = "invalid phone number or password"
 	StatusNoData = "no data yet"
 	StatusInternalError = "server error"
 )

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
 )
 
@@ -21,6 +22,13 @@ func NewUserServiceImpl() UserService {
 // GetAll implements UserService.
 func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 	users, err := u.repo.GetUsers(context.Background())
+	var result []responses.UserResponse
+	for _,v := range users {
+		var item responses.UserResponse
+		common.MapStruct(v, &item)
+		result = append(result, item)
+	}
+	
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -32,6 +40,6 @@ func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       users,
+		Data:       result,
 	}
 }
