@@ -163,4 +163,5 @@ type User struct {
 	Role        int32              `json:"role"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	Otp         *int32             `json:"otp"`
 }

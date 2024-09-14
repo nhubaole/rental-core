@@ -19,10 +19,11 @@ INSERT INTO PUBLIC.USERS
     address,
     password,
     role,
+    otp,
     created_at
 ) VALUES
 (
-    $1,$2,$3,$4,$5,now()
+    $1,$2,$3,$4,$5,$6,now()
 )
 `
 
@@ -32,6 +33,7 @@ type CreateUserParams struct {
 	Address     *string `json:"address"`
 	Password    string  `json:"password"`
 	Role        int32   `json:"role"`
+	Otp         *int32  `json:"otp"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -41,21 +43,53 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.Address,
 		arg.Password,
 		arg.Role,
+		arg.Otp,
 	)
 	return err
 }
 
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, phone_number, full_name, address, created_at
+FROM PUBLIC.USERS
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type GetUserByIDRow struct {
+	ID          int32              `json:"id"`
+	PhoneNumber string             `json:"phone_number"`
+	FullName    string             `json:"full_name"`
+	Address     *string            `json:"address"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PhoneNumber,
+		&i.FullName,
+		&i.Address,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT phone_number, full_name, address, created_at
+SELECT id, phone_number, password, role, full_name, address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1
 `
 
 type GetUserByPhoneRow struct {
+	ID          int32              `json:"id"`
 	PhoneNumber string             `json:"phone_number"`
+	Password    string             `json:"password"`
+	Role        int32              `json:"role"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
+	Otp         *int32             `json:"otp"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -63,9 +97,13 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 	row := q.db.QueryRow(ctx, getUserByPhone, phoneNumber)
 	var i GetUserByPhoneRow
 	err := row.Scan(
+		&i.ID,
 		&i.PhoneNumber,
+		&i.Password,
+		&i.Role,
 		&i.FullName,
 		&i.Address,
+		&i.Otp,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -107,4 +145,55 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET
+    phone_number = COALESCE($2, phone_number),
+    full_name = COALESCE($3, full_name),
+    address = COALESCE($4, address),
+    role = COALESCE($5, role),
+    otp = $6
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, phone_number, full_name, address, role::text, created_at
+`
+
+type UpdateUserParams struct {
+	ID          int32   `json:"id"`
+	PhoneNumber string  `json:"phone_number"`
+	FullName    string  `json:"full_name"`
+	Address     *string `json:"address"`
+	Role        int32   `json:"role"`
+	Otp         *int32  `json:"otp"`
+}
+
+type UpdateUserRow struct {
+	ID          int32              `json:"id"`
+	PhoneNumber string             `json:"phone_number"`
+	FullName    string             `json:"full_name"`
+	Address     *string            `json:"address"`
+	Role        string             `json:"role"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.PhoneNumber,
+		arg.FullName,
+		arg.Address,
+		arg.Role,
+		arg.Otp,
+	)
+	var i UpdateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.PhoneNumber,
+		&i.FullName,
+		&i.Address,
+		&i.Role,
+		&i.CreatedAt,
+	)
+	return i, err
 }
