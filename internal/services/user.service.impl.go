@@ -43,3 +43,36 @@ func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 		Data:       result,
 	}
 }
+
+func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
+	user, err := userRepo.repo.GetUserByID(context.Background(), int32(id))
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "This user can't be found",
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       user,
+	}
+}
+
+func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParam) *responses.ResponseData {
+	err := userRepo.repo.UpdateUser(context.Background(), body)
+	if err != nil {
+		println(string(err.Error()))
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to finish your request",
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusNoContent,
+		Message:    responses.StatusSuccess,
+	}
+}

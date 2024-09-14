@@ -23,4 +23,18 @@ SELECT id, phone_number, password, role, full_name, address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
-    
+
+-- name: GetUserByID :one
+SELECT id, phone_number, full_name, address, created_at
+FROM PUBLIC.USERS
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: UpdateUser :one
+UPDATE users
+SET
+    phone_number = COALESCE($2, phone_number),
+    full_name = COALESCE($3, full_name),
+    address = COALESCE($4, address),
+    role = COALESCE($5, role)
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, phone_number, full_name, address, role::text, created_at;
