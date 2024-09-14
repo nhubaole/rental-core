@@ -10,5 +10,6 @@ const (
 	StatusAuthorizeFail = "invalid phone number or password"
 	StatusNoData = "no data yet"
 	StatusInternalError = "server error"
+	StatusVerifySuccess = "verify success"
 )
 

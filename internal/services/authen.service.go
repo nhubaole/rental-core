@@ -9,4 +9,5 @@ import (
 type AuthenService interface {
 	Register(user *dataaccess.CreateUserParams) *responses.ResponseData
 	Login(req *requests.LoginRequest) *responses.ResponseData
+	VerifyOTP(req *requests.VerifyOTPRequest) *responses.ResponseData
 }

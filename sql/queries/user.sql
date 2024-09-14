@@ -11,14 +11,15 @@ INSERT INTO PUBLIC.USERS
     address,
     password,
     role,
+    otp,
     created_at
 ) VALUES
 (
-    $1,$2,$3,$4,$5,now()
+    $1,$2,$3,$4,$5,$6,now()
 );
 
 -- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, created_at
+SELECT id, phone_number, password, role, full_name, address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;

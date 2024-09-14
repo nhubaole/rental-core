@@ -36,6 +36,8 @@ func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *respon
 	}
 
 	user.Password = string(passwordHash)
+	opt := int32(common.GenerateDigitOTP())
+	user.Otp = &opt
 	err := as.repo.CreateUser(context.Background(), *user)
 
 	if err != nil {
@@ -53,11 +55,12 @@ func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *respon
 	}
 
 }
+
 // Login implements AuthenService.
 func (as *AuthenServiceImpl) Login(req *requests.LoginRequest) *responses.ResponseData {
-	user, err := as.repo.GetUserByPhone(context.Background(),req.PhoneNumber)
+	user, err := as.repo.GetUserByPhone(context.Background(), req.PhoneNumber)
 
-	if err != nil {	
+	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: 401,
 			Message:    err.Error(),
@@ -88,8 +91,57 @@ func (as *AuthenServiceImpl) Login(req *requests.LoginRequest) *responses.Respon
 	return &responses.ResponseData{
 		StatusCode: 200,
 		Message:    responses.StatusSuccess,
-		Data:       responses.LoginRes{
-			AccessToken: accessToken,
+		Data: responses.LoginRes{
+			AccessToken:  accessToken,
+			RefreshToken: "not yet",
+		},
+	}
+}
+
+// VerifyOTP implements AuthenService.
+func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *responses.ResponseData {
+	user, err := as.repo.GetUserByPhone(context.Background(), req.PhoneNumber)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:   err.Error(),
+			Data:       nil,
+		}
+	}
+
+	if user == (dataaccess.GetUserByPhoneRow{}) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNotFound,
+			Message:   responses.StatusResourceNotFound,
+			Data:       nil,
+		}
+	}
+
+	if int(*user.Otp) != req.Otp {
+		return &responses.ResponseData{
+			StatusCode: http.StatusUnauthorized,
+			Message:   responses.StatusAuthorizeFail,
+			Data:       nil,
+		}
+	}
+
+	var result responses.UserResponse
+	common.MapStruct(user, &result)
+	token, err := common.GenerateToken(result)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:   err.Error(),
+			Data:       nil,
+		}
+	}
+	
+
+	return &responses.ResponseData{
+		StatusCode: 200,
+		Message:    responses.StatusVerifySuccess,
+		Data: responses.LoginRes{
+			AccessToken:  token,
 			RefreshToken: "not yet",
 		},
 	}

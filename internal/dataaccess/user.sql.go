@@ -19,10 +19,11 @@ INSERT INTO PUBLIC.USERS
     address,
     password,
     role,
+    otp,
     created_at
 ) VALUES
 (
-    $1,$2,$3,$4,$5,now()
+    $1,$2,$3,$4,$5,$6,now()
 )
 `
 
@@ -32,6 +33,7 @@ type CreateUserParams struct {
 	Address     *string `json:"address"`
 	Password    string  `json:"password"`
 	Role        int32   `json:"role"`
+	Otp         *int32  `json:"otp"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -41,12 +43,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.Address,
 		arg.Password,
 		arg.Role,
+		arg.Otp,
 	)
 	return err
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, created_at
+SELECT id, phone_number, password, role, full_name, address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1
@@ -59,6 +62,7 @@ type GetUserByPhoneRow struct {
 	Role        int32              `json:"role"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
+	Otp         *int32             `json:"otp"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -72,6 +76,7 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 		&i.Role,
 		&i.FullName,
 		&i.Address,
+		&i.Otp,
 		&i.CreatedAt,
 	)
 	return i, err
