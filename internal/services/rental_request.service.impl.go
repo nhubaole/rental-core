@@ -21,21 +21,11 @@ func NewRentalRequestServiceImpl() RentalRequestService {
 }
 
 func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *requests.CreateRentalRequest, myid int32) *responses.ResponseData {
-	// check if the room id existed
-	_, checkEr := rentalService.repo.CheckRoomExisted(context.Background(), body.RoomID)
-	if checkEr != nil {
-		fmt.Println(checkEr.Error())
-		return &responses.ResponseData{
-			StatusCode: http.StatusBadRequest,
-			Message:    "We can't find this room",
-			Data:       "nothing here",
-		}
-	}
+	// check if there is already a rental request and if the room is created
 	request := dataaccess.CheckRequestExistedParams{
 		SenderID: myid,
 		RoomID:   body.RoomID,
 	}
-	// check if there is already a rental request
 	rentStatus, checkError2 := rentalService.repo.CheckRequestExisted(context.Background(), request)
 	// create retal request
 	if checkError2 == nil {
@@ -45,6 +35,13 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 				Message:    "You have to wait until the owner responds",
 				Data:       "nothing here",
 			}
+		}
+	} else {
+		fmt.Println(checkError2.Error())
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "We can't find this room",
+			Data:       "nothing here",
 		}
 	}
 	// parse to the new body
