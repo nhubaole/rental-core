@@ -153,3 +153,50 @@ func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.Respons
 		Data:       rooms,
 	}
 }
+
+// LikeRoom implements RoomService.
+func (r *RoomServiceImpl) LikeRoom(roomID int, userID int) *responses.ResponseData {
+	param := dataaccess.CheckUserLikedRoomParams{
+		RoomID: int32(roomID),
+		UserID: int32(userID),
+	}
+	_, err := r.repo.CheckUserLikedRoom(context.Background(), param)
+	var isLiked bool
+
+	if err != nil {
+		isLiked = true
+		param := dataaccess.LikeRoomParams{
+			RoomID: int32(roomID),
+			UserID: int32(userID),
+		}
+		err := r.repo.LikeRoom(context.Background(), param)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	} else {
+		isLiked = false
+		param := dataaccess.UnlikeRoomParams{
+			RoomID: int32(roomID),
+			UserID: int32(userID),
+		}
+		err := r.repo.UnlikeRoom(context.Background(), param)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+	res := map[string]bool{"isLiked": isLiked}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusCreated,
+		Message:    responses.StatusSuccess,
+		Data:       res,
+	}
+}

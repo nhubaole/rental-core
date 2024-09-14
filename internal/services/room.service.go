@@ -10,4 +10,5 @@ type RoomService interface {
 	GetRooms() *responses.ResponseData
 	GetRoomByID(id int) *responses.ResponseData
 	SearchRoomByAddress(address string) *responses.ResponseData
+	LikeRoom(roomID int, userID int) *responses.ResponseData
 }

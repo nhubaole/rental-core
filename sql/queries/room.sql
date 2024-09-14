@@ -120,3 +120,25 @@ FROM
 WHERE 
     deleted_at IS NULL
     AND array_to_string(address, ', ') ILIKE '%' || $1 || '%';  
+
+
+-- name: LikeRoom :exec
+INSERT INTO PUBLIC."like"
+(
+    room_id,
+    user_id,
+    created_at,
+    updated_at
+) VALUES
+(
+    $1, $2, NOW(), NOW()
+);
+
+-- name: UnlikeRoom :exec
+DELETE FROM PUBLIC."like"
+WHERE room_id = $1 AND user_id = $2;
+
+-- name: CheckUserLikedRoom :one
+SELECT 1
+FROM PUBLIC."like"
+WHERE room_id = $1 AND user_id = $2 AND deleted_at IS NULL;
