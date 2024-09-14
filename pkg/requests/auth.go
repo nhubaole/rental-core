@@ -7,5 +7,5 @@ type LoginRequest struct {
 
 type VerifyOTPRequest struct {
 	PhoneNumber string `json:"phone_number" binding:"required"`
-	Otp         int    `json:"password" otp:"required"`
+	Otp         int    `json:"otp" otp:"required"`
 }

@@ -8,5 +8,5 @@ import (
 type UserService interface {
 	GetAll() *responses.ResponseData
 	GetUserByID(ID int) *responses.ResponseData 
-	Update(user *dataaccess.UpdateUserParam) *responses.ResponseData
+	Update(user *dataaccess.UpdateUserParams) *responses.ResponseData
 }

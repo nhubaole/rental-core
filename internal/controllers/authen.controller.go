@@ -33,6 +33,19 @@ func (uc AuthenController) Register(ctx *gin.Context) {
 
 }	
 
+func (uc AuthenController) VerifyOTP(ctx *gin.Context) {
+	req := requests.VerifyOTPRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		fmt.Println(err)
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := uc.authenService.VerifyOTP(&req)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+
+}	
+
 func (uc AuthenController) Login(ctx *gin.Context) {
 	req := requests.LoginRequest{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {

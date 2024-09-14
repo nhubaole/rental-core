@@ -38,7 +38,7 @@ func (uc *UserController) GetUserByID(ctx *gin.Context) {
 
 func (uc *UserController) Update(ctx *gin.Context) {
 	// Parse request body
-	var updateUserParam *dataaccess.UpdateUserParam
+	var updateUserParam *dataaccess.UpdateUserParams
 	err := ctx.BindJSON(&updateUserParam)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)

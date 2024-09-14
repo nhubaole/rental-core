@@ -125,6 +125,7 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 		}
 	}
 
+
 	var result responses.UserResponse
 	common.MapStruct(user, &result)
 	token, err := common.GenerateToken(result)
@@ -135,7 +136,19 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 			Data:       nil,
 		}
 	}
+
+	var updateUser dataaccess.UpdateUserParams
+	common.MapStruct(user, &updateUser)
+	updateUser.Otp = nil
 	
+	_, updateErr := as.repo.UpdateUser(context.Background(), updateUser)
+	if updateErr != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:   updateErr.Error(),
+			Data:       nil,
+		}
+	}
 
 	return &responses.ResponseData{
 		StatusCode: 200,

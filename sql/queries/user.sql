@@ -35,6 +35,7 @@ SET
     phone_number = COALESCE($2, phone_number),
     full_name = COALESCE($3, full_name),
     address = COALESCE($4, address),
-    role = COALESCE($5, role)
+    role = COALESCE($5, role),
+    otp = $6
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, phone_number, full_name, address, role::text, created_at;

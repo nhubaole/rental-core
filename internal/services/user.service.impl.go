@@ -61,8 +61,8 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 	}
 }
 
-func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParam) *responses.ResponseData {
-	err := userRepo.repo.UpdateUser(context.Background(), body)
+func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParams) *responses.ResponseData {
+	user, err := userRepo.repo.UpdateUser(context.Background(), *body)
 	if err != nil {
 		println(string(err.Error()))
 		return &responses.ResponseData{
@@ -74,5 +74,6 @@ func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParam) *respo
 	return &responses.ResponseData{
 		StatusCode: http.StatusNoContent,
 		Message:    responses.StatusSuccess,
+		Data: user.ID,
 	}
 }

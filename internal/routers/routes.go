@@ -13,6 +13,7 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	authRouter := baseRouter.Group("/authen")
 	authRouter.POST("register", ac.Register)
 	authRouter.POST("login", ac.Login)
+	authRouter.POST("verify-otp", ac.VerifyOTP)
 
 	userRouter := baseRouter.Group("/users")
 	userRouter.GET("", uc.GetAll)
