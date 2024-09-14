@@ -11,9 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
-
 type RoomController struct {
 	roomService services.RoomService
 }
@@ -71,9 +68,9 @@ func (rc RoomController) Like(ctx *gin.Context) {
 	}
 	user, err := common.GetCurrentUser(ctx)
 	if err != nil {
-		responses.APIResponse(ctx, 400, "Bad request", nil)
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
 		return
-		
+
 	}
 
 	result := rc.roomService.LikeRoom(int(roomId), int(user.ID))
@@ -81,7 +78,23 @@ func (rc RoomController) Like(ctx *gin.Context) {
 }
 
 func (rc RoomController) GetLikedRooms(ctx *gin.Context) {
-	userId := 1 //TODO: get current user id
-	result := rc.roomService.GetLikedRooms(userId)
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	result := rc.roomService.GetLikedRooms(int(user.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (rc RoomController) GetByStatus(ctx *gin.Context) {
+	status, err := strconv.Atoi(ctx.Param("status"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := rc.roomService.GetRoomByStatus(status)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
