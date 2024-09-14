@@ -28,8 +28,11 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	roomRouter.GET("/search-by-address", middlewares.AuthenMiddleware, rc.SearchByAddress)
 	roomRouter.GET("/like/:id", middlewares.AuthenMiddleware, rc.Like)
 
-	rentalRequestRouter := baseRouter.Group("/rent")
+	rentalRequestRouter := baseRouter.Group("/requests")
 	rentalRequestRouter.POST("", middlewares.AuthenMiddleware, rrc.Create)
+	rentalRequestRouter.DELETE("/:id", middlewares.AuthenMiddleware, rrc.Delete)
+	rentalRequestRouter.GET("", middlewares.AuthenMiddleware, rrc.GetAllRentalRequest)
+	rentalRequestRouter.GET("/:id", middlewares.AuthenMiddleware, rrc.GetRentalRequestById)
 
 	return r
 }

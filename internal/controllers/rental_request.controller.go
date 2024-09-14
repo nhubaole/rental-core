@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,19 +25,55 @@ func (controller RentalRequestController) Create(ctx *gin.Context) {
 
 	var body *requests.CreateRentalRequest
 	err := ctx.ShouldBindJSON(&body)
-	fmt.Print("28")
 	if err != nil {
-		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body1", nil)
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
-	fmt.Print("33")
 	myuser, errr := common.GetCurrentUser(ctx)
 	if errr != nil {
-		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body2", nil)
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
-	fmt.Print("39")
 	result := controller.rentalService.CreateRentalRequest(body, myuser.ID)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
 
+func (controller RentalRequestController) Delete(ctx *gin.Context) {
+	rentid, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	myuser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	result := controller.rentalService.DeleteRentalRequest(int32(rentid), myuser.ID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+func (controller RentalRequestController) GetRentalRequestById(ctx *gin.Context) {
+	rentid, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	myuser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	result := controller.rentalService.GetRentalRequestById(int32(rentid), myuser.ID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (controller RentalRequestController) GetAllRentalRequest(ctx *gin.Context) {
+	myuser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	
+	result := controller.rentalService.GetAllRentalRequest( myuser.PhoneNumber)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

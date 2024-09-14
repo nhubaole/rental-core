@@ -12,7 +12,7 @@ import (
 )
 
 const checkRequestExisted = `-- name: CheckRequestExisted :one
-SELECT status 
+SELECT status , deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 
 WHERE room_id = $1 and sender_id = $2
 `
@@ -22,11 +22,16 @@ type CheckRequestExistedParams struct {
 	SenderID int32 `json:"sender_id"`
 }
 
-func (q *Queries) CheckRequestExisted(ctx context.Context, arg CheckRequestExistedParams) (int32, error) {
+type CheckRequestExistedRow struct {
+	Status    int32              `json:"status"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+func (q *Queries) CheckRequestExisted(ctx context.Context, arg CheckRequestExistedParams) (CheckRequestExistedRow, error) {
 	row := q.db.QueryRow(ctx, checkRequestExisted, arg.RoomID, arg.SenderID)
-	var status int32
-	err := row.Scan(&status)
-	return status, err
+	var i CheckRequestExistedRow
+	err := row.Scan(&i.Status, &i.DeletedAt)
+	return i, err
 }
 
 const checkRoomExisted = `-- name: CheckRoomExisted :one
@@ -111,6 +116,124 @@ func (q *Queries) CreateRentalRequest(ctx context.Context, arg CreateRentalReque
 		&i.AdditionRequest,
 		&i.Status,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteRequest = `-- name: DeleteRequest :exec
+UPDATE public.rental_requests
+SET deleted_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) DeleteRequest(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteRequest, id)
+	return err
+}
+
+const getRequestByID = `-- name: GetRequestByID :one
+SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
+FROM PUBLIC.RENTAL_REQUESTS 
+WHERE room_id = $1
+`
+
+func (q *Queries) GetRequestByID(ctx context.Context, roomID int32) (RentalRequest, error) {
+	row := q.db.QueryRow(ctx, getRequestByID, roomID)
+	var i RentalRequest
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.SenderID,
+		&i.RoomID,
+		&i.SuggestedPrice,
+		&i.NumOfPerson,
+		&i.BeginDate,
+		&i.EndDate,
+		&i.AdditionRequest,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getRequestByOwnerID = `-- name: GetRequestByOwnerID :one
+SELECT     
+    RENTAL_REQUESTS.id,
+    RENTAL_REQUESTS.code,
+    RENTAL_REQUESTS.sender_id,
+    RENTAL_REQUESTS.room_id,
+    RENTAL_REQUESTS.suggested_price,
+    RENTAL_REQUESTS.num_of_person,
+    RENTAL_REQUESTS.begin_date,
+    RENTAL_REQUESTS.end_date,
+    RENTAL_REQUESTS.addition_request,
+    RENTAL_REQUESTS.status,
+    RENTAL_REQUESTS.created_at,
+    RENTAL_REQUESTS.updated_at
+FROM PUBLIC.RENTAL_REQUESTS ,PUBLIC.ROOMS 
+WHERE owner = $1 and RENTAL_REQUESTS.room_id =ROOMS.id and RENTAL_REQUESTS.deleted_at != NULL
+`
+
+type GetRequestByOwnerIDRow struct {
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	RoomID          int32              `json:"room_id"`
+	SuggestedPrice  *float64           `json:"suggested_price"`
+	NumOfPerson     *int32             `json:"num_of_person"`
+	BeginDate       pgtype.Timestamptz `json:"begin_date"`
+	EndDate         pgtype.Timestamptz `json:"end_date"`
+	AdditionRequest *string            `json:"addition_request"`
+	Status          int32              `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) (GetRequestByOwnerIDRow, error) {
+	row := q.db.QueryRow(ctx, getRequestByOwnerID, owner)
+	var i GetRequestByOwnerIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.SenderID,
+		&i.RoomID,
+		&i.SuggestedPrice,
+		&i.NumOfPerson,
+		&i.BeginDate,
+		&i.EndDate,
+		&i.AdditionRequest,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getRequestBySenderID = `-- name: GetRequestBySenderID :one
+SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
+FROM PUBLIC.RENTAL_REQUESTS 
+WHERE sender_id = $1
+`
+
+func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) (RentalRequest, error) {
+	row := q.db.QueryRow(ctx, getRequestBySenderID, senderID)
+	var i RentalRequest
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.SenderID,
+		&i.RoomID,
+		&i.SuggestedPrice,
+		&i.NumOfPerson,
+		&i.BeginDate,
+		&i.EndDate,
+		&i.AdditionRequest,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
