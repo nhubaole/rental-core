@@ -22,6 +22,7 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	roomRouter.GET("/:id", rc.GetByID)
 	roomRouter.GET("/search-by-address", rc.SearchByAddress)
 	roomRouter.GET("/like/:id", rc.Like)
+	roomRouter.GET("/like", rc.GetLikedRooms)
 
 	return r
 }

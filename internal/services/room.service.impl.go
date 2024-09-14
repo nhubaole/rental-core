@@ -200,3 +200,21 @@ func (r *RoomServiceImpl) LikeRoom(roomID int, userID int) *responses.ResponseDa
 		Data:       res,
 	}
 }
+
+// GetLikedRooms implements RoomService.
+func (r *RoomServiceImpl) GetLikedRooms(userID int) *responses.ResponseData {
+	rooms, err := r.repo.GetLikedRooms(context.Background(), int32(userID))
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       rooms,
+	}
+}

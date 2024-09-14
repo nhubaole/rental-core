@@ -110,6 +110,58 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 	return err
 }
 
+const getLikedRooms = `-- name: GetLikedRooms :many
+SELECT r.id, r.title, r.address, r.room_number, r.room_images, r.utilities, r.description, r.room_type, r.owner, r.capacity, r.gender, r.area, r.total_price, r.deposit, r.electricity_cost, r.water_cost, r.internet_cost, r.is_parking, r.parking_fee, r.status, r.is_rent, r.created_at, r.updated_at, r.deleted_at
+FROM PUBLIC."like" l
+JOIN PUBLIC.rooms r ON l.room_id = r.id
+WHERE l.user_id = $1 AND l.deleted_at IS NULL
+`
+
+func (q *Queries) GetLikedRooms(ctx context.Context, userID int32) ([]Room, error) {
+	rows, err := q.db.Query(ctx, getLikedRooms, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Address,
+			&i.RoomNumber,
+			&i.RoomImages,
+			&i.Utilities,
+			&i.Description,
+			&i.RoomType,
+			&i.Owner,
+			&i.Capacity,
+			&i.Gender,
+			&i.Area,
+			&i.TotalPrice,
+			&i.Deposit,
+			&i.ElectricityCost,
+			&i.WaterCost,
+			&i.InternetCost,
+			&i.IsParking,
+			&i.ParkingFee,
+			&i.Status,
+			&i.IsRent,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoomByID = `-- name: GetRoomByID :one
 SELECT 
     id, 

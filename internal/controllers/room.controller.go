@@ -74,3 +74,9 @@ func (rc RoomController) Like(ctx *gin.Context) {
 	result := rc.roomService.LikeRoom(int(roomId), userId)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (rc RoomController) GetLikedRooms(ctx *gin.Context) {
+	userId := 1 //TODO: get current user id
+	result := rc.roomService.GetLikedRooms(userId)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
