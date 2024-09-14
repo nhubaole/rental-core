@@ -11,6 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkUserLikedRoom = `-- name: CheckUserLikedRoom :one
+SELECT 1
+FROM PUBLIC."like"
+WHERE room_id = $1 AND user_id = $2 AND deleted_at IS NULL
+`
+
+type CheckUserLikedRoomParams struct {
+	RoomID int32 `json:"room_id"`
+	UserID int32 `json:"user_id"`
+}
+
+func (q *Queries) CheckUserLikedRoom(ctx context.Context, arg CheckUserLikedRoomParams) (int32, error) {
+	row := q.db.QueryRow(ctx, checkUserLikedRoom, arg.RoomID, arg.UserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createRoom = `-- name: CreateRoom :exec
 INSERT INTO "rooms" 
 (
@@ -282,6 +300,29 @@ func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
 	return items, nil
 }
 
+const likeRoom = `-- name: LikeRoom :exec
+INSERT INTO PUBLIC."like"
+(
+    room_id,
+    user_id,
+    created_at,
+    updated_at
+) VALUES
+(
+    $1, $2, NOW(), NOW()
+)
+`
+
+type LikeRoomParams struct {
+	RoomID int32 `json:"room_id"`
+	UserID int32 `json:"user_id"`
+}
+
+func (q *Queries) LikeRoom(ctx context.Context, arg LikeRoomParams) error {
+	_, err := q.db.Exec(ctx, likeRoom, arg.RoomID, arg.UserID)
+	return err
+}
+
 const searchRoomByAddress = `-- name: SearchRoomByAddress :many
 SELECT 
     id, 
@@ -382,4 +423,19 @@ func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]
 		return nil, err
 	}
 	return items, nil
+}
+
+const unlikeRoom = `-- name: UnlikeRoom :exec
+DELETE FROM PUBLIC."like"
+WHERE room_id = $1 AND user_id = $2
+`
+
+type UnlikeRoomParams struct {
+	RoomID int32 `json:"room_id"`
+	UserID int32 `json:"user_id"`
+}
+
+func (q *Queries) UnlikeRoom(ctx context.Context, arg UnlikeRoomParams) error {
+	_, err := q.db.Exec(ctx, unlikeRoom, arg.RoomID, arg.UserID)
+	return err
 }

@@ -62,3 +62,15 @@ func (rc RoomController) SearchByAddress(ctx *gin.Context) {
 	result := rc.roomService.SearchRoomByAddress(searchParam)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (rc RoomController) Like(ctx *gin.Context) {
+	roomId, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+	userId := 1 //TODO: get current user id
+
+	result := rc.roomService.LikeRoom(int(roomId), userId)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
