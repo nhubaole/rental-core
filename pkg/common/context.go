@@ -2,6 +2,7 @@ package common
 
 import (
 	"errors"
+
 	"smart-rental/pkg/responses"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +15,10 @@ func GetCurrentUser(c *gin.Context) (*responses.UserResponse, error) {
 		
 		return nil, errors.New("Unauthorized")
 	}
+	var currentUser responses.UserResponse
+	
+	MapStruct(user, &currentUser)
 
-	currentUser, ok := user.(responses.UserResponse)
-	if !ok {
-		return nil, errors.New("user type assertion failed")
-	}
 	return &currentUser, nil
 
 }

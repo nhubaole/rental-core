@@ -79,6 +79,7 @@ func (as *AuthenServiceImpl) Login(req *requests.LoginRequest) *responses.Respon
 	}
 
 	var userResponse responses.UserResponse
+	common.MapStruct(user, &userResponse)
 	accessToken, errToken := common.GenerateToken(userResponse)
 
 	if errToken != nil {

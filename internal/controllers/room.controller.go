@@ -1,10 +1,10 @@
 package controllers
 
 import (
-
 	"smart-rental/internal/services"
 	"strconv"
 
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 
@@ -69,8 +69,13 @@ func (rc RoomController) Like(ctx *gin.Context) {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
-	userId := 1 //TODO: get current user id
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+		
+	}
 
-	result := rc.roomService.LikeRoom(int(roomId), userId)
+	result := rc.roomService.LikeRoom(int(roomId), int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
