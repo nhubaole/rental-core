@@ -7,7 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController, rc *controllers.RoomController, rrc *controllers.RentalRequestController) *gin.Engine {
+func NewRouter(
+	ac *controllers.AuthenController,
+	uc *controllers.UserController,
+	rc *controllers.RoomController,
+	rrc *controllers.RentalRequestController,
+	pc *controllers.ProcessTrackingController) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -36,6 +41,8 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	rentalRequestRouter.GET("", middlewares.AuthenMiddleware, rrc.GetAllRentalRequest)
 	rentalRequestRouter.GET("/:id", middlewares.AuthenMiddleware, rrc.GetRentalRequestById)
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
+	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, pc.GetProcessTrackingByRentalId)
+	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, pc.GetAllProcessTracking)
 
 	return r
 }

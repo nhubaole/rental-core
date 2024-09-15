@@ -64,7 +64,7 @@ INSERT INTO PUBLIC.RENTAL_REQUESTS
 (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()
 )
-RETURNING code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at
+RETURNING id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at
 `
 
 type CreateRentalRequestParams struct {
@@ -80,6 +80,7 @@ type CreateRentalRequestParams struct {
 }
 
 type CreateRentalRequestRow struct {
+	ID              int32              `json:"id"`
 	Code            string             `json:"code"`
 	SenderID        int32              `json:"sender_id"`
 	RoomID          int32              `json:"room_id"`
@@ -106,6 +107,7 @@ func (q *Queries) CreateRentalRequest(ctx context.Context, arg CreateRentalReque
 	)
 	var i CreateRentalRequestRow
 	err := row.Scan(
+		&i.ID,
 		&i.Code,
 		&i.SenderID,
 		&i.RoomID,

@@ -21,7 +21,7 @@ func NewRentalRequestServiceImpl() RentalRequestService {
 }
 
 func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *requests.CreateRentalRequest, userid int32) *responses.ResponseData {
-	// check if the room id existed
+	// check if the room reqId existed
 	_, checkEr := rentalService.repo.CheckRoomExisted(context.Background(), body.RoomID)
 	if checkEr != nil {
 		fmt.Println(checkEr.Error())
@@ -77,6 +77,26 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 	res, err := rentalService.repo.CreateRentalRequest(context.Background(), parseBody)
 	if err != nil {
 		println(string(err.Error()))
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to finish your request",
+			Data:       nil,
+		}
+	}
+
+	trackingParam := dataaccess.CreateProgressTrackingParams{
+		Actor:     userid,
+		Action:    "Người thuê tạo yêu cầu thuê phòng thành công",
+		RequestID: res.ID,
+	}
+	processService := new(ProcessServiceImpl)
+	createTracking := processService.CreateProcessTracking(&trackingParam)
+	if !createTracking {
+		fmt.Println("ERROR Create process tracking failed!!")
+
+		// ignore error because it's already an error
+		rentalService.repo.DeleteRequest(context.Background(), res.ID)
+
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Unable to finish your request",
@@ -201,7 +221,7 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(phoneNumber s
 
 }
 
-func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string, id int32, userid int32) *responses.ResponseData {
+func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string, reqId int32, userid int32) *responses.ResponseData {
 	// check if this user is the owner
 	checkRoom, er := rentalService.repo.GetRequestByUserID(context.Background(), userid)
 	if er != nil {
@@ -213,11 +233,11 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 		}
 	}
 	for _, room := range checkRoom {
-		if room.ID == id {
+		if room.ID == reqId {
 			if room.SenderID != userid {
 
 				temp := dataaccess.UpdateRequestStatusByIdParams{
-					ID: id,
+					ID: reqId,
 				}
 				if result == "approve" {
 					temp.Status = 2
@@ -225,6 +245,30 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 					temp.Status = 3
 				}
 				err := rentalService.repo.UpdateRequestStatusById(context.Background(), temp)
+				str := ""
+				if temp.Status == 2 {
+					str = "Người cho thuê đã đồng ý yêu cầu thuê"
+				} else {
+					str = "Người cho thuê không đồng ý yêu cầu thuê"
+				}
+
+				// log to process tracking
+				trackingParam := dataaccess.CreateProgressTrackingParams{
+					Actor:     userid,
+					Action:    str,
+					RequestID: reqId,
+				}
+				processService := new(ProcessServiceImpl)
+				processTracking := processService.CreateProcessTracking(&trackingParam)
+				if !processTracking {
+					fmt.Println("ERROR Create process tracking failed!!")
+					return &responses.ResponseData{
+						StatusCode: http.StatusInternalServerError,
+						Message:    "Bad",
+						Data:       "An error occured",
+					}
+				}
+
 				if err != nil {
 					fmt.Println(err.Error())
 					return &responses.ResponseData{

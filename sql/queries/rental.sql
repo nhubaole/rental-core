@@ -16,7 +16,7 @@ INSERT INTO PUBLIC.RENTAL_REQUESTS
 (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()
 )
-RETURNING code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at;
+RETURNING id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at;
 
 -- name: CheckRoomExisted :one
 SELECT id 
