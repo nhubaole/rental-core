@@ -45,19 +45,21 @@ SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
 WHERE sender_id = $1;
 
--- name: GetRequestByOwnerID :one
+-- name: GetRequestByUserID :one
 SELECT     
-    RENTAL_REQUESTS.id,
-    RENTAL_REQUESTS.code,
-    RENTAL_REQUESTS.sender_id,
-    RENTAL_REQUESTS.room_id,
-    RENTAL_REQUESTS.suggested_price,
-    RENTAL_REQUESTS.num_of_person,
-    RENTAL_REQUESTS.begin_date,
-    RENTAL_REQUESTS.end_date,
-    RENTAL_REQUESTS.addition_request,
-    RENTAL_REQUESTS.status,
-    RENTAL_REQUESTS.created_at,
-    RENTAL_REQUESTS.updated_at
-FROM PUBLIC.RENTAL_REQUESTS ,PUBLIC.ROOMS 
-WHERE owner = $1 and RENTAL_REQUESTS.room_id =ROOMS.id and RENTAL_REQUESTS.deleted_at != NULL ;
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS
+	on RR.room_id = ROOMS.id
+WHERE (owner = $1   or sender_id = $1) 
+	and RR.deleted_at is NULL ;

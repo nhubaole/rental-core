@@ -143,7 +143,7 @@ func (rentalService *RentalRequestServiceImpl) GetRentalRequestById(rentid int32
 	}
 	if result.DeletedAt.Valid {
 		return &responses.ResponseData{
-			StatusCode: http.StatusAccepted,
+			StatusCode: http.StatusOK,
 			Message:    "Nothing found",
 			Data:       "nothing",
 		}
@@ -152,20 +152,20 @@ func (rentalService *RentalRequestServiceImpl) GetRentalRequestById(rentid int32
 	result2, err := rentalService.repo.GetRoomByID(context.Background(), result.RoomID)
 	if err != nil {
 		return &responses.ResponseData{
-			StatusCode: http.StatusAccepted,
+			StatusCode: http.StatusOK,
 			Message:    "Nothing found",
 			Data:       "nothing",
 		}
 	}
 	if result.SenderID != userid && result2.Owner != userid {
 		return &responses.ResponseData{
-			StatusCode: http.StatusAccepted,
+			StatusCode: http.StatusOK,
 			Message:    "Nothing found",
 			Data:       "nothing",
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusAccepted,
+		StatusCode: http.StatusOK,
 		Message:    "Success",
 		Data:       result,
 	}
@@ -173,42 +173,30 @@ func (rentalService *RentalRequestServiceImpl) GetRentalRequestById(rentid int32
 
 func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(phoneNumber string) *responses.ResponseData {
 	// Find rental request and check if the owner or renter is inside it
+
 	result, er := rentalService.repo.GetUserByPhone(context.Background(), phoneNumber)
 	if er != nil {
+		fmt.Println(er.Error())
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
 			Message:    "Who are you buddy?",
 			Data:       "nothing",
 		}
 	}
-	if result.Role == 1 {
-		finalResult, err := rentalService.repo.GetRequestBySenderID(context.Background(), result.ID)
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusAccepted,
-				Message:    "Nothing found",
-				Data:       "nothing",
-			}
-		}
+
+	finalResult, err := rentalService.repo.GetRequestByUserID(context.Background(), result.ID)
+	if err != nil {
+		fmt.Println(err.Error())
 		return &responses.ResponseData{
-			StatusCode: http.StatusAccepted,
-			Message:    "Success",
-			Data:       finalResult,
+			StatusCode: http.StatusOK,
+			Message:    "Nothing found",
+			Data:       "nothing",
 		}
-	} else {
-		finalResult, err := rentalService.repo.GetRequestByOwnerID(context.Background(), result.ID)
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusAccepted,
-				Message:    "Nothing found",
-				Data:       "nothing",
-			}
-		}
-		return &responses.ResponseData{
-			StatusCode: http.StatusAccepted,
-			Message:    "Success",
-			Data:       finalResult,
-		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    "Success",
+		Data:       finalResult,
 	}
 
 }
