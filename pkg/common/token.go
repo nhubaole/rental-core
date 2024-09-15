@@ -13,7 +13,7 @@ import (
 
 func GenerateToken(user responses.UserResponse) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"full_name":  user.FullName,
+		"full_name": user.FullName,
 		"sub":       user.PhoneNumber,
 		"exp":       time.Now().Add(time.Hour).Unix(),
 		"authorize": true,
@@ -25,7 +25,7 @@ func TokenValid(ctx *gin.Context) error {
 	tokenString := ctx.GetHeader("Authorization")
 	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})

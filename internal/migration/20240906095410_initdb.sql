@@ -69,6 +69,9 @@ CREATE TABLE "rental_requests" (
   "end_date" timestamptz NOT NULL,
   "addition_request" varchar,
   "status" integer NOT NULL,
+  -- 1: pending
+  -- 2: approved
+  -- 3. declined
   "created_at" timestamptz,
   "updated_at" timestamptz,
   "deleted_at" timestamptz
