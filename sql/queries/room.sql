@@ -142,3 +142,14 @@ WHERE room_id = $1 AND user_id = $2;
 SELECT 1
 FROM PUBLIC."like"
 WHERE room_id = $1 AND user_id = $2 AND deleted_at IS NULL;
+
+-- name: GetLikedRooms :many
+SELECT r.*
+FROM PUBLIC."like" l
+JOIN PUBLIC.rooms r ON l.room_id = r.id
+WHERE l.user_id = $1 AND l.deleted_at IS NULL;
+
+-- name: GetRoomsByStatus :many
+SELECT *
+FROM PUBLIC.rooms
+WHERE status = $1;
