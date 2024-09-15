@@ -7,7 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController, rc *controllers.RoomController) *gin.Engine {
+func NewRouter(ac *controllers.AuthenController,
+	uc *controllers.UserController,
+	rc *controllers.RoomController,
+	cc *controllers.ContractController ) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -29,6 +32,10 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	roomRouter.GET("/like/:id",middlewares.AuthenMiddleware, rc.Like)
 	roomRouter.GET("/like",middlewares.AuthenMiddleware, rc.GetLikedRooms)
 	roomRouter.GET("/status/:status",middlewares.AuthenMiddleware, rc.GetByStatus)
+
+	contractRouter := baseRouter.Group("/contracts")
+	contractRouter.POST("/template", cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
 
 	return r
 }

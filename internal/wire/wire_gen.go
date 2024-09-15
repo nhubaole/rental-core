@@ -31,3 +31,9 @@ func InitRoomRouterHandler() *controllers.RoomController {
 	roomController := controllers.NewRoomController(roomService)
 	return roomController
 }
+
+func InitContractRouterHandler() *controllers.ContractController {
+	contractService := services.NewContractServiceImpl()
+	contractController := controllers.NewContractController(contractService)
+	return contractController
+}

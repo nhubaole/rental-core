@@ -16,7 +16,8 @@ func main() {
 	ac := wire.InitAuthenRouterHandler()
 	uc := wire.InitUserRouterHandler()
 	rc := wire.InitRoomRouterHandler()
-	r := routers.NewRouter(ac, uc, rc)
+	cc := wire.InitContractRouterHandler()
+	r := routers.NewRouter(ac, uc, rc, cc)
 
 	r.Run()
 }
