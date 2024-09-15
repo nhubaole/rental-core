@@ -40,12 +40,12 @@ FROM PUBLIC.RENTAL_REQUESTS
 WHERE room_id = $1;
 
 
--- name: GetRequestBySenderID :one
+-- name: GetRequestBySenderID :many
 SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
 WHERE sender_id = $1;
 
--- name: GetRequestByUserID :one
+-- name: GetRequestByUserID :many
 SELECT     
     RR.id,
     RR.code,
@@ -63,3 +63,7 @@ FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS
 	on RR.room_id = ROOMS.id
 WHERE (owner = $1   or sender_id = $1) 
 	and RR.deleted_at is NULL ;
+
+-- name: UpdateRequestStatusById :exec
+update PUBLIC.RENTAL_REQUESTS
+set status = $1 WHERE id = $2 and status = 1;

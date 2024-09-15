@@ -200,3 +200,52 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(phoneNumber s
 	}
 
 }
+
+func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string, id int32, userid int32) *responses.ResponseData {
+	// check if this user is the owner
+	checkRoom, er := rentalService.repo.GetRequestByUserID(context.Background(), userid)
+	if er != nil {
+		fmt.Println(er.Error())
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "No rental request found",
+			Data:       false,
+		}
+	}
+	for _, room := range checkRoom {
+		if room.ID == id {
+			if room.SenderID != userid {
+
+				temp := dataaccess.UpdateRequestStatusByIdParams{
+					ID: id,
+				}
+				if result == "approve" {
+					temp.Status = 2
+				} else if result == "decline" {
+					temp.Status = 3
+				}
+				err := rentalService.repo.UpdateRequestStatusById(context.Background(), temp)
+				if err != nil {
+					fmt.Println(err.Error())
+					return &responses.ResponseData{
+						StatusCode: http.StatusInternalServerError,
+						Message:    "Bad",
+						Data:       "An error occured",
+					}
+				}
+				return &responses.ResponseData{
+					StatusCode: http.StatusAccepted,
+					Message:    "Success",
+					Data:       true,
+				}
+			}
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusBadRequest,
+		Message:    "We can't find this room",
+		Data:       false,
+	}
+
+}
