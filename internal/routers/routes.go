@@ -29,6 +29,7 @@ func NewRouter(ac *controllers.AuthenController, uc *controllers.UserController,
 	roomRouter.GET("/like/:id",middlewares.AuthenMiddleware, rc.Like)
 	roomRouter.GET("/like",middlewares.AuthenMiddleware, rc.GetLikedRooms)
 	roomRouter.GET("/status/:status",middlewares.AuthenMiddleware, rc.GetByStatus)
+	roomRouter.PUT("", middlewares.AuthenMiddleware, rc.UpdateRoom)
 
 	return r
 }

@@ -22,7 +22,6 @@ func NewRoomController(service services.RoomService) *RoomController {
 }
 
 func (rc RoomController) Create(ctx *gin.Context) {
-	//newRoom := dataaccess.CreateRoomParams{}
 	var formData requests.CreateRoomForm
 	if err := ctx.ShouldBind(&formData); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
@@ -96,5 +95,16 @@ func (rc RoomController) GetByStatus(ctx *gin.Context) {
 	}
 
 	result := rc.roomService.GetRoomByStatus(status)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (rc RoomController) UpdateRoom(ctx *gin.Context) {
+	var formData requests.UpdateRoomRequest
+	if err := ctx.ShouldBind(&formData); err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := rc.roomService.UpdateRoom(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
