@@ -22,13 +22,20 @@ func NewRentalRequestServiceImpl() RentalRequestService {
 
 func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *requests.CreateRentalRequest, userid int32) *responses.ResponseData {
 	// check if the room reqId existed
-	_, checkEr := rentalService.repo.CheckRoomExisted(context.Background(), body.RoomID)
+	rs, checkEr := rentalService.repo.GetRoomByID(context.Background(), body.RoomID)
 	if checkEr != nil {
 		fmt.Println(checkEr.Error())
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
 			Message:    "We can't find this room",
 			Data:       "nothing here",
+		}
+	}
+	if rs.Owner == userid {
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "You can't rent your room!! You have already owned it",
+			Data:       false,
 		}
 	}
 	request := dataaccess.CheckRequestExistedParams{
@@ -84,14 +91,13 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		}
 	}
 
-	trackingParam := dataaccess.CreateProgressTrackingParams{
+	trackingParam := dataaccess.CreateProcessTrackingParams{
 		Actor:     userid,
 		Action:    "Người thuê tạo yêu cầu thuê phòng thành công",
 		RequestID: res.ID,
 	}
-	processService := new(ProcessServiceImpl)
-	createTracking := processService.CreateProcessTracking(&trackingParam)
-	if !createTracking {
+	_, er := rentalService.repo.CreateProcessTracking(context.Background(), trackingParam)
+	if er != nil {
 		fmt.Println("ERROR Create process tracking failed!!")
 
 		// ignore error because it's already an error
@@ -152,19 +158,12 @@ func (rentalService *RentalRequestServiceImpl) DeleteRentalRequest(rentid int32,
 }
 
 func (rentalService *RentalRequestServiceImpl) GetRentalRequestById(rentid int32, userid int32) *responses.ResponseData {
-	// Find rental request and check if the owner or renter is inside it
+	// Find rental request
 	result, er := rentalService.repo.GetRequestByID(context.Background(), rentid)
 	if er != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
 			Message:    "You do not have this rental request",
-			Data:       "nothing",
-		}
-	}
-	if result.DeletedAt.Valid {
-		return &responses.ResponseData{
-			StatusCode: http.StatusOK,
-			Message:    "Nothing found",
 			Data:       "nothing",
 		}
 	}
@@ -253,14 +252,14 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 				}
 
 				// log to process tracking
-				trackingParam := dataaccess.CreateProgressTrackingParams{
+				trackingParam := dataaccess.CreateProcessTrackingParams{
 					Actor:     userid,
 					Action:    str,
 					RequestID: reqId,
 				}
-				processService := new(ProcessServiceImpl)
-				processTracking := processService.CreateProcessTracking(&trackingParam)
-				if !processTracking {
+				_, er := rentalService.repo.CreateProcessTracking(context.Background(), trackingParam)
+
+				if er != nil {
 					fmt.Println("ERROR Create process tracking failed!!")
 					return &responses.ResponseData{
 						StatusCode: http.StatusInternalServerError,

@@ -19,8 +19,8 @@ func NewProcessServiceImpl() ProcessService {
 	}
 }
 
-func (process *ProcessServiceImpl) CreateProcessTracking(body *dataaccess.CreateProgressTrackingParams) bool {
-	_, er := process.repo.CreateProgressTracking(context.Background(), *body)
+func (process *ProcessServiceImpl) CreateProcessTracking(body *dataaccess.CreateProcessTrackingParams) bool {
+	_, er := process.repo.CreateProcessTracking(context.Background(), *body)
 	if er != nil {
 		fmt.Println(er.Error())
 		return false
@@ -29,9 +29,11 @@ func (process *ProcessServiceImpl) CreateProcessTracking(body *dataaccess.Create
 }
 
 func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, rentalId int32) *responses.ResponseData {
-	rentalService := new(RentalRequestServiceImpl)
-	rs, er := rentalService.repo.GetRequestByUserID(context.Background(), userid)
+
+	fmt.Println(userid)
+	rs, er := process.repo.GetRequestByUserID(context.Background(), userid)
 	if er != nil {
+		fmt.Println(er.Error() + "11111")
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
 			Message:    "Can't find this process",
@@ -40,8 +42,9 @@ func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, re
 	}
 	for _, r := range rs {
 		if r.ID == rentalId {
-			result, error := process.repo.GetProgressTrackingByRentalId(context.Background(), rentalId)
+			result, error := process.repo.GetProcessTrackingByRentalId(context.Background(), rentalId)
 			if error != nil {
+				fmt.Println(error.Error())
 				return &responses.ResponseData{
 					StatusCode: http.StatusBadRequest,
 					Message:    "Can't find this process",
@@ -55,7 +58,7 @@ func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, re
 			}
 		}
 	}
-
+	fmt.Println("ERROR GetProcessTrackingByRentalId Service Impl ??")
 	return &responses.ResponseData{
 		StatusCode: http.StatusBadRequest,
 		Message:    "Can't find this process",
@@ -64,11 +67,11 @@ func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, re
 }
 
 func (process *ProcessServiceImpl) GetAllProcessTracking(userid int32) *responses.ResponseData {
-	rs, er := process.repo.GetAllProgressTracking(context.Background(), userid)
+	rs, er := process.repo.GetAllProcessTracking(context.Background(), userid)
 	if er != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "Can't find this progress",
+			Message:    "Can't find this Process",
 			Data:       false,
 		}
 	}

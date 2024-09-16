@@ -18,11 +18,6 @@ INSERT INTO PUBLIC.RENTAL_REQUESTS
 )
 RETURNING id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at;
 
--- name: CheckRoomExisted :one
-SELECT id 
-FROM PUBLIC.ROOMS 
-WHERE id = $1 ;
-
 -- name: CheckRequestExisted :one
 SELECT status , deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 
@@ -37,7 +32,7 @@ WHERE id = $1 ;
 -- name: GetRequestByID :one
 SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
-WHERE room_id = $1;
+WHERE room_id = $1 and deleted_at is null;
 
 
 -- name: GetRequestBySenderID :many

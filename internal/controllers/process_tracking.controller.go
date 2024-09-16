@@ -21,11 +21,8 @@ func NewProcessTrackingController(service services.ProcessService) *ProcessTrack
 }
 
 func (controller ProcessTrackingController) GetProcessTrackingByRentalId(ctx *gin.Context) {
-	myuser, errr := common.GetCurrentUser(ctx)
-	if errr != nil {
-		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
-		return
-	}
+	myuser, _ := common.GetCurrentUser(ctx)
+
 	rentid, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)

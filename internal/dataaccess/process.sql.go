@@ -9,7 +9,7 @@ import (
 	"context"
 )
 
-const createProgressTracking = `-- name: CreateProgressTracking :one
+const createProcessTracking = `-- name: CreateProcessTracking :one
 insert INTO PUBLIC.PROCESS_TRACKING(
   actor, action, issued_at, request_id
 )
@@ -17,14 +17,14 @@ VALUES ($1, $2 , now(), $3)
 RETURNING id, actor, action, issued_at, request_id
 `
 
-type CreateProgressTrackingParams struct {
+type CreateProcessTrackingParams struct {
 	Actor     int32  `json:"actor"`
 	Action    string `json:"action"`
 	RequestID int32  `json:"request_id"`
 }
 
-func (q *Queries) CreateProgressTracking(ctx context.Context, arg CreateProgressTrackingParams) (ProcessTracking, error) {
-	row := q.db.QueryRow(ctx, createProgressTracking, arg.Actor, arg.Action, arg.RequestID)
+func (q *Queries) CreateProcessTracking(ctx context.Context, arg CreateProcessTrackingParams) (ProcessTracking, error) {
+	row := q.db.QueryRow(ctx, createProcessTracking, arg.Actor, arg.Action, arg.RequestID)
 	var i ProcessTracking
 	err := row.Scan(
 		&i.ID,
@@ -36,13 +36,13 @@ func (q *Queries) CreateProgressTracking(ctx context.Context, arg CreateProgress
 	return i, err
 }
 
-const getAllProgressTracking = `-- name: GetAllProgressTracking :many
+const getAllProcessTracking = `-- name: GetAllProcessTracking :many
 select id, actor, action, issued_at, request_id from PUBLIC.PROCESS_TRACKING
 where actor = $1
 `
 
-func (q *Queries) GetAllProgressTracking(ctx context.Context, actor int32) ([]ProcessTracking, error) {
-	rows, err := q.db.Query(ctx, getAllProgressTracking, actor)
+func (q *Queries) GetAllProcessTracking(ctx context.Context, actor int32) ([]ProcessTracking, error) {
+	rows, err := q.db.Query(ctx, getAllProcessTracking, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +67,13 @@ func (q *Queries) GetAllProgressTracking(ctx context.Context, actor int32) ([]Pr
 	return items, nil
 }
 
-const getProgressTrackingByRentalId = `-- name: GetProgressTrackingByRentalId :one
+const getProcessTrackingByRentalId = `-- name: GetProcessTrackingByRentalId :one
 select id, actor, action, issued_at, request_id from PUBLIC.PROCESS_TRACKING
 where request_id = $1
 `
 
-func (q *Queries) GetProgressTrackingByRentalId(ctx context.Context, requestID int32) (ProcessTracking, error) {
-	row := q.db.QueryRow(ctx, getProgressTrackingByRentalId, requestID)
+func (q *Queries) GetProcessTrackingByRentalId(ctx context.Context, requestID int32) (ProcessTracking, error) {
+	row := q.db.QueryRow(ctx, getProcessTrackingByRentalId, requestID)
 	var i ProcessTracking
 	err := row.Scan(
 		&i.ID,
