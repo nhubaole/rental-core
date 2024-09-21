@@ -15,6 +15,7 @@ func GenerateToken(user responses.UserResponse) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"full_name": user.FullName,
 		"sub":       user.PhoneNumber,
+		"role":      user.Role,
 		"exp":       time.Now().Add(time.Hour).Unix(),
 		"authorize": true,
 	})

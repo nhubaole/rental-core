@@ -12,7 +12,8 @@ func NewRouter(
 	uc *controllers.UserController,
 	rc *controllers.RoomController,
 	rrc *controllers.RentalRequestController,
-	pc *controllers.ProcessTrackingController) *gin.Engine {
+	pc *controllers.ProcessTrackingController,
+	cc *controllers.ContractController ) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -43,6 +44,13 @@ func NewRouter(
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
 	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, pc.GetProcessTrackingByRentalId)
 	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, pc.GetAllProcessTracking)
+
+	contractRouter := baseRouter.Group("/contracts")
+	contractRouter.POST("/template", cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
+	contractRouter.POST("", cc.Create)
+	contractRouter.GET("/:id", cc.GetByID)
+	contractRouter.GET("/status/:statusID", cc.GetByStatus)
 
 	return r
 }
