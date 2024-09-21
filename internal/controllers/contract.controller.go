@@ -3,6 +3,7 @@ package controllers
 import (
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
@@ -72,5 +73,37 @@ func (cc ContractController) GetByStatus(ctx *gin.Context) {
 	}
 
 	result := cc.services.ListContractByStatus(statusID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (cc ContractController) SignContract(ctx *gin.Context) {
+	var req	dataaccess.SignContractParams
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	result := cc.services.SignContract(req, int(currentUser.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (cc ContractController) DeclineContract(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("statusID"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	result := cc.services.DeclineContract(id, int(currentUser.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
