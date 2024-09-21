@@ -12,7 +12,11 @@ func NewRouter(
 	uc *controllers.UserController,
 	rc *controllers.RoomController,
 	rrc *controllers.RentalRequestController,
-	pc *controllers.ProcessTrackingController) *gin.Engine {
+	pc *controllers.ProcessTrackingController,
+	id *controllers.IndexServiceController,
+	bi *controllers.BillingServiceController,
+
+) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -43,6 +47,12 @@ func NewRouter(
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
 	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, pc.GetProcessTrackingByRentalId)
 	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, pc.GetAllProcessTracking)
+
+	billingRouter := baseRouter.Group("/billings")
+	billingRouter.GET("/index/:year/:month", middlewares.AuthenMiddleware, id.GetIndexFromOwner)
+	billingRouter.POST("/index", middlewares.AuthenMiddleware, id.CreateIndex)
+	billingRouter.POST("/", middlewares.AuthenMiddleware, bi.CreateBill)
+	billingRouter.GET("/:year/:month", middlewares.AuthenMiddleware, bi.GetBillByMonth)
 
 	return r
 }

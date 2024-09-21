@@ -121,6 +121,36 @@ func (q *Queries) DeleteRequest(ctx context.Context, id int32) error {
 	return err
 }
 
+const getRentalRequestSuccessByRoomId = `-- name: GetRentalRequestSuccessByRoomId :one
+SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
+FROM public.rental_requests
+WHERE room_id = $1
+  AND status = 2
+  AND begin_date <= now()
+  AND end_date >= now()
+`
+
+func (q *Queries) GetRentalRequestSuccessByRoomId(ctx context.Context, roomID int32) (RentalRequest, error) {
+	row := q.db.QueryRow(ctx, getRentalRequestSuccessByRoomId, roomID)
+	var i RentalRequest
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.SenderID,
+		&i.RoomID,
+		&i.SuggestedPrice,
+		&i.NumOfPerson,
+		&i.BeginDate,
+		&i.EndDate,
+		&i.AdditionRequest,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getRequestByID = `-- name: GetRequestByID :one
 SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 

@@ -43,3 +43,15 @@ func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 	processController := controllers.NewProcessTrackingController(processService)
 	return processController
 }
+
+func InitIndexRouterHandler() *controllers.IndexServiceController {
+	index := services.NewIndexServiceImpl()
+	indexCtl := controllers.NewIndexServiceController(index)
+	return indexCtl
+}
+
+func InitBillingRouterHandler() *controllers.BillingServiceController {
+	service := services.NewBillingServiceImpl()
+	ctl := controllers.NewBillingServiceController(service)
+	return ctl
+}

@@ -62,3 +62,12 @@ WHERE (owner = $1   or sender_id = $1)
 -- name: UpdateRequestStatusById :exec
 update PUBLIC.RENTAL_REQUESTS
 set status = $1 WHERE id = $2 and status = 1;
+
+
+-- name: GetRentalRequestSuccessByRoomId :one
+SELECT *
+FROM public.rental_requests
+WHERE room_id = $1
+  AND status = 2
+  AND begin_date <= now()
+  AND end_date >= now();
