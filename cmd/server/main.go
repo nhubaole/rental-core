@@ -20,7 +20,7 @@ func main() {
 	pc := wire.InitProcessTrackingRouterHandler()
 	
 	cc := wire.InitContractRouterHandler()
-	r := routers.NewRouter(ac, uc, rc, cc, rrc, pc)
+	r := routers.NewRouter(ac, uc, rc, rrc, pc, cc)
 
 	r.Run()
 }
