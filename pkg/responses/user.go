@@ -7,5 +7,6 @@ type UserResponse struct {
 	PhoneNumber string    `json:"phone_number"`
 	FullName    string    `json:"full_name"`
 	Address     *string   `json:"address"`
+	Role        int       `json:"role"`
 	CreatedAt   time.Time `json:"created_at"`
 }

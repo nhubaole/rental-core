@@ -36,6 +36,9 @@ func NewRouter(ac *controllers.AuthenController,
 	contractRouter := baseRouter.Group("/contracts")
 	contractRouter.POST("/template", cc.CreateTemplate)
 	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
+	contractRouter.POST("", cc.Create)
+	contractRouter.GET("/:id", cc.GetByID)
+	contractRouter.GET("/status/:statusID", cc.GetByStatus)
 
 	return r
 }

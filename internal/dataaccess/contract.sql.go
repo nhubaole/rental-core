@@ -194,6 +194,77 @@ func (q *Queries) CreateContractTemplate(ctx context.Context, arg CreateContract
 	return err
 }
 
+const getContractByID = `-- name: GetContractByID :one
+SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
+FROM public.contracts
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type GetContractByIDRow struct {
+	ID                    int32              `json:"id"`
+	Code                  string             `json:"code"`
+	PartyA                int32              `json:"party_a"`
+	PartyB                int32              `json:"party_b"`
+	RequestID             int32              `json:"request_id"`
+	RoomID                int32              `json:"room_id"`
+	ActualPrice           float64            `json:"actual_price"`
+	PaymentMethod         *string            `json:"payment_method"`
+	ElectricityMethod     string             `json:"electricity_method"`
+	ElectricityCost       float64            `json:"electricity_cost"`
+	WaterMethod           string             `json:"water_method"`
+	WaterCost             float64            `json:"water_cost"`
+	InternetCost          float64            `json:"internet_cost"`
+	ParkingFee            *float64           `json:"parking_fee"`
+	Deposit               float64            `json:"deposit"`
+	BeginDate             pgtype.Date        `json:"begin_date"`
+	EndDate               pgtype.Date        `json:"end_date"`
+	ResponsibilityA       string             `json:"responsibility_a"`
+	ResponsibilityB       string             `json:"responsibility_b"`
+	GeneralResponsibility *string            `json:"general_responsibility"`
+	SignatureA            string             `json:"signature_a"`
+	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
+	SignatureB            string             `json:"signature_b"`
+	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	ContractTemplateID    *int32             `json:"contract_template_id"`
+}
+
+func (q *Queries) GetContractByID(ctx context.Context, id int32) (GetContractByIDRow, error) {
+	row := q.db.QueryRow(ctx, getContractByID, id)
+	var i GetContractByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.PartyA,
+		&i.PartyB,
+		&i.RequestID,
+		&i.RoomID,
+		&i.ActualPrice,
+		&i.PaymentMethod,
+		&i.ElectricityMethod,
+		&i.ElectricityCost,
+		&i.WaterMethod,
+		&i.WaterCost,
+		&i.InternetCost,
+		&i.ParkingFee,
+		&i.Deposit,
+		&i.BeginDate,
+		&i.EndDate,
+		&i.ResponsibilityA,
+		&i.ResponsibilityB,
+		&i.GeneralResponsibility,
+		&i.SignatureA,
+		&i.SignedTimeA,
+		&i.SignatureB,
+		&i.SignedTimeB,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ContractTemplateID,
+	)
+	return i, err
+}
+
 const getContractTemplateByAddress = `-- name: GetContractTemplateByAddress :one
 SELECT 
     id,
@@ -239,4 +310,88 @@ func (q *Queries) GetContractTemplateByAddress(ctx context.Context, dollar_1 []s
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const listContractByStatus = `-- name: ListContractByStatus :many
+SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
+FROM public.contracts
+WHERE status = $1 AND deleted_at IS NULL
+`
+
+type ListContractByStatusRow struct {
+	ID                    int32              `json:"id"`
+	Code                  string             `json:"code"`
+	PartyA                int32              `json:"party_a"`
+	PartyB                int32              `json:"party_b"`
+	RequestID             int32              `json:"request_id"`
+	RoomID                int32              `json:"room_id"`
+	ActualPrice           float64            `json:"actual_price"`
+	PaymentMethod         *string            `json:"payment_method"`
+	ElectricityMethod     string             `json:"electricity_method"`
+	ElectricityCost       float64            `json:"electricity_cost"`
+	WaterMethod           string             `json:"water_method"`
+	WaterCost             float64            `json:"water_cost"`
+	InternetCost          float64            `json:"internet_cost"`
+	ParkingFee            *float64           `json:"parking_fee"`
+	Deposit               float64            `json:"deposit"`
+	BeginDate             pgtype.Date        `json:"begin_date"`
+	EndDate               pgtype.Date        `json:"end_date"`
+	ResponsibilityA       string             `json:"responsibility_a"`
+	ResponsibilityB       string             `json:"responsibility_b"`
+	GeneralResponsibility *string            `json:"general_responsibility"`
+	SignatureA            string             `json:"signature_a"`
+	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
+	SignatureB            string             `json:"signature_b"`
+	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	ContractTemplateID    *int32             `json:"contract_template_id"`
+}
+
+func (q *Queries) ListContractByStatus(ctx context.Context, status *int32) ([]ListContractByStatusRow, error) {
+	rows, err := q.db.Query(ctx, listContractByStatus, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContractByStatusRow
+	for rows.Next() {
+		var i ListContractByStatusRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.PartyA,
+			&i.PartyB,
+			&i.RequestID,
+			&i.RoomID,
+			&i.ActualPrice,
+			&i.PaymentMethod,
+			&i.ElectricityMethod,
+			&i.ElectricityCost,
+			&i.WaterMethod,
+			&i.WaterCost,
+			&i.InternetCost,
+			&i.ParkingFee,
+			&i.Deposit,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.ResponsibilityA,
+			&i.ResponsibilityB,
+			&i.GeneralResponsibility,
+			&i.SignatureA,
+			&i.SignedTimeA,
+			&i.SignatureB,
+			&i.SignedTimeB,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ContractTemplateID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

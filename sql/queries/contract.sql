@@ -114,3 +114,14 @@ WHERE
     address = $1::varchar[]
     AND deleted_at IS NULL;
 
+
+-- name: GetContractByID :one
+SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
+FROM public.contracts
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: ListContractByStatus :many
+SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
+FROM public.contracts
+WHERE status = $1 AND deleted_at IS NULL;
+

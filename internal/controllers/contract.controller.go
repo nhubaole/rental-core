@@ -5,6 +5,7 @@ import (
 	"smart-rental/internal/services"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,4 +40,37 @@ func(cc ContractController) GetTemplateByAddress(ctx *gin.Context) {
 
 	result := cc.services.GetTemplateByAddress(req)
 	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
+}
+
+func(cc ContractController) Create(ctx *gin.Context) {
+	var req	requests.CreateContractRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := cc.services.CreateContract(req)
+	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
+}
+
+func (cc ContractController) GetByID(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := cc.services.GetContractByID(id)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (cc ContractController) GetByStatus(ctx *gin.Context) {
+	statusID, err := strconv.Atoi(ctx.Param("statusID"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := cc.services.ListContractByStatus(statusID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

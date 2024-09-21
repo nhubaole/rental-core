@@ -53,6 +53,7 @@ type Contract struct {
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt             pgtype.Timestamp   `json:"deleted_at"`
 	ContractTemplateID    *int32             `json:"contract_template_id"`
+	Status                *int32             `json:"status"`
 }
 
 type ContractTemplate struct {
