@@ -37,3 +37,9 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
 	return rentalRequestController
 }
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	processService := services.NewProcessServiceImpl()
+	processController := controllers.NewProcessTrackingController(processService)
+	return processController
+}

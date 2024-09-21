@@ -34,18 +34,6 @@ func (q *Queries) CheckRequestExisted(ctx context.Context, arg CheckRequestExist
 	return i, err
 }
 
-const checkRoomExisted = `-- name: CheckRoomExisted :one
-SELECT id 
-FROM PUBLIC.ROOMS 
-WHERE id = $1
-`
-
-func (q *Queries) CheckRoomExisted(ctx context.Context, id int32) (int32, error) {
-	row := q.db.QueryRow(ctx, checkRoomExisted, id)
-	err := row.Scan(&id)
-	return id, err
-}
-
 const createRentalRequest = `-- name: CreateRentalRequest :one
 INSERT INTO PUBLIC.RENTAL_REQUESTS
 (
@@ -64,7 +52,7 @@ INSERT INTO PUBLIC.RENTAL_REQUESTS
 (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()
 )
-RETURNING code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at
+RETURNING id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at
 `
 
 type CreateRentalRequestParams struct {
@@ -80,6 +68,7 @@ type CreateRentalRequestParams struct {
 }
 
 type CreateRentalRequestRow struct {
+	ID              int32              `json:"id"`
 	Code            string             `json:"code"`
 	SenderID        int32              `json:"sender_id"`
 	RoomID          int32              `json:"room_id"`
@@ -106,6 +95,7 @@ func (q *Queries) CreateRentalRequest(ctx context.Context, arg CreateRentalReque
 	)
 	var i CreateRentalRequestRow
 	err := row.Scan(
+		&i.ID,
 		&i.Code,
 		&i.SenderID,
 		&i.RoomID,
@@ -134,7 +124,7 @@ func (q *Queries) DeleteRequest(ctx context.Context, id int32) error {
 const getRequestByID = `-- name: GetRequestByID :one
 SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 
-WHERE room_id = $1
+WHERE room_id = $1 and deleted_at is null
 `
 
 func (q *Queries) GetRequestByID(ctx context.Context, roomID int32) (RentalRequest, error) {
@@ -158,25 +148,67 @@ func (q *Queries) GetRequestByID(ctx context.Context, roomID int32) (RentalReque
 	return i, err
 }
 
-const getRequestByOwnerID = `-- name: GetRequestByOwnerID :one
-SELECT     
-    RENTAL_REQUESTS.id,
-    RENTAL_REQUESTS.code,
-    RENTAL_REQUESTS.sender_id,
-    RENTAL_REQUESTS.room_id,
-    RENTAL_REQUESTS.suggested_price,
-    RENTAL_REQUESTS.num_of_person,
-    RENTAL_REQUESTS.begin_date,
-    RENTAL_REQUESTS.end_date,
-    RENTAL_REQUESTS.addition_request,
-    RENTAL_REQUESTS.status,
-    RENTAL_REQUESTS.created_at,
-    RENTAL_REQUESTS.updated_at
-FROM PUBLIC.RENTAL_REQUESTS ,PUBLIC.ROOMS 
-WHERE owner = $1 and RENTAL_REQUESTS.room_id =ROOMS.id and RENTAL_REQUESTS.deleted_at != NULL
+const getRequestBySenderID = `-- name: GetRequestBySenderID :many
+SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
+FROM PUBLIC.RENTAL_REQUESTS 
+WHERE sender_id = $1
 `
 
-type GetRequestByOwnerIDRow struct {
+func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) ([]RentalRequest, error) {
+	rows, err := q.db.Query(ctx, getRequestBySenderID, senderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RentalRequest
+	for rows.Next() {
+		var i RentalRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.SenderID,
+			&i.RoomID,
+			&i.SuggestedPrice,
+			&i.NumOfPerson,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.AdditionRequest,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRequestByUserID = `-- name: GetRequestByUserID :many
+SELECT     
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS
+	on RR.room_id = ROOMS.id
+WHERE (owner = $1   or sender_id = $1) 
+	and RR.deleted_at is NULL
+`
+
+type GetRequestByUserIDRow struct {
 	ID              int32              `json:"id"`
 	Code            string             `json:"code"`
 	SenderID        int32              `json:"sender_id"`
@@ -191,49 +223,50 @@ type GetRequestByOwnerIDRow struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) (GetRequestByOwnerIDRow, error) {
-	row := q.db.QueryRow(ctx, getRequestByOwnerID, owner)
-	var i GetRequestByOwnerIDRow
-	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.SenderID,
-		&i.RoomID,
-		&i.SuggestedPrice,
-		&i.NumOfPerson,
-		&i.BeginDate,
-		&i.EndDate,
-		&i.AdditionRequest,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) GetRequestByUserID(ctx context.Context, owner int32) ([]GetRequestByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getRequestByUserID, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRequestByUserIDRow
+	for rows.Next() {
+		var i GetRequestByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.SenderID,
+			&i.RoomID,
+			&i.SuggestedPrice,
+			&i.NumOfPerson,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.AdditionRequest,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-const getRequestBySenderID = `-- name: GetRequestBySenderID :one
-SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
-FROM PUBLIC.RENTAL_REQUESTS 
-WHERE sender_id = $1
+const updateRequestStatusById = `-- name: UpdateRequestStatusById :exec
+update PUBLIC.RENTAL_REQUESTS
+set status = $1 WHERE id = $2 and status = 1
 `
 
-func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) (RentalRequest, error) {
-	row := q.db.QueryRow(ctx, getRequestBySenderID, senderID)
-	var i RentalRequest
-	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.SenderID,
-		&i.RoomID,
-		&i.SuggestedPrice,
-		&i.NumOfPerson,
-		&i.BeginDate,
-		&i.EndDate,
-		&i.AdditionRequest,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+type UpdateRequestStatusByIdParams struct {
+	Status int32 `json:"status"`
+	ID     int32 `json:"id"`
+}
+
+func (q *Queries) UpdateRequestStatusById(ctx context.Context, arg UpdateRequestStatusByIdParams) error {
+	_, err := q.db.Exec(ctx, updateRequestStatusById, arg.Status, arg.ID)
+	return err
 }

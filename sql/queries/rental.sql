@@ -16,12 +16,7 @@ INSERT INTO PUBLIC.RENTAL_REQUESTS
 (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, now(), now()
 )
-RETURNING code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at;
-
--- name: CheckRoomExisted :one
-SELECT id 
-FROM PUBLIC.ROOMS 
-WHERE id = $1 ;
+RETURNING id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date,     addition_request, status, created_at;
 
 -- name: CheckRequestExisted :one
 SELECT status , deleted_at
@@ -37,27 +32,33 @@ WHERE id = $1 ;
 -- name: GetRequestByID :one
 SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
-WHERE room_id = $1;
+WHERE room_id = $1 and deleted_at is null;
 
 
--- name: GetRequestBySenderID :one
+-- name: GetRequestBySenderID :many
 SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
 WHERE sender_id = $1;
 
--- name: GetRequestByOwnerID :one
+-- name: GetRequestByUserID :many
 SELECT     
-    RENTAL_REQUESTS.id,
-    RENTAL_REQUESTS.code,
-    RENTAL_REQUESTS.sender_id,
-    RENTAL_REQUESTS.room_id,
-    RENTAL_REQUESTS.suggested_price,
-    RENTAL_REQUESTS.num_of_person,
-    RENTAL_REQUESTS.begin_date,
-    RENTAL_REQUESTS.end_date,
-    RENTAL_REQUESTS.addition_request,
-    RENTAL_REQUESTS.status,
-    RENTAL_REQUESTS.created_at,
-    RENTAL_REQUESTS.updated_at
-FROM PUBLIC.RENTAL_REQUESTS ,PUBLIC.ROOMS 
-WHERE owner = $1 and RENTAL_REQUESTS.room_id =ROOMS.id and RENTAL_REQUESTS.deleted_at != NULL ;
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS
+	on RR.room_id = ROOMS.id
+WHERE (owner = $1   or sender_id = $1) 
+	and RR.deleted_at is NULL ;
+
+-- name: UpdateRequestStatusById :exec
+update PUBLIC.RENTAL_REQUESTS
+set status = $1 WHERE id = $2 and status = 1;
