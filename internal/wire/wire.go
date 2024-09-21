@@ -40,6 +40,13 @@ func InitRoomRouterHandler() *controllers.RoomController {
 	)
 	return &controllers.RoomController{}
 }
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	wire.Build(
+		services.NewRentalRequestServiceImpl,
+		controllers.NewRentalRequestController,
+	)
+	return &controllers.RentalRequestController{}
+}
 
 func InitContractRouterHandler() *controllers.ContractController {
 	wire.Build(

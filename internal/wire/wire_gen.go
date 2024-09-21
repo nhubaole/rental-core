@@ -37,3 +37,15 @@ func InitContractRouterHandler() *controllers.ContractController {
 	contractController := controllers.NewContractController(contractService)
 	return contractController
 }
+
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	rentalRequestService := services.NewRentalRequestServiceImpl()
+	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
+	return rentalRequestController
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	processService := services.NewProcessServiceImpl()
+	processController := controllers.NewProcessTrackingController(processService)
+	return processController
+}
