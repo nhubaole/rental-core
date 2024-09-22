@@ -56,8 +56,6 @@ INSERT INTO PUBLIC.contracts
     general_responsibility, -- Trách nhiệm chung
     signature_a,            -- Chữ ký của bên A
     signed_time_a,          -- Thời gian ký của bên A
-    signature_b,            -- Chữ ký của bên B
-    signed_time_b,          -- Thời gian ký của bên B
     contract_template_id,   -- ID mẫu hợp đồng
     created_at,             -- Thời gian tạo
     updated_at              -- Thời gian cập nhật
@@ -84,9 +82,7 @@ INSERT INTO PUBLIC.contracts
     $19, -- Trách nhiệm chung
     $20, -- Chữ ký bên A
     $21, -- Thời gian ký của bên A
-    $22, -- Chữ ký bên B
-    $23, -- Thời gian ký của bên B
-    $24, -- ID mẫu hợp đồng
+    $22, -- ID mẫu hợp đồng
     NOW(), -- Thời gian tạo
     NOW()  -- Thời gian cập nhật
 );
@@ -125,3 +121,15 @@ SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_me
 FROM public.contracts
 WHERE status = $1 AND deleted_at IS NULL;
 
+-- name: SignContract :exec
+UPDATE public.contracts
+SET signature_b = $2,
+    signed_time_b = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: DeclineContract :exec
+UPDATE public.contracts
+SET status = 3,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL;

@@ -12,4 +12,6 @@ type ContractService interface {
 	CreateContract(req requests.CreateContractRequest) *responses.ResponseData
 	GetContractByID(id int) *responses.ResponseData
 	ListContractByStatus(statusID int) *responses.ResponseData
+	SignContract(req dataaccess.SignContractParams, userID int) *responses.ResponseData
+	DeclineContract(id int, userID int) *responses.ResponseData
 }

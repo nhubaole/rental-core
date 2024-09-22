@@ -35,8 +35,6 @@ INSERT INTO PUBLIC.contracts
     general_responsibility, -- Trách nhiệm chung
     signature_a,            -- Chữ ký của bên A
     signed_time_a,          -- Thời gian ký của bên A
-    signature_b,            -- Chữ ký của bên B
-    signed_time_b,          -- Thời gian ký của bên B
     contract_template_id,   -- ID mẫu hợp đồng
     created_at,             -- Thời gian tạo
     updated_at              -- Thời gian cập nhật
@@ -63,9 +61,7 @@ INSERT INTO PUBLIC.contracts
     $19, -- Trách nhiệm chung
     $20, -- Chữ ký bên A
     $21, -- Thời gian ký của bên A
-    $22, -- Chữ ký bên B
-    $23, -- Thời gian ký của bên B
-    $24, -- ID mẫu hợp đồng
+    $22, -- ID mẫu hợp đồng
     NOW(), -- Thời gian tạo
     NOW()  -- Thời gian cập nhật
 )
@@ -93,8 +89,6 @@ type CreateContractParams struct {
 	GeneralResponsibility *string            `json:"general_responsibility"`
 	SignatureA            string             `json:"signature_a"`
 	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            string             `json:"signature_b"`
-	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
 	ContractTemplateID    *int32             `json:"contract_template_id"`
 }
 
@@ -121,8 +115,6 @@ func (q *Queries) CreateContract(ctx context.Context, arg CreateContractParams) 
 		arg.GeneralResponsibility,
 		arg.SignatureA,
 		arg.SignedTimeA,
-		arg.SignatureB,
-		arg.SignedTimeB,
 		arg.ContractTemplateID,
 	)
 	return err
@@ -191,6 +183,18 @@ func (q *Queries) CreateContractTemplate(ctx context.Context, arg CreateContract
 		arg.ResponsibilityB,
 		arg.GeneralResponsibility,
 	)
+	return err
+}
+
+const declineContract = `-- name: DeclineContract :exec
+UPDATE public.contracts
+SET status = 3,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) DeclineContract(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, declineContract, id)
 	return err
 }
 
@@ -394,4 +398,22 @@ func (q *Queries) ListContractByStatus(ctx context.Context, status *int32) ([]Li
 		return nil, err
 	}
 	return items, nil
+}
+
+const signContract = `-- name: SignContract :exec
+UPDATE public.contracts
+SET signature_b = $2,
+    signed_time_b = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type SignContractParams struct {
+	ID         int32  `json:"id"`
+	SignatureB string `json:"signature_b"`
+}
+
+func (q *Queries) SignContract(ctx context.Context, arg SignContractParams) error {
+	_, err := q.db.Exec(ctx, signContract, arg.ID, arg.SignatureB)
+	return err
 }

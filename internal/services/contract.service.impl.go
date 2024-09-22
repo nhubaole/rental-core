@@ -16,6 +16,7 @@ type ContractServiceImpl struct {
 }
 
 
+
 func NewContractServiceImpl() ContractService {
 	return &ContractServiceImpl{
 		repo: dataaccess.New(global.Db),
@@ -80,6 +81,15 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 			Data:       false,
 		}
 	}
+	signOfA, encryptedErrA := common.EncryptBase64AES(req.SignatureA, global.Config.JWT.AESKey)
+	//signOfB, encryptedErrB := common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
+	if encryptedErrA != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Lỗi ký hợp đồng",
+			Data:       false,
+		}
+	}
 	parkingFee := common.IfNullFloat64(req.ParkingFee, &template.ParkingFee)
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
 	contract := &dataaccess.CreateContractParams{
@@ -102,10 +112,8 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),
 		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),
 		GeneralResponsibility: &generalResponsibility,
-		SignatureA:            req.SignatureA,
+		SignatureA:            signOfA,
 		SignedTimeA:           req.SignedTimeA,
-		SignatureB:            req.SignatureB,
-		SignedTimeB:           req.SignedTimeB,
 		ContractTemplateID:    &template.ID,
 	}
 
@@ -127,6 +135,8 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 // GetContractByID implements ContractService.
 func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 	contract, err := c.repo.GetContractByID(context.Background(), int32(id))
+	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
+	contract.SignatureB, _ = common.DecryptBase64AES(contract.SignatureB, global.Config.JWT.AESKey)
 	if err != nil {
 		if (contract == dataaccess.GetContractByIDRow{}) {
 			return &responses.ResponseData{
@@ -160,14 +170,13 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int) *responses.Resp
 			Data:       nil,
 		}
 	}
-	if (len(contracts) == 0) {
+	if len(contracts) == 0 {
 		return &responses.ResponseData{
 			StatusCode: http.StatusNoContent,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
 	}
-	
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
@@ -175,4 +184,66 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int) *responses.Resp
 		Data:       contracts,
 	}
 
+}
+
+// SignContract implements ContractService.
+func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, userID int) *responses.ResponseData {
+	var encryptErr error
+	contract, _ := c.repo.GetContractByID(context.Background(), int32(req.ID))
+	if userID != int(contract.PartyB) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusForbidden,
+			Message:    "Bạn không có quyền thực hiện thao tác này",
+			Data:       false,
+		}
+	}
+	req.SignatureB, encryptErr = common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
+	if encryptErr != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Lỗi ký hợp đồng",
+			Data:       false,
+		}
+	}
+	err := c.repo.SignContract(context.Background(), req)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusCreated,
+		Message:    responses.StatusSuccess,
+		Data:       true,
+	}
+}
+
+// DeclineContract implements ContractService.
+func (c *ContractServiceImpl) DeclineContract(id int, userID int) *responses.ResponseData {
+	contract, _ := c.repo.GetContractByID(context.Background(), int32(id))
+	if userID != int(contract.PartyB) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusForbidden,
+			Message:    "Bạn không có quyền thực hiện thao tác này",
+			Data:       false,
+		}
+	}
+
+	err := c.repo.DeclineContract(context.Background(), contract.ID)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusCreated,
+		Message:    responses.StatusSuccess,
+		Data:       true,
+	}
 }
