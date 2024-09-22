@@ -24,3 +24,28 @@ func InitUserRouterHandler() *controllers.UserController {
 	userController := controllers.NewUserController(userService)
 	return userController
 }
+
+func InitRoomRouterHandler() *controllers.RoomController {
+	storageSerivce := services.NewStorageServiceImpl()
+	roomService := services.NewRoomServiceImpl(storageSerivce)
+	roomController := controllers.NewRoomController(roomService)
+	return roomController
+}
+
+func InitContractRouterHandler() *controllers.ContractController {
+	contractService := services.NewContractServiceImpl()
+	contractController := controllers.NewContractController(contractService)
+	return contractController
+}
+
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	rentalRequestService := services.NewRentalRequestServiceImpl()
+	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
+	return rentalRequestController
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	processService := services.NewProcessServiceImpl()
+	processController := controllers.NewProcessTrackingController(processService)
+	return processController
+}

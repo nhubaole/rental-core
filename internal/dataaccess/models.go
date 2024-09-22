@@ -52,6 +52,26 @@ type Contract struct {
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt             pgtype.Timestamp   `json:"deleted_at"`
+	ContractTemplateID    *int32             `json:"contract_template_id"`
+	Status                *int32             `json:"status"`
+}
+
+type ContractTemplate struct {
+	ID                    int32              `json:"id"`
+	PartyA                int32              `json:"party_a"`
+	Address               []string           `json:"address"`
+	ElectricityMethod     string             `json:"electricity_method"`
+	ElectricityCost       float64            `json:"electricity_cost"`
+	WaterMethod           string             `json:"water_method"`
+	WaterCost             float64            `json:"water_cost"`
+	InternetCost          float64            `json:"internet_cost"`
+	ParkingFee            float64            `json:"parking_fee"`
+	ResponsibilityA       string             `json:"responsibility_a"`
+	ResponsibilityB       string             `json:"responsibility_b"`
+	GeneralResponsibility string             `json:"general_responsibility"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt             pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type Index struct {
@@ -163,4 +183,5 @@ type User struct {
 	Role        int32              `json:"role"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	Otp         *int32             `json:"otp"`
 }

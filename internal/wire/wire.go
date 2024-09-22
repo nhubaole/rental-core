@@ -25,12 +25,33 @@ func InitAuthenRouterHandler() *controllers.AuthenController {
 
 func InitUserRouterHandler() *controllers.UserController {
 	wire.Build(
-		//initialize.DatabaseConnection,
-		//	initialize.NewQueries,
-		//dataaccess.New,
 		services.NewUserServiceImpl,
 		controllers.NewUserController,
 	)
 
 	return &controllers.UserController{}
+}
+
+func InitRoomRouterHandler() *controllers.RoomController {
+	wire.Build(
+		services.NewRoomServiceImpl,
+		services.NewStorageServiceImpl,
+		controllers.NewRoomController,
+	)
+	return &controllers.RoomController{}
+}
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	wire.Build(
+		services.NewRentalRequestServiceImpl,
+		controllers.NewRentalRequestController,
+	)
+	return &controllers.RentalRequestController{}
+}
+
+func InitContractRouterHandler() *controllers.ContractController {
+	wire.Build(
+		services.NewContractServiceImpl,
+		controllers.NewContractController,
+	)
+	return &controllers.ContractController{}
 }
