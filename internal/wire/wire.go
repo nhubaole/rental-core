@@ -45,6 +45,14 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 	return &controllers.RentalRequestController{}
 }
 
+func InitContractRouterHandler() *controllers.ContractController {
+	wire.Build(
+		services.NewContractServiceImpl,
+		controllers.NewContractController,
+	)
+	return &controllers.ContractController{}
+}
+
 func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 	wire.Build(
 		services.NewProcessServiceImpl,

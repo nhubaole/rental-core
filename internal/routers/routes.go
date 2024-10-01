@@ -15,6 +15,7 @@ func NewRouter(
 	ptc *controllers.ProcessTrackingController,
 	ic *controllers.IndexController,
 	bc *controllers.BillingController,
+	cc *controllers.ContractController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -57,6 +58,15 @@ func NewRouter(
 	billingRouter.POST("/get-metrics", bc.GetBillMetric)
 	billingRouter.GET("/status/:statusID", bc.GetBillByStatusID)
 	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
+
+	contractRouter := baseRouter.Group("/contracts")
+	contractRouter.POST("/template", cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
+	contractRouter.POST("", cc.Create)
+	contractRouter.GET("/:id", cc.GetByID)
+	contractRouter.GET("/status/:statusID", cc.GetByStatus)
+	contractRouter.PUT("/sign", middlewares.AuthenMiddleware, cc.SignContract)
+	contractRouter.PUT("/decline/:id", middlewares.AuthenMiddleware, cc.DeclineContract)
 
 	return r
 }
