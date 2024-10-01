@@ -11,41 +11,81 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BillingServiceController struct {
+type BillingController struct {
 	service services.BillingService
 }
 
-func NewBillingServiceController(service services.BillingService) *BillingServiceController {
-	return &BillingServiceController{
+func NewBillingController(service services.BillingService) *BillingController {
+	return &BillingController{
 		service: service,
 	}
 }
 
-func (controller BillingServiceController) CreateBill(ctx *gin.Context) {
-	myuser, _ := common.GetCurrentUser(ctx)
-	var body *dataaccess.CreateBillParams
+func (controller BillingController) CreateBill(ctx *gin.Context) {
+	currentUser, _ := common.GetCurrentUser(ctx)
+	var body dataaccess.CreateBillParams
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	result := controller.service.CreateBill(myuser.ID, body)
+	result := controller.service.CreateBill(currentUser.ID, body)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
-
-func (controller BillingServiceController) GetBillByMonth(ctx *gin.Context) {
+func (controller BillingController) GetBillByMonth(ctx *gin.Context) {
 	myuser, _ := common.GetCurrentUser(ctx)
-	year, err := strconv.Atoi(ctx.Param("year"))
+	year, err := strconv.Atoi(ctx.Query("year"))
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	month, err := strconv.Atoi(ctx.Param("month"))
+	month, err := strconv.Atoi(ctx.Query("month"))
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
 	result := controller.service.GetBillByMonth(myuser.ID, int32(month), int32(year))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (controller BillingController) GetBillByID(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	result := controller.service.GetBillByID(int32(id))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (controller BillingController) GetBillMetric(ctx *gin.Context) {
+	var body dataaccess.GetAllMetric4BillByRoomIDParams
+	err := ctx.ShouldBindJSON(&body)
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	result := controller.service.GetBillMetrics(body)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+func (controller BillingController) GetBillByStatusID(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("statusID"))
+	if (id != 1 && id != 2) {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Status must be between 1 and 2", nil)
+		return
+	}
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	result := controller.service.GetBillByStatus(int32(id))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (controller BillingController) GetBillOfRentedRoomByOwnerID(ctx *gin.Context) {
+	currentUser, _ := common.GetCurrentUser(ctx)
+	
+	result := controller.service.GetBillOfRentedRoomByOwnerID(int(currentUser.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

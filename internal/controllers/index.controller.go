@@ -11,17 +11,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type IndexServiceController struct {
+type IndexController struct {
 	indexService services.IndexService
 }
 
-func NewIndexServiceController(service services.IndexService) *IndexServiceController {
-	return &IndexServiceController{
+func NewIndexController(service services.IndexService) *IndexController {
+	return &IndexController{
 		indexService: service,
 	}
 }
 
-func (controller IndexServiceController) GetIndexFromOwner(ctx *gin.Context) {
+func (controller IndexController) GetIndexFromOwner(ctx *gin.Context) {
 	myuser, _ := common.GetCurrentUser(ctx)
 	year, err := strconv.Atoi(ctx.Param("year"))
 	if err != nil {
@@ -37,7 +37,7 @@ func (controller IndexServiceController) GetIndexFromOwner(ctx *gin.Context) {
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
-func (controller IndexServiceController) CreateIndex(ctx *gin.Context) {
+func (controller IndexController) CreateIndex(ctx *gin.Context) {
 	myuser, _ := common.GetCurrentUser(ctx)
 	var body *dataaccess.CreateIndexParams
 	err := ctx.ShouldBindJSON(&body)
