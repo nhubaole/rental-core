@@ -13,9 +13,6 @@ import (
 
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	wire.Build(
-		//initialize.DatabaseConnection,
-		//	initialize.NewQueries,
-		//dataaccess.New,
 		services.NewAuthenSerivceImpl,
 		controllers.NewAuthController,
 	)
@@ -54,4 +51,28 @@ func InitContractRouterHandler() *controllers.ContractController {
 		controllers.NewContractController,
 	)
 	return &controllers.ContractController{}
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	wire.Build(
+		services.NewProcessServiceImpl,
+		controllers.NewProcessTrackingController,
+	)
+	return &controllers.ProcessTrackingController{}
+}
+
+func InitIndexRouterHandler() *controllers.IndexController {
+	wire.Build(
+		services.NewIndexServiceImpl,
+		controllers.NewIndexController,
+	)
+	return &controllers.IndexController{}
+}
+
+func InitBillingRouterHandler() *controllers.BillingController {
+	wire.Build(
+		services.NewBillingServiceImpl,
+		controllers.NewBillingController,
+	)
+	return &controllers.BillingController{}
 }

@@ -12,8 +12,12 @@ func NewRouter(
 	uc *controllers.UserController,
 	rc *controllers.RoomController,
 	rrc *controllers.RentalRequestController,
-	pc *controllers.ProcessTrackingController,
-	cc *controllers.ContractController ) *gin.Engine {
+	ptc *controllers.ProcessTrackingController,
+	ic *controllers.IndexController,
+	bc *controllers.BillingController,
+	cc *controllers.ContractController,
+
+) *gin.Engine {
 	r := gin.Default()
 
 	baseRouter := r.Group("/api/v1")
@@ -42,8 +46,18 @@ func NewRouter(
 	rentalRequestRouter.GET("", middlewares.AuthenMiddleware, rrc.GetAllRentalRequest)
 	rentalRequestRouter.GET("/:id", middlewares.AuthenMiddleware, rrc.GetRentalRequestById)
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
-	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, pc.GetProcessTrackingByRentalId)
-	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, pc.GetAllProcessTracking)
+	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, ptc.GetProcessTrackingByRentalId)
+	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, ptc.GetAllProcessTracking)
+
+	billingRouter := baseRouter.Group("/billings")
+	billingRouter.GET("/index/:year/:month", middlewares.AuthenMiddleware, ic.GetIndexFromOwner)
+	billingRouter.POST("/index", middlewares.AuthenMiddleware, ic.CreateIndex)
+	billingRouter.POST("/", middlewares.AuthenMiddleware, bc.CreateBill)
+	billingRouter.GET("/", middlewares.AuthenMiddleware, bc.GetBillByMonth)
+	billingRouter.GET("/:id", middlewares.AuthenMiddleware, bc.GetBillByID)
+	billingRouter.POST("/get-metrics", bc.GetBillMetric)
+	billingRouter.GET("/status/:statusID", bc.GetBillByStatusID)
+	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
 
 	contractRouter := baseRouter.Group("/contracts")
 	contractRouter.POST("/template", cc.CreateTemplate)

@@ -153,3 +153,9 @@ WHERE l.user_id = $1 AND l.deleted_at IS NULL;
 SELECT *
 FROM PUBLIC.rooms
 WHERE status = $1;
+
+-- name: GetRoomsByOwner :many
+SELECT *
+FROM PUBLIC.rooms
+where owner = $1;
+

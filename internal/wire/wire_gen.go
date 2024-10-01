@@ -46,6 +46,18 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 
 func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 	processService := services.NewProcessServiceImpl()
-	processController := controllers.NewProcessTrackingController(processService)
-	return processController
+	processTrackingController := controllers.NewProcessTrackingController(processService)
+	return processTrackingController
+}
+
+func InitIndexRouterHandler() *controllers.IndexController {
+	indexService := services.NewIndexServiceImpl()
+	indexController := controllers.NewIndexController(indexService)
+	return indexController
+}
+
+func InitBillingRouterHandler() *controllers.BillingController {
+	billingService := services.NewBillingServiceImpl()
+	billingController := controllers.NewBillingController(billingService)
+	return billingController
 }

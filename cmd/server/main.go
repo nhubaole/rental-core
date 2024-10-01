@@ -18,9 +18,11 @@ func main() {
 	rc := wire.InitRoomRouterHandler()
 	rrc := wire.InitRentalRequestRouterHandler()
 	pc := wire.InitProcessTrackingRouterHandler()
+	ic := wire.InitIndexRouterHandler()
+	bc := wire.InitBillingRouterHandler()
 	
 	cc := wire.InitContractRouterHandler()
-	r := routers.NewRouter(ac, uc, rc, rrc, pc, cc)
+	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc)
 
 	r.Run()
 }
