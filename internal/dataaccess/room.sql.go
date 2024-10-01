@@ -355,6 +355,57 @@ func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
 	return items, nil
 }
 
+const getRoomsByOwner = `-- name: GetRoomsByOwner :many
+SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at
+FROM PUBLIC.rooms
+where owner = $1
+`
+
+func (q *Queries) GetRoomsByOwner(ctx context.Context, owner int32) ([]Room, error) {
+	rows, err := q.db.Query(ctx, getRoomsByOwner, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Room
+	for rows.Next() {
+		var i Room
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Address,
+			&i.RoomNumber,
+			&i.RoomImages,
+			&i.Utilities,
+			&i.Description,
+			&i.RoomType,
+			&i.Owner,
+			&i.Capacity,
+			&i.Gender,
+			&i.Area,
+			&i.TotalPrice,
+			&i.Deposit,
+			&i.ElectricityCost,
+			&i.WaterCost,
+			&i.InternetCost,
+			&i.IsParking,
+			&i.ParkingFee,
+			&i.Status,
+			&i.IsRent,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoomsByStatus = `-- name: GetRoomsByStatus :many
 SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at
 FROM PUBLIC.rooms

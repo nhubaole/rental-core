@@ -17,8 +17,6 @@ type AuthenServiceImpl struct {
 	repo *dataaccess.Queries
 }
 
-
-
 func NewAuthenSerivceImpl() AuthenService {
 	return &AuthenServiceImpl{
 		repo: dataaccess.New(global.Db),
@@ -105,7 +103,7 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:   err.Error(),
+			Message:    err.Error(),
 			Data:       nil,
 		}
 	}
@@ -113,7 +111,7 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 	if user == (dataaccess.GetUserByPhoneRow{}) {
 		return &responses.ResponseData{
 			StatusCode: http.StatusNotFound,
-			Message:   responses.StatusResourceNotFound,
+			Message:    responses.StatusResourceNotFound,
 			Data:       nil,
 		}
 	}
@@ -121,11 +119,10 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 	if int(*user.Otp) != req.Otp {
 		return &responses.ResponseData{
 			StatusCode: http.StatusUnauthorized,
-			Message:   responses.StatusAuthorizeFail,
+			Message:    responses.StatusAuthorizeFail,
 			Data:       nil,
 		}
 	}
-
 
 	var result responses.UserResponse
 	common.MapStruct(user, &result)
@@ -133,7 +130,7 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:   err.Error(),
+			Message:    err.Error(),
 			Data:       nil,
 		}
 	}
@@ -141,12 +138,12 @@ func (as *AuthenServiceImpl) VerifyOTP(req *requests.VerifyOTPRequest) *response
 	var updateUser dataaccess.UpdateUserParams
 	common.MapStruct(user, &updateUser)
 	updateUser.Otp = nil
-	
+
 	_, updateErr := as.repo.UpdateUser(context.Background(), updateUser)
 	if updateErr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:   updateErr.Error(),
+			Message:    updateErr.Error(),
 			Data:       nil,
 		}
 	}

@@ -183,3 +183,9 @@ WHERE
     deleted_at IS NULL
     AND id = $1
     RETURNING id;
+
+-- name: GetRoomsByOwner :many
+SELECT *
+FROM PUBLIC.rooms
+where owner = $1;
+

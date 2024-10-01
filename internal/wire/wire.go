@@ -13,9 +13,6 @@ import (
 
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	wire.Build(
-		//initialize.DatabaseConnection,
-		//	initialize.NewQueries,
-		//dataaccess.New,
 		services.NewAuthenSerivceImpl,
 		controllers.NewAuthController,
 	)
@@ -25,9 +22,6 @@ func InitAuthenRouterHandler() *controllers.AuthenController {
 
 func InitUserRouterHandler() *controllers.UserController {
 	wire.Build(
-		//initialize.DatabaseConnection,
-		//	initialize.NewQueries,
-		//dataaccess.New,
 		services.NewUserServiceImpl,
 		controllers.NewUserController,
 	)
@@ -42,4 +36,43 @@ func InitRoomRouterHandler() *controllers.RoomController {
 		controllers.NewRoomController,
 	)
 	return &controllers.RoomController{}
+}
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	wire.Build(
+		services.NewRentalRequestServiceImpl,
+		controllers.NewRentalRequestController,
+	)
+	return &controllers.RentalRequestController{}
+}
+
+func InitContractRouterHandler() *controllers.ContractController {
+	wire.Build(
+		services.NewContractServiceImpl,
+		controllers.NewContractController,
+	)
+	return &controllers.ContractController{}
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	wire.Build(
+		services.NewProcessServiceImpl,
+		controllers.NewProcessTrackingController,
+	)
+	return &controllers.ProcessTrackingController{}
+}
+
+func InitIndexRouterHandler() *controllers.IndexController {
+	wire.Build(
+		services.NewIndexServiceImpl,
+		controllers.NewIndexController,
+	)
+	return &controllers.IndexController{}
+}
+
+func InitBillingRouterHandler() *controllers.BillingController {
+	wire.Build(
+		services.NewBillingServiceImpl,
+		controllers.NewBillingController,
+	)
+	return &controllers.BillingController{}
 }

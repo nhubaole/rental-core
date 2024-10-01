@@ -9,19 +9,25 @@ import (
 )
 
 type Billing struct {
-	ID           int32              `json:"id"`
-	Code         string             `json:"code"`
-	ContractID   int32              `json:"contract_id"`
-	IndexID      int32              `json:"index_id"`
-	AdditionFee  *int32             `json:"addition_fee"`
-	AdditionNote *string            `json:"addition_note"`
-	TotalAmount  float64            `json:"total_amount"`
-	Month        int32              `json:"month"`
-	Year         int32              `json:"year"`
-	PaidTime     pgtype.Timestamptz `json:"paid_time"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	ID                   int32              `json:"id"`
+	Code                 string             `json:"code"`
+	ContractID           int32              `json:"contract_id"`
+	AdditionFee          *int32             `json:"addition_fee"`
+	AdditionNote         *string            `json:"addition_note"`
+	TotalAmount          float64            `json:"total_amount"`
+	Month                int32              `json:"month"`
+	Year                 int32              `json:"year"`
+	PaidTime             pgtype.Timestamptz `json:"paid_time"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
+	OldWaterIndex        *int32             `json:"old_water_index"`
+	OldElectricityIndex  *int32             `json:"old_electricity_index"`
+	NewWaterIndex        *int32             `json:"new_water_index"`
+	NewElectricityIndex  *int32             `json:"new_electricity_index"`
+	TotalWaterCost       *float64           `json:"total_water_cost"`
+	TotalElectricityCost *float64           `json:"total_electricity_cost"`
+	Status               *int32             `json:"status"`
 }
 
 type Contract struct {
@@ -52,6 +58,26 @@ type Contract struct {
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt             pgtype.Timestamp   `json:"deleted_at"`
+	ContractTemplateID    *int32             `json:"contract_template_id"`
+	Status                *int32             `json:"status"`
+}
+
+type ContractTemplate struct {
+	ID                    int32              `json:"id"`
+	PartyA                int32              `json:"party_a"`
+	Address               []string           `json:"address"`
+	ElectricityMethod     string             `json:"electricity_method"`
+	ElectricityCost       float64            `json:"electricity_cost"`
+	WaterMethod           string             `json:"water_method"`
+	WaterCost             float64            `json:"water_cost"`
+	InternetCost          float64            `json:"internet_cost"`
+	ParkingFee            float64            `json:"parking_fee"`
+	ResponsibilityA       string             `json:"responsibility_a"`
+	ResponsibilityB       string             `json:"responsibility_b"`
+	GeneralResponsibility string             `json:"general_responsibility"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt             pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type Index struct {

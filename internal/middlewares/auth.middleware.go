@@ -35,7 +35,7 @@ func AuthenMiddleware(ctx *gin.Context) {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(global.Config.JWT.SecretKey), nil
 	})
-	fmt.Print(bearerToken.Valid)
+	// fmt.Print(bearerToken.Valid)
 
 	if claims, ok := bearerToken.Claims.(jwt.MapClaims); ok && bearerToken.Valid {
 

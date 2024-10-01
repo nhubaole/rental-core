@@ -31,3 +31,33 @@ func InitRoomRouterHandler() *controllers.RoomController {
 	roomController := controllers.NewRoomController(roomService)
 	return roomController
 }
+
+func InitContractRouterHandler() *controllers.ContractController {
+	contractService := services.NewContractServiceImpl()
+	contractController := controllers.NewContractController(contractService)
+	return contractController
+}
+
+func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
+	rentalRequestService := services.NewRentalRequestServiceImpl()
+	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
+	return rentalRequestController
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	processService := services.NewProcessServiceImpl()
+	processTrackingController := controllers.NewProcessTrackingController(processService)
+	return processTrackingController
+}
+
+func InitIndexRouterHandler() *controllers.IndexController {
+	indexService := services.NewIndexServiceImpl()
+	indexController := controllers.NewIndexController(indexService)
+	return indexController
+}
+
+func InitBillingRouterHandler() *controllers.BillingController {
+	billingService := services.NewBillingServiceImpl()
+	billingController := controllers.NewBillingController(billingService)
+	return billingController
+}
