@@ -32,16 +32,16 @@ func InitRoomRouterHandler() *controllers.RoomController {
 	return roomController
 }
 
-func InitContractRouterHandler() *controllers.ContractController {
-	contractService := services.NewContractServiceImpl()
-	contractController := controllers.NewContractController(contractService)
-	return contractController
-}
-
 func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 	rentalRequestService := services.NewRentalRequestServiceImpl()
 	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
 	return rentalRequestController
+}
+
+func InitContractRouterHandler() *controllers.ContractController {
+	contractService := services.NewContractServiceImpl()
+	contractController := controllers.NewContractController(contractService)
+	return contractController
 }
 
 func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
@@ -60,4 +60,17 @@ func InitBillingRouterHandler() *controllers.BillingController {
 	billingService := services.NewBillingServiceImpl()
 	billingController := controllers.NewBillingController(billingService)
 	return billingController
+}
+
+func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
+	returnRequestService := services.NewReturnRequestServiceImpl()
+	returnRequestController := controllers.NewReturnRequestController(returnRequestService)
+	return returnRequestController
+}
+
+func InitRatingRouterHandler() *controllers.RatingController {
+	storageSerivce := services.NewStorageServiceImpl()
+	ratingService := services.NewRatingServiceImpl(storageSerivce)
+	ratingController := controllers.NewRatingController(ratingService)
+	return ratingController
 }

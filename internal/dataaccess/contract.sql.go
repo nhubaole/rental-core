@@ -227,7 +227,7 @@ type GetContractByIDRow struct {
 	GeneralResponsibility *string            `json:"general_responsibility"`
 	SignatureA            string             `json:"signature_a"`
 	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            string             `json:"signature_b"`
+	SignatureB            *string            `json:"signature_b"`
 	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
@@ -345,7 +345,7 @@ type ListContractByStatusRow struct {
 	GeneralResponsibility *string            `json:"general_responsibility"`
 	SignatureA            string             `json:"signature_a"`
 	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            string             `json:"signature_b"`
+	SignatureB            *string            `json:"signature_b"`
 	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
@@ -400,6 +400,18 @@ func (q *Queries) ListContractByStatus(ctx context.Context, status *int32) ([]Li
 	return items, nil
 }
 
+const setExpiredContract = `-- name: SetExpiredContract :exec
+UPDATE public.contracts
+SET status = 4,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) SetExpiredContract(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, setExpiredContract, id)
+	return err
+}
+
 const signContract = `-- name: SignContract :exec
 UPDATE public.contracts
 SET signature_b = $2,
@@ -409,8 +421,8 @@ WHERE id = $1 AND deleted_at IS NULL
 `
 
 type SignContractParams struct {
-	ID         int32  `json:"id"`
-	SignatureB string `json:"signature_b"`
+	ID         int32   `json:"id"`
+	SignatureB *string `json:"signature_b"`
 }
 
 func (q *Queries) SignContract(ctx context.Context, arg SignContractParams) error {

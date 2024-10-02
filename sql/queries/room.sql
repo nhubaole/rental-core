@@ -189,3 +189,13 @@ SELECT *
 FROM PUBLIC.rooms
 where owner = $1;
 
+-- name: GetRoomByContractID :one
+SELECT r.id AS room_id,
+		r.title,
+		r.address,
+		r.room_number,
+        r.owner
+FROM PUBLIC.rooms r
+LEFT JOIN public.contracts c ON r.id = c.room_id
+WHERE c.id = $1;
+

@@ -24,7 +24,6 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 	// check if the room reqId existed
 	rs, checkEr := rentalService.repo.GetRoomByID(context.Background(), body.RoomID)
 	if checkEr != nil {
-		fmt.Println(checkEr.Error())
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
 			Message:    "We can't find this room",
