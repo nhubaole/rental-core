@@ -12,7 +12,7 @@ import (
 // user id + room id + date
 // user id + bill id + date
 var secret = "nhar94##coratnhieue@edat"
-var bytes = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
+var b = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
 
 func GenerateCode(context string, key1 int, key2 int, key3 int) string {
 	// Combine key1 and key2, key3 into a single integer
@@ -24,7 +24,7 @@ func GenerateCode(context string, key1 int, key2 int, key3 int) string {
 		fmt.Println(err.Error())
 		return ""
 	}
-	cfb := cipher.NewCFBEncrypter(block, bytes)
+	cfb := cipher.NewCFBEncrypter(block, b)
 	cipherText := make([]byte, len(plainText))
 	cfb.XORKeyStream(cipherText, plainText)
 	return context + StringToAsciiNumbers(Encode(cipherText))
@@ -49,12 +49,12 @@ func Decode(s string) []byte {
 	return data
 }
 func Decrypt(text string) (string, error) {
-	block, err := aes.NewCipher([]byte(bytes))
+	block, err := aes.NewCipher([]byte(b))
 	if err != nil {
 		return "", err
 	}
 	cipherText := Decode(text)
-	cfb := cipher.NewCFBDecrypter(block, bytes)
+	cfb := cipher.NewCFBDecrypter(block, b)
 	plainText := make([]byte, len(cipherText))
 	cfb.XORKeyStream(plainText, cipherText)
 	return string(plainText), nil
