@@ -42,3 +42,18 @@ INSERT INTO public.landlord_ratings(
     created_at)
 VALUES
 ($1, $2, $3, $4, $5, $6,$7, $8, now());
+
+-- name: GetRoomRatingByRoomID :many
+SELECT id,
+ room_id, 
+ rated_by, 
+ amenities_rating, 
+ location_rating, 
+ cleanliness_rating, 
+ price_rating, 
+ overall_rating, 
+ comments, 
+ images, 
+ created_at
+FROM public.room_ratings
+WHERE room_id = $1;

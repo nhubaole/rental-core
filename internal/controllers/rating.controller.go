@@ -6,6 +6,7 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,5 +66,16 @@ func(ratingController *RatingController) CreateLandlordRating(ctx *gin.Context) 
 		return
 	}
 	result := ratingController.service.CreateLandlordRating(body, int(currentUser.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func(ratingController *RatingController) GetRoomRatingByRoomID(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("roomID"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+
+	result := ratingController.service.GetRoomRatingByRoomID(int32(id))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

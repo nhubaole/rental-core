@@ -135,3 +135,51 @@ func (q *Queries) CreateTenantRating(ctx context.Context, arg CreateTenantRating
 	)
 	return err
 }
+
+const getRoomRatingByRoomID = `-- name: GetRoomRatingByRoomID :many
+SELECT id,
+ room_id, 
+ rated_by, 
+ amenities_rating, 
+ location_rating, 
+ cleanliness_rating, 
+ price_rating, 
+ overall_rating, 
+ comments, 
+ images, 
+ created_at
+FROM public.room_ratings
+WHERE room_id = $1
+`
+
+func (q *Queries) GetRoomRatingByRoomID(ctx context.Context, roomID *int32) ([]RoomRating, error) {
+	rows, err := q.db.Query(ctx, getRoomRatingByRoomID, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RoomRating
+	for rows.Next() {
+		var i RoomRating
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoomID,
+			&i.RatedBy,
+			&i.AmenitiesRating,
+			&i.LocationRating,
+			&i.CleanlinessRating,
+			&i.PriceRating,
+			&i.OverallRating,
+			&i.Comments,
+			&i.Images,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

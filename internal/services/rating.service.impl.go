@@ -20,6 +20,8 @@ type RatingServiceImpl struct {
 	storage StorageSerivce
 }
 
+
+
 func NewRatingServiceImpl(storage StorageSerivce) RatingService {
 	return &RatingServiceImpl{
 		repo:    dataaccess.New(global.Db),
@@ -53,12 +55,12 @@ func (r *RatingServiceImpl) CreateLandlordRating(req requests.CreateLandlordRati
 func (r *RatingServiceImpl) CreateRoomRating(req requests.CreateRoomRatingReq, userID int) *responses.ResponseData {
 	var urls []string
 	for _, fileName := range req.Images {
-		f, _ := fileName.Open() 
+		f, _ := fileName.Open()
 		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 		fileExt := filepath.Ext(fileName.Filename)
 		contentType := mime.TypeByExtension(fileExt)
 		user := fmt.Sprintf("user_%d", userID)
-		objKey := fmt.Sprintf("%s/%s/%d%s",constants.RATING_OBJ, user, timestamp, fileExt)
+		objKey := fmt.Sprintf("%s/%s/%d%s", constants.RATING_OBJ, user, timestamp, fileExt)
 
 		url, err := r.storage.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 		if err != nil {
@@ -96,12 +98,12 @@ func (r *RatingServiceImpl) CreateRoomRating(req requests.CreateRoomRatingReq, u
 func (r *RatingServiceImpl) CreateTenantRating(req requests.CreateTenantRatingReq, userID int) *responses.ResponseData {
 	var urls []string
 	for _, fileName := range req.Images {
-		f, _ := fileName.Open() 
+		f, _ := fileName.Open()
 		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 		fileExt := filepath.Ext(fileName.Filename)
 		contentType := mime.TypeByExtension(fileExt)
 		user := fmt.Sprintf("user_%d", userID)
-		objKey := fmt.Sprintf("%s/%s/%d%s",constants.RATING_OBJ, user, timestamp, fileExt)
+		objKey := fmt.Sprintf("%s/%s/%d%s", constants.RATING_OBJ, user, timestamp, fileExt)
 
 		url, err := r.storage.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 		if err != nil {
@@ -132,5 +134,30 @@ func (r *RatingServiceImpl) CreateTenantRating(req requests.CreateTenantRatingRe
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
 		Data:       true,
+	}
+}
+
+// GetRoomRatingByRoomID implements RatingService.
+func (r *RatingServiceImpl) GetRoomRatingByRoomID(roomID int32) *responses.ResponseData {
+	roomRatings, err := r.repo.GetRoomRatingByRoomID(context.Background(), &roomID)
+	if err != nil {
+		if len(roomRatings) == 0 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusNoContent,
+				Message:    responses.StatusNoData,
+				Data:       nil,
+			}
+		}
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusCreated,
+		Message:    responses.StatusSuccess,
+		Data:       roomRatings,
 	}
 }
