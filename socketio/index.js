@@ -34,13 +34,13 @@ io.on('connection', (socket) => {
 });
 
 app.post('/send-message', (req, res) => {
-  const { message, toSocketId } = req.body;
+  const { message, socket_id } = req.body;
 
-  if (!message || !toSocketId) {
-    return res.status(400).json({ error: 'Message and toSocketId are required' });
+  if (!message || !socket_id) {
+    return res.status(400).json({ error: 'Message and socket_id are required' });
   }
 
-  const targetSocket = connectedClients[toSocketId];
+  const targetSocket = connectedClients[socket_id];
 
   if (targetSocket) {
     targetSocket.emit('connection', { message });

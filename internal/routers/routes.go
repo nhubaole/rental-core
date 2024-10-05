@@ -18,6 +18,7 @@ func NewRouter(
 	cc *controllers.ContractController,
 	returnRequestController *controllers.ReturnRequestController,
 	ratingController *controllers.RatingController,
+	ms *controllers.MessageController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -80,5 +81,8 @@ func NewRouter(
 	ratingRouter.POST("create-tenant-rating", middlewares.AuthenMiddleware, ratingController.CreateTenantRating)
 	ratingRouter.POST("create-landlord-rating", middlewares.AuthenMiddleware, ratingController.CreateLandlordRating)
 	ratingRouter.GET("/:roomID", middlewares.AuthenMiddleware, ratingController.GetRoomRatingByRoomID)
+
+	messageRouter := baseRouter.Group("/messages")
+	messageRouter.POST("", ms.SendMessage)
 	return r
 }

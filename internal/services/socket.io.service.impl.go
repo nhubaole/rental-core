@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
@@ -32,5 +32,25 @@ func (s *SocketIOServiceImpl) SendMessage(req requests.MessageReq) *responses.Re
 			Data:       true,
 		}
 	}
-	fmt.Print(res)
+	var nodeRes responses.NodeResponse
+	if err := json.Unmarshal([]byte(res), &nodeRes); err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to parse response from Node.js",
+			Data:       nil,
+		}
+	}
+	if !nodeRes.Success {
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    nodeRes.Message,
+			Data:       nil,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       res,
+	}
 }
