@@ -53,7 +53,7 @@ type Contract struct {
 	GeneralResponsibility *string            `json:"general_responsibility"`
 	SignatureA            string             `json:"signature_a"`
 	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            string             `json:"signature_b"`
+	SignatureB            *string            `json:"signature_b"`
 	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
@@ -87,6 +87,19 @@ type Index struct {
 	RoomID           int32   `json:"room_id"`
 	Month            int32   `json:"month"`
 	Year             int32   `json:"year"`
+}
+
+type LandlordRating struct {
+	ID                    int32            `json:"id"`
+	LandlordID            *int32           `json:"landlord_id"`
+	RatedBy               *int32           `json:"rated_by"`
+	FriendlinessRating    *int32           `json:"friendliness_rating"`
+	ProfessionalismRating *int32           `json:"professionalism_rating"`
+	SupportRating         *int32           `json:"support_rating"`
+	TransparencyRating    *int32           `json:"transparency_rating"`
+	OverallRating         *int32           `json:"overall_rating"`
+	Comments              *string          `json:"comments"`
+	CreatedAt             pgtype.Timestamp `json:"created_at"`
 }
 
 type Like struct {
@@ -132,6 +145,20 @@ type RentalRequest struct {
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type ReturnRequest struct {
+	ID                 int32            `json:"id"`
+	ContractID         *int32           `json:"contract_id"`
+	Reason             *string          `json:"reason"`
+	ReturnDate         pgtype.Timestamp `json:"return_date"`
+	Status             *int32           `json:"status"`
+	DeductAmount       *float64         `json:"deduct_amount"`
+	TotalReturnDeposit *float64         `json:"total_return_deposit"`
+	CreatedUser        *int32           `json:"created_user"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
+	DeletedAt          pgtype.Timestamp `json:"deleted_at"`
+}
+
 type Room struct {
 	ID              int32              `json:"id"`
 	Title           string             `json:"title"`
@@ -159,6 +186,20 @@ type Room struct {
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type RoomRating struct {
+	ID                int32            `json:"id"`
+	RoomID            *int32           `json:"room_id"`
+	RatedBy           *int32           `json:"rated_by"`
+	AmenitiesRating   *int32           `json:"amenities_rating"`
+	LocationRating    *int32           `json:"location_rating"`
+	CleanlinessRating *int32           `json:"cleanliness_rating"`
+	PriceRating       *int32           `json:"price_rating"`
+	OverallRating     *int32           `json:"overall_rating"`
+	Comments          *string          `json:"comments"`
+	Images            []string         `json:"images"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+}
+
 type Tenant struct {
 	ID        int32              `json:"id"`
 	RoomID    int32              `json:"room_id"`
@@ -168,6 +209,20 @@ type Tenant struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type TenantRating struct {
+	ID                            int32            `json:"id"`
+	TenantID                      *int32           `json:"tenant_id"`
+	RatedBy                       *int32           `json:"rated_by"`
+	PaymentRating                 *int32           `json:"payment_rating"`
+	PropertyCareRating            *int32           `json:"property_care_rating"`
+	NeighborhoodDisturbanceRating *int32           `json:"neighborhood_disturbance_rating"`
+	ContractComplianceRating      *int32           `json:"contract_compliance_rating"`
+	OverallRating                 *int32           `json:"overall_rating"`
+	Comments                      *string          `json:"comments"`
+	Images                        []string         `json:"images"`
+	CreatedAt                     pgtype.Timestamp `json:"created_at"`
 }
 
 type Transaction struct {

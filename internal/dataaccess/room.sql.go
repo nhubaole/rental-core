@@ -165,6 +165,38 @@ func (q *Queries) GetLikedRooms(ctx context.Context, userID int32) ([]Room, erro
 	return items, nil
 }
 
+const getRoomByContractID = `-- name: GetRoomByContractID :one
+SELECT r.id AS room_id,
+		r.title,
+		r.address,
+		r.room_number,
+        r.owner
+FROM PUBLIC.rooms r
+LEFT JOIN public.contracts c ON r.id = c.room_id
+WHERE c.id = $1
+`
+
+type GetRoomByContractIDRow struct {
+	RoomID     int32    `json:"room_id"`
+	Title      string   `json:"title"`
+	Address    []string `json:"address"`
+	RoomNumber int32    `json:"room_number"`
+	Owner      int32    `json:"owner"`
+}
+
+func (q *Queries) GetRoomByContractID(ctx context.Context, id int32) (GetRoomByContractIDRow, error) {
+	row := q.db.QueryRow(ctx, getRoomByContractID, id)
+	var i GetRoomByContractIDRow
+	err := row.Scan(
+		&i.RoomID,
+		&i.Title,
+		&i.Address,
+		&i.RoomNumber,
+		&i.Owner,
+	)
+	return i, err
+}
+
 const getRoomByID = `-- name: GetRoomByID :one
 SELECT 
     id, 

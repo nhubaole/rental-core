@@ -133,3 +133,10 @@ UPDATE public.contracts
 SET status = 3,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: SetExpiredContract :exec
+UPDATE public.contracts
+SET status = 4,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL;
+

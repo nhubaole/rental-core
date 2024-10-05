@@ -46,3 +46,15 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) erro
 	)
 	return err
 }
+
+const deleteTenantByRoomID = `-- name: DeleteTenantByRoomID :exec
+UPDATE public.tenants
+SET deleted_at = now()
+WHERE deleted_at IS NULL
+  AND room_id = $1
+`
+
+func (q *Queries) DeleteTenantByRoomID(ctx context.Context, roomID int32) error {
+	_, err := q.db.Exec(ctx, deleteTenantByRoomID, roomID)
+	return err
+}

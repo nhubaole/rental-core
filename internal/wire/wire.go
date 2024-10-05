@@ -76,3 +76,20 @@ func InitBillingRouterHandler() *controllers.BillingController {
 	)
 	return &controllers.BillingController{}
 }
+
+func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
+	wire.Build(
+		services.NewReturnRequestServiceImpl,
+		controllers.NewReturnRequestController,
+	)
+	return &controllers.ReturnRequestController{}
+}
+
+func InitRatingRouterHandler() *controllers.RatingController {
+	wire.Build(
+		services.NewRatingServiceImpl,
+		services.NewStorageServiceImpl,
+		controllers.NewRatingController,
+	)
+	return &controllers.RatingController{}
+}

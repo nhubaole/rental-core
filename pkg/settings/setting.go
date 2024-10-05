@@ -7,6 +7,7 @@ type Config struct {
 	Server Server   `mapstructure:"server"`
 	S3     AWS      `mapstructure:"s3"`
 	JWT    JWT      `mapstructure:"security"`
+	NodeServer NodeServer `mapstructure:"node_server"`
 }
 
 type Database struct {
@@ -30,4 +31,8 @@ type AWS struct {
 type JWT struct {
 	SecretKey string `mapstructure:"secret_key"`
 	AESKey    string `mapstructure:"aes_key"`
+}
+
+type NodeServer struct {
+	Url string `mapstructure:"url"`
 }

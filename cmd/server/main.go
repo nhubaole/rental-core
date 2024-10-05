@@ -20,9 +20,11 @@ func main() {
 	pc := wire.InitProcessTrackingRouterHandler()
 	ic := wire.InitIndexRouterHandler()
 	bc := wire.InitBillingRouterHandler()
+	returnRequestRoute := wire.InitReturnRequestRouterHandler()
+	ratingRoute := wire.InitRatingRouterHandler()
 	
 	cc := wire.InitContractRouterHandler()
-	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc)
+	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc, returnRequestRoute, ratingRoute)
 
 	r.Run()
 }
