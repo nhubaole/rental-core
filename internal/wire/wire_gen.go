@@ -74,3 +74,9 @@ func InitRatingRouterHandler() *controllers.RatingController {
 	ratingController := controllers.NewRatingController(ratingService)
 	return ratingController
 }
+
+func InitMessageRouterHandler() *controllers.MessageController {
+	socketIOService := services.NewSocketIOServiceImpl()
+	messageController := controllers.NewMessageController(socketIOService)
+	return messageController
+}

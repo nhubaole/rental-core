@@ -93,3 +93,11 @@ func InitRatingRouterHandler() *controllers.RatingController {
 	)
 	return &controllers.RatingController{}
 }
+
+func InitMessageRouterHandler() *controllers.MessageController {
+	wire.Build(
+		services.NewSocketIOServiceImpl,
+		controllers.NewMessageController,
+	)
+	return &controllers.MessageController{}
+}
