@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
-    permissions: 
+    permissions:
       contents: write
     steps:
       - name: Checkout
@@ -43,7 +43,7 @@ jobs:
           PRERELEASE: false
           MAJOR_STRING_TOKEN: UPDATE
           MINOR_STRING_TOKEN: update
-          TAG_CONTEXT: branch
+          TAG_CONTEXT: repo
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
