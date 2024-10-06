@@ -64,7 +64,7 @@ jobs:
       - name: Build and push image socket
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./socketio
           file: ./socketio/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/smart-rental-socket:latest,${{ secrets.DOCKER_USERNAME }}/smart-rental-socket:${{ steps.tag.outputs.tag }}
