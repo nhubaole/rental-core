@@ -41,7 +41,7 @@ jobs:
           PRERELEASE: false
           MAJOR_STRING_TOKEN: UPDATE
           MINOR_STRING_TOKEN: update
-          TAG_CONTEXT: repo
+          TAG_CONTEXT: branch
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
