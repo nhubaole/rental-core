@@ -8,7 +8,7 @@ import (
 
 func InitRedis() {
 	client := redis.NewClient(&redis.Options{
-		Addr:     global.Config.DB.DBHost,
+		Addr:     global.Config.Redis.Host,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
