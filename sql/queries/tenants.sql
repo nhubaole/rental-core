@@ -13,3 +13,9 @@ VALUES
 (
   $1, $2, $3, $4, now(), now(), $5
 );
+
+-- name: DeleteTenantByRoomID :exec
+UPDATE public.tenants
+SET deleted_at = now()
+WHERE deleted_at IS NULL
+  AND room_id = $1;

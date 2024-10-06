@@ -108,8 +108,8 @@ CREATE TABLE "contracts" (
   "general_responsibility" varchar,
   "signature_a" varchar NOT NULL,
   "signed_time_a" timestamptz NOT NULL,
-  "signature_b" varchar NOT NULL,
-  "signed_time_b" timestamptz NOT NULL,
+  "signature_b" varchar,
+  "signed_time_b" timestamptz,
   "created_at" timestamptz NOT NULL,
   "updated_at" timestamptz NOT NULL,
   "deleted_at" timestamp

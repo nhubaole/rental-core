@@ -9,6 +9,8 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ContractServiceImpl struct {
@@ -136,7 +138,8 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 	contract, err := c.repo.GetContractByID(context.Background(), int32(id))
 	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
-	contract.SignatureB, _ = common.DecryptBase64AES(contract.SignatureB, global.Config.JWT.AESKey)
+	signB, _ := common.DecryptBase64AES(*contract.SignatureB, global.Config.JWT.AESKey)
+	contract.SignatureB = &signB
 	if err != nil {
 		if (contract == dataaccess.GetContractByIDRow{}) {
 			return &responses.ResponseData{
@@ -188,7 +191,6 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int) *responses.Resp
 
 // SignContract implements ContractService.
 func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, userID int) *responses.ResponseData {
-	var encryptErr error
 	contract, _ := c.repo.GetContractByID(context.Background(), int32(req.ID))
 	if userID != int(contract.PartyB) {
 		return &responses.ResponseData{
@@ -197,7 +199,8 @@ func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, us
 			Data:       false,
 		}
 	}
-	req.SignatureB, encryptErr = common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
+	signB, encryptErr := common.EncryptBase64AES(*req.SignatureB, global.Config.JWT.AESKey)
+	req.SignatureB = &signB
 	if encryptErr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -213,7 +216,19 @@ func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, us
 			Data:       false,
 		}
 	}
-
+	createTenantParam := dataaccess.CreateTenantParams{
+		RoomID: contract.RoomID,
+		TenantID: contract.PartyB,
+		BeginDate: pgtype.Timestamptz(contract.BeginDate),
+	}
+	errUpdateTenant := c.repo.CreateTenant(context.Background(), createTenantParam)
+	if errUpdateTenant != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    errUpdateTenant.Error(),
+			Data:       false,
+		}
+	}
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,

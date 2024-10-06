@@ -13,9 +13,6 @@ import (
 
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	wire.Build(
-		//initialize.DatabaseConnection,
-		//	initialize.NewQueries,
-		//dataaccess.New,
 		services.NewAuthenSerivceImpl,
 		controllers.NewAuthController,
 	)
@@ -54,4 +51,53 @@ func InitContractRouterHandler() *controllers.ContractController {
 		controllers.NewContractController,
 	)
 	return &controllers.ContractController{}
+}
+
+func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
+	wire.Build(
+		services.NewProcessServiceImpl,
+		controllers.NewProcessTrackingController,
+	)
+	return &controllers.ProcessTrackingController{}
+}
+
+func InitIndexRouterHandler() *controllers.IndexController {
+	wire.Build(
+		services.NewIndexServiceImpl,
+		controllers.NewIndexController,
+	)
+	return &controllers.IndexController{}
+}
+
+func InitBillingRouterHandler() *controllers.BillingController {
+	wire.Build(
+		services.NewBillingServiceImpl,
+		controllers.NewBillingController,
+	)
+	return &controllers.BillingController{}
+}
+
+func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
+	wire.Build(
+		services.NewReturnRequestServiceImpl,
+		controllers.NewReturnRequestController,
+	)
+	return &controllers.ReturnRequestController{}
+}
+
+func InitRatingRouterHandler() *controllers.RatingController {
+	wire.Build(
+		services.NewRatingServiceImpl,
+		services.NewStorageServiceImpl,
+		controllers.NewRatingController,
+	)
+	return &controllers.RatingController{}
+}
+
+func InitMessageRouterHandler() *controllers.MessageController {
+	wire.Build(
+		services.NewSocketIOServiceImpl,
+		controllers.NewMessageController,
+	)
+	return &controllers.MessageController{}
 }

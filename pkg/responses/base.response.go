@@ -1,7 +1,6 @@
 package responses
 
 import (
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,10 +10,15 @@ type ResponseData struct {
 	Data       interface{} `json:"data"`
 }
 
-func APIResponse(c *gin.Context, code int, msg string, data interface{}){
+func APIResponse(c *gin.Context, code int, msg string, data interface{}) {
 	c.JSON(code, ResponseData{
 		StatusCode: code,
-		Message: msg,
-		Data: data,
+		Message:    msg,
+		Data:       data,
 	})
+}
+
+type NodeResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
 }
