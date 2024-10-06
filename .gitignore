@@ -28,7 +28,6 @@ tmp/
 # Project build
 main
 *templ.go
-*.yaml
 configs/
 
 node_modules
