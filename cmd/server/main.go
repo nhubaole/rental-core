@@ -20,9 +20,10 @@ func main() {
 	returnRequestRoute := wire.InitReturnRequestRouterHandler()
 	ratingRoute := wire.InitRatingRouterHandler()
 	ms := wire.InitMessageRouterHandler()
+	conversationRoute := wire.InitConversationRouterHandler()
 	
 	cc := wire.InitContractRouterHandler()
-	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc, returnRequestRoute, ratingRoute, ms)
+	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc, returnRequestRoute, ratingRoute, ms, conversationRoute)
 
 	r.Run()
 }

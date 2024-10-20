@@ -1,75 +1,66 @@
-import {Server as SocketIOServer} from "socket.io"
-const path = require('path');
-const yaml = require('node-yaml');
-import {server} from "express"
-const configPath = path.join(__dirname, '../configs', 'local.yaml');
-const io = SocketIOServer(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+import { Server as SocketIOServer } from "socket.io";
+import express from 'express';
+import http from 'http';
+import loadConfig from './config/config.js';
+import {query } from "./config/database.js";
 
-yaml.read(configPath)
-  .then(config => {
-    console.log('Loaded configuration:', config);
+const app = express();
+const server = http.createServer(app);  
 
-    // Sử dụng cấu hình từ file YAML
-    const serverPort = config.node_server.port;
-    const dbConfig = config.db;
-    const redisConfig = config.redis;
-    const s3Config = config.s3;
+let config;
+let connectedClients = {};
+loadConfig()
+  .then((loadedConfig) => {
+    config = loadedConfig;
+    const serverPort = config.node_server.port || 3001;
+    
+    const io = new SocketIOServer(server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
+    });
 
-    console.log(`Server running on port: ${serverPort}`);
-    console.log(`DB Configuration:`, dbConfig);
-    console.log(`Redis Configuration:`, redisConfig);
-    console.log(`S3 Configuration:`, s3Config);
+    io.on('connection', (socket) => {
+      const userId = socket.handshake.query.userID;
+      if (userId) {
+        connectedClients[userId] = socket.id;
+        console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+      } else {
+        console.log(`User ID not found in query parameters for socket ID: ${socket.id}`);
+      }
+      
+      socket.on('sendMessage', async (message) => {
+        const { sender_id, receiver_id,conversation_id, content, type } = message;
+
+        try {
+          const result = await query(
+            'INSERT INTO messages (sender_id,conversation_id, content, type) VALUES ($1, $2, $3, $4) RETURNING *',
+            [sender_id, conversation_id,content, type]
+          );
+          const savedMessage = result.rows[0]; 
+          console.log(savedMessage)
+          io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
+          io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
+          console.log(connectedClients[sender_id])
+
+        } catch (error) {
+          console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
+        }
+      });
+
+      socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        delete connectedClients[socket.id];
+      });
+    });
+
+    server.listen(serverPort, () => {
+      console.log(`Listening on port ${serverPort}`);
+    });
   })
-  .catch(error => {
-    console.error(`Error reading or parsing YAML file: ${error}`);
+  .catch((error) => {
+    console.error(`Failed to load configuration: ${error}`);
   });
-
-
-const port = serverPort || 3001;
-
 
 app.use(express.json());
-
-let connectedClients = {};
-
-io.on('connection', (socket) => {
-  const userId = socket.handshake.query.user_id;
-  if (userId) {
-    userSocketMap[userId] = socket.id;
-    console.log(`User ${userId} connected with socket ID: ${socket.id}`);
-  } else {
-    console.log(`User ID not found in query parameters for socket ID: ${socket.id}`);
-  }
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    delete connectedClients[socket.id];
-  });
-});
-
-app.post('/send-message', (req, res) => {
-  const { user_id, message } = req.body;
-
-  if (!message || !user_id) {
-    return res.status(400).json({ error: 'Message and user_id are required' });
-  }
-
-  const socket_id = userSocketMap[user_id];
-
-  if (socket_id) {
-    io.to(socket_id).emit('connection', { message });
-    console.log(message)
-    res.status(200).json({ success: true, message: 'Message sent successfully', data: user_id });
-  } else {
-    res.status(404).json({ error: 'Socket not found or user is not connected' });
-  }
-});
-
-server.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});

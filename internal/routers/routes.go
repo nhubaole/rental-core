@@ -19,9 +19,11 @@ func NewRouter(
 	returnRequestController *controllers.ReturnRequestController,
 	ratingController *controllers.RatingController,
 	ms *controllers.MessageController,
+	conversation *controllers.ConversationController,
 
 ) *gin.Engine {
 	r := gin.Default()
+	r.Use(middlewares.CORSMiddleware())
 
 	baseRouter := r.Group("/api/v1")
 	authRouter := baseRouter.Group("/authen")
@@ -32,6 +34,7 @@ func NewRouter(
 	userRouter := baseRouter.Group("/users")
 	userRouter.GET("", middlewares.AuthenMiddleware, uc.GetAll)
 	userRouter.GET("/:id", middlewares.AuthenMiddleware, uc.GetUserByID)
+	userRouter.GET("/current-user", middlewares.AuthenMiddleware, uc.GetCurrentUser)
 	userRouter.PUT("/", middlewares.AuthenMiddleware, uc.Update)
 
 	roomRouter := baseRouter.Group("/rooms")
@@ -84,5 +87,10 @@ func NewRouter(
 
 	messageRouter := baseRouter.Group("/messages")
 	messageRouter.POST("", ms.SendMessage)
+	messageRouter.GET("/conversation/:conversationID",middlewares.AuthenMiddleware, ms.GetMessagesByConversationID)
+
+	conversationRouter := baseRouter.Group("/conversations")
+	conversationRouter.POST("",middlewares.AuthenMiddleware, conversation.CreateConversation)
+	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
 	return r
 }

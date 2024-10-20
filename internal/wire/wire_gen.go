@@ -80,3 +80,9 @@ func InitMessageRouterHandler() *controllers.MessageController {
 	messageController := controllers.NewMessageController(socketIOService)
 	return messageController
 }
+
+func InitConversationRouterHandler() *controllers.ConversationController {
+	conversationService := services.NewConversationServiceImpl()
+	conversationController := controllers.NewConversationController(conversationService)
+	return conversationController
+}
