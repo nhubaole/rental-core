@@ -110,12 +110,13 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT phone_number, full_name, address, created_at 
+SELECT id, phone_number, full_name, address, created_at 
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL
 `
 
 type GetUsersRow struct {
+	ID          int32              `json:"id"`
 	PhoneNumber string             `json:"phone_number"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
@@ -132,6 +133,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 	for rows.Next() {
 		var i GetUsersRow
 		if err := rows.Scan(
+			&i.ID,
 			&i.PhoneNumber,
 			&i.FullName,
 			&i.Address,

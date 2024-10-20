@@ -1,5 +1,5 @@
 -- name: GetUsers :many
-SELECT phone_number, full_name, address, created_at 
+SELECT id, phone_number, full_name, address, created_at 
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL;
 

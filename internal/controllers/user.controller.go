@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -47,6 +48,19 @@ func (uc *UserController) Update(ctx *gin.Context) {
 
 	// Call service layer Update function
 	result := uc.userService.Update(updateUserParam)
+
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (uc *UserController) GetCurrentUser(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+
+	result := uc.userService.GetUserByID(int(user.ID))
 
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

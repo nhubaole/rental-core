@@ -7,4 +7,7 @@ import (
 
 type SocketIOService interface {
 	SendMessage(req requests.MessageReq) *responses.ResponseData
+	GetMessages() *responses.ResponseData
+	GetMessageByID(id int) *responses.ResponseData
+	GetMessageByConversationID(conversationID int)*responses.ResponseData
 }
