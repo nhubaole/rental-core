@@ -3,23 +3,29 @@ package settings
 import _ "github.com/spf13/viper"
 
 type Config struct {
-	DB     Database `mapstructure:"db"`
-	Server Server   `mapstructure:"server"`
-	S3     AWS      `mapstructure:"s3"`
-	JWT    JWT      `mapstructure:"security"`
+	DB         Database   `mapstructure:"db"`
+	Redis      Redis      `mapstructure:"redis"`
+	Server     Server     `mapstructure:"server"`
+	S3         AWS        `mapstructure:"s3"`
+	JWT        JWT        `mapstructure:"security"`
 	NodeServer NodeServer `mapstructure:"node_server"`
 }
 
 type Database struct {
 	DBPort     int    `mapstructure:"port"`
-	DBPassword string `mapstructure:"db_password"`
-	DBHost     string `mapstructure:"db_host"`
-	DBUser     string `mapstructure:"db_user"`
-	DBName     string `mapstructure:"db_name"`
+	DBPassword string `mapstructure:"password"`
+	DBHost     string `mapstructure:"host"`
+	DBUser     string `mapstructure:"user"`
+	DBName     string `mapstructure:"name"`
 }
 
 type Server struct {
 	Port int `mapstructure:"port"`
+}
+
+type Redis struct {
+	Port int    `mapstructure:"port"`
+	Host string `mapstructure:"host"`
 }
 
 type AWS struct {

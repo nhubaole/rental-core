@@ -80,6 +80,14 @@ type ContractTemplate struct {
 	DeletedAt             pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type Conversation struct {
+	ID            int32            `json:"id"`
+	UserA         int32            `json:"user_a"`
+	UserB         int32            `json:"user_b"`
+	LastMessageID *int32           `json:"last_message_id"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
 type Index struct {
 	ID               int32   `json:"id"`
 	WaterIndex       float64 `json:"water_index"`
@@ -109,6 +117,15 @@ type Like struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Message struct {
+	ID             int32            `json:"id"`
+	ConversationID int32            `json:"conversation_id"`
+	SenderID       int32            `json:"sender_id"`
+	Type           int32            `json:"type"`
+	Content        string           `json:"content"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
 }
 
 type Payment struct {

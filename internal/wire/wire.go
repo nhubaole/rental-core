@@ -101,3 +101,11 @@ func InitMessageRouterHandler() *controllers.MessageController {
 	)
 	return &controllers.MessageController{}
 }
+
+func InitConversationRouterHandler() *controllers.ConversationController {
+	wire.Build(
+		services.NewConversationServiceImpl,
+		controllers.NewConversationController,
+	)
+	return &controllers.ConversationController{}
+}
