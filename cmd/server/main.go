@@ -10,6 +10,7 @@ import (
 
 func main() {
 	initialize.Run()
+
 	ac := wire.InitAuthenRouterHandler()
 	uc := wire.InitUserRouterHandler()
 	rc := wire.InitRoomRouterHandler()

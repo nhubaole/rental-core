@@ -9,6 +9,9 @@ type Config struct {
 	S3         AWS        `mapstructure:"s3"`
 	JWT        JWT        `mapstructure:"security"`
 	NodeServer NodeServer `mapstructure:"node_server"`
+	Infura     Infura     `mapstructure:"infura"`
+	Kafka      Kafka      `mapstructure:"kafka"`
+	ElasticSearch ElasticSearch `mapstructure:"elasticsearch"`
 }
 
 type Database struct {
@@ -20,7 +23,8 @@ type Database struct {
 }
 
 type Server struct {
-	Port int `mapstructure:"port"`
+	Port int    `mapstructure:"port"`
+	Host string `mapstructure:"host"`
 }
 
 type Redis struct {
@@ -41,4 +45,14 @@ type JWT struct {
 
 type NodeServer struct {
 	Url string `mapstructure:"url"`
+}
+type Infura struct {
+	APIKey string `mapstructure:"api_key"`
+}
+
+type Kafka struct {
+	Port int `mapstructure:"port"`
+}
+type ElasticSearch struct {
+	Port int `mapstructure:"port"`
 }
