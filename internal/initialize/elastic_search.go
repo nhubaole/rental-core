@@ -1,10 +1,13 @@
 package initialize
 
 import (
+	"context"
 	"fmt"
 	"smart-rental/global"
+	"smart-rental/internal/constants"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
 func InitElasticsearch() {
@@ -19,4 +22,14 @@ func InitElasticsearch() {
 		panic(err.Error())
 	}
 	global.ElasticSearch = es
+}
+
+func ESCreateIndexIfNotExist(){
+	_, err :=esapi.IndicesExistsRequest{
+		Index: []string{constants.SEARCH_INDEX},
+	}.Do(context.Background(), global.ElasticSearch )
+
+	if err != nil {
+		global.ElasticSearch.Indices.Create(constants.SEARCH_INDEX)
+	}
 }

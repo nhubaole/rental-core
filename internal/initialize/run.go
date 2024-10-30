@@ -8,5 +8,6 @@ func Run() {
 	InitRedis()
 	InitS3()
 	InitElasticsearch()
+	ESCreateIndexIfNotExist()
 	blockchain.InitEthClient()
 }

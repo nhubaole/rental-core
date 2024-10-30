@@ -108,3 +108,4 @@ func (rc RoomController) UpdateRoom(ctx *gin.Context) {
 	result := rc.roomService.UpdateRoom(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+

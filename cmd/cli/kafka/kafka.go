@@ -14,12 +14,11 @@ import (
 var (
 	kafkaProducer *kafka.Writer
 )
-
-const (
-	kafkaURL = "14.225.255.85:9092" // Ensure this is correct
+const(
+	kafkaURL = "14.225.255.85:9092"
+	kafkaTopic = "user_test"
 )
-
-// For consumer
+// for consumer
 func GetKafkaReader(kafkaURL, topic, groupID string) *kafka.Reader {
 	brokers := strings.Split(kafkaURL, ",")
 	return kafka.NewReader(kafka.ReaderConfig{
@@ -29,11 +28,11 @@ func GetKafkaReader(kafkaURL, topic, groupID string) *kafka.Reader {
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB
 		CommitInterval: time.Second,
-		StartOffset:    kafka.FirstOffset,
+		StartOffset: kafka.FirstOffset,
 	})
 }
 
-// For producer
+// for producer
 func GetKafkaWriter(kafkaURL, topic string) *kafka.Writer {
 	return &kafka.Writer{
 		Addr:     kafka.TCP(kafkaURL),
@@ -42,12 +41,13 @@ func GetKafkaWriter(kafkaURL, topic string) *kafka.Writer {
 	}
 }
 
+
 type Stock struct {
 	Message string `json:"message"`
-	Type    string `json:"type"`
+	Type string `json:"type"`
 }
 
-func newStock(msg, msgType string) *Stock {
+func newStock(msg, msgType string ) *Stock {
 	s := Stock{}
 	s.Message = msg
 	s.Type = msgType
@@ -55,14 +55,14 @@ func newStock(msg, msgType string) *Stock {
 }
 
 func actionStock(c *gin.Context) {
-	s := newStock(c.Query("msg"), c.Query("type"))
+	s := newStock(c.Query("msg"),c.Query("type"))
 	body := make(map[string]interface{})
 	body["action"] = "action"
 	body["info"] = s
 
-	jsonBody, _ := json.Marshal(body)
-	message := kafka.Message{
-		Key:   []byte("action"),
+	jsonBody,_ := json.Marshal(body)
+	message := kafka.Message {
+		Key: []byte("action"),
 		Value: []byte(string(jsonBody)),
 	}
 
@@ -75,31 +75,32 @@ func actionStock(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(200, gin.H {
 		"err": "",
-		"msg": "successfully",
-	})
+		"msg":"successfully",
+	}) 
+
 }
 
 func RegisterConsumer(id int) {
-	kafkaGroupID := "my-group-id" // Ensure a valid group ID is used
-	reader := GetKafkaReader(kafkaURL, "test", kafkaGroupID)
+	kafkaGroupID := "group-" + string(id)
+	reader := GetKafkaReader(kafkaURL,"test",kafkaGroupID)
 	defer reader.Close()
 
-	fmt.Printf("Consumer (%d) is running:\n", id)
+	fmt.Printf("Consumer (%d) hong phien:: \n", id)
 	for {
 		m, err := reader.ReadMessage(context.Background())
 		if err != nil {
-			fmt.Printf("Consumer (%d) err: %v\n", id, err.Error())
+			fmt.Printf("Consumer (%d) err: %v", id, err.Error())
 		}
 
-		fmt.Printf("Consumer %d received message from topic: %v\n", id, m.Topic)
+		fmt.Printf("Consumer %d, hong topic: %v, message: %s \n", id, m.Topic, string(m.Value))
 	}
 }
 
-func main() {
+func main(){
 	r := gin.Default()
-	kafkaProducer = GetKafkaWriter(kafkaURL, "test")
+	kafkaProducer = GetKafkaWriter(kafkaURL,"test")
 	defer kafkaProducer.Close()
 	r.POST("action/stock", actionStock)
 
