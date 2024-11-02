@@ -65,7 +65,7 @@ up:
 down:
 	@set GOOSE_DRIVER=$(GOOSE_DRIVER)&& set GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) down
 
-create-migration:
+create-migration: 
 	cd $(GOOSE_MIGRATION_DIR) && goose create $(name) sql
 	
 sqlc-gen:	

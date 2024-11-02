@@ -12,5 +12,5 @@ var (
 	Config settings.Config
 	Db *pgxpool.Pool
 	S3 *s3.Client
-	Redis *redis.Client
+	Redis *redis.Client 
 )
