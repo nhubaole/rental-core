@@ -8,7 +8,7 @@ const (
 	StatusResourceNotFound = "resource not found"
 	StatusUnAuthorize = "unauthorize"
 	StatusAuthorizeFail = "invalid phone number or password"
-	StatusNoData = "no data yet"
+	StatusNoData = "no data"
 	StatusInternalError = "server error"
 	StatusVerifySuccess = "verify success"
 )
