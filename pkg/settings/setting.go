@@ -3,15 +3,16 @@ package settings
 import _ "github.com/spf13/viper"
 
 type Config struct {
-	DB         Database   `mapstructure:"db"`
-	Redis      Redis      `mapstructure:"redis"`
-	Server     Server     `mapstructure:"server"`
-	S3         AWS        `mapstructure:"s3"`
-	JWT        JWT        `mapstructure:"security"`
-	NodeServer NodeServer `mapstructure:"node_server"`
-	Infura     Infura     `mapstructure:"infura"`
-	Kafka      Kafka      `mapstructure:"kafka"`
+	DB            Database      `mapstructure:"db"`
+	Redis         Redis         `mapstructure:"redis"`
+	Server        Server        `mapstructure:"server"`
+	S3            AWS           `mapstructure:"s3"`
+	JWT           JWT           `mapstructure:"security"`
+	NodeServer    NodeServer    `mapstructure:"node_server"`
+	Infura        Infura        `mapstructure:"infura"`
+	Kafka         Kafka         `mapstructure:"kafka"`
 	ElasticSearch ElasticSearch `mapstructure:"elasticsearch"`
+	SmartContract SmartContract `mapstructure:"smart_contract"`
 }
 
 type Database struct {
@@ -55,4 +56,8 @@ type Kafka struct {
 }
 type ElasticSearch struct {
 	Port int `mapstructure:"port"`
+}
+type SmartContract struct {
+	ListingContractAddress         string `mapstructure:"listing_contract"`
+	LeaseAgreementProducerContract string `mapstructure:"lease_agreement_producer_contract"`
 }

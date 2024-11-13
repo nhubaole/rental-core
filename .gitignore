@@ -29,5 +29,5 @@ tmp/
 main
 *templ.go
 configs/
-
+keystore
 node_modules

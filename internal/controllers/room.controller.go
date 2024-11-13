@@ -24,7 +24,7 @@ func NewRoomController(service services.RoomService) *RoomController {
 func (rc RoomController) Create(ctx *gin.Context) {
 	var formData requests.CreateRoomForm
 	if err := ctx.ShouldBind(&formData); err != nil {
-		responses.APIResponse(ctx, 400, "Bad request", nil)
+		responses.APIResponse(ctx, 400, err.Error(), nil)
 		return
 	}
 

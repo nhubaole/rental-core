@@ -48,3 +48,11 @@ type UpdateRoomRequest struct {
 	IsRent          bool                    `form:"is_rent"`
 	DeleteFiles     []string                `form:"delete_files"`
 }
+
+type CreateRoomOnChainReq struct {
+	RoomID     int64
+	TotalPrice int
+	Deposit    int64
+	Status     int64
+	IsRent     bool
+}
