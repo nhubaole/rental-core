@@ -21,10 +21,7 @@ type BlockchainServiceImpl struct {
 	lapcAddress common.Address
 }
 
-// CreateLeaseAgreementProducerContract implements BlockchainService.
-func (b *BlockchainServiceImpl) CreateLeaseAgreementProducerContract() error {
-	panic("unimplemented")
-}
+
 
 func NewBlockchainServiceImpl() BlockchainService {
 	return &BlockchainServiceImpl{
@@ -33,6 +30,76 @@ func NewBlockchainServiceImpl() BlockchainService {
 		lapcAddress: common.HexToAddress(global.Config.SmartContract.LeaseAgreementProducerContract),
 	}
 }
+
+// CreateLeaseAgreementProducerContract creates a new lease agreement on the blockchain
+func (b *BlockchainServiceImpl) CreateLeaseAgreementProducerContract(
+	privateKeyHex string,
+	req requests.CreateLeaseAgreementOnChainReq,
+) (string, error) {
+	// Get the chain ID for the network
+	chainID, err := b.client.NetworkID(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to get network ID: %w", err)
+	}
+
+	// Parse the private key
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	// Suggest gas price
+	gasPrice, err := b.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to suggest gas price: %w", err)
+	}
+
+	// Set up transaction options with the private key, gas price, and limit
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create transactor: %w", err)
+	}
+	auth.GasLimit = 3000000
+	auth.GasPrice = gasPrice
+
+	// Create a new instance of the LeaseAgreementProducerContract
+	leaseContract, err := room.NewLeaseAgreementProducerContract(b.lapcAddress, b.client)
+	if err != nil {
+		return "", fmt.Errorf("failed to create lease agreement producer contract instance: %w", err)
+	}
+
+	// Call createLeaseContract with the necessary parameters
+	tx, err := leaseContract.CreateLeaseContract(
+		auth,
+		common.HexToAddress(req.TenantAddress),    // Tenant's address
+		big.NewInt(req.RoomID),                    // Room ID
+		big.NewInt(int64(req.ActualPrice)),        // Actual price
+		big.NewInt(int64(req.DepositAmount)),      // Deposit amount
+		big.NewInt(req.BeginDate),                 // Begin date
+		big.NewInt(req.EndDate),                   // End date
+		req.ContractCode,                          // Contract code
+		req.SignatureA,                            // Landlord's signature
+		big.NewInt(req.SignedTimeA),               // Landlord's signing timestamp
+		req.PaymentMethod,                         // Payment method
+		req.ElectricityMethod,                     // Electricity method
+		big.NewInt(req.ElectricityCost),           // Electricity cost
+		req.WaterMethod,                           // Water method
+		big.NewInt(req.WaterCost),                 // Water cost
+		big.NewInt(req.InternetCost),              // Internet cost
+		big.NewInt(req.ParkingFee),                // Parking fee
+		req.ResponsibilityA,                       // Landlord's responsibilities
+		req.ResponsibilityB,                       // Tenant's responsibilities
+		req.GeneralResponsibility,                 // General responsibilities
+		big.NewInt(req.ContractTemplateID),        // Contract template ID
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to create lease agreement on blockchain: %w", err)
+	}
+
+	// Return the transaction hash
+	return tx.Hash().Hex(), nil
+}
+
 
 // CreateRoomOnBlockchain implements BlockchainService.
 func (b *BlockchainServiceImpl) CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error) {
@@ -83,7 +150,7 @@ func (b *BlockchainServiceImpl) CreateRoomOnBlockchain(privateKeyHex string, req
 }
 
 // GetRoomFromBlockchain implements BlockchainService.
-func (b *BlockchainServiceImpl) GetRoomFromBlockchain(roomID int64) (*responses.RoomResOnChain, error) {
+func (b *BlockchainServiceImpl) GetRoomByIDOnChain(roomID int64) (*responses.RoomOnChainRes, error) {
 	roomContract, err := room.NewListingContract(b.listingContractAddress, b.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create room contract instance: %w", err)
@@ -97,7 +164,7 @@ func (b *BlockchainServiceImpl) GetRoomFromBlockchain(roomID int64) (*responses.
 	}
 
 	// Format data for the response
-	blockchainRoom := &responses.RoomResOnChain{
+	blockchainRoom := &responses.RoomOnChainRes{
 		ID:         out0.Int64(),
 		TotalPrice: int(out2.Int64()),
 		Deposit:    out3.Int64(),

@@ -1,6 +1,6 @@
 package responses
 
-type RoomResOnChain struct {
+type RoomOnChainRes struct {
 	ID     int64
 	TotalPrice int
 	Deposit    int64

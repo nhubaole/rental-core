@@ -33,6 +33,7 @@ func InitRoomRouterHandler() *controllers.RoomController {
 	wire.Build(
 		services.NewRoomServiceImpl,
 		services.NewStorageServiceImpl,
+		services.NewBlockchainServiceImpl,
 		controllers.NewRoomController,
 	)
 	return &controllers.RoomController{}
@@ -48,6 +49,7 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 func InitContractRouterHandler() *controllers.ContractController {
 	wire.Build(
 		services.NewContractServiceImpl,
+		services.NewBlockchainServiceImpl,
 		controllers.NewContractController,
 	)
 	return &controllers.ContractController{}

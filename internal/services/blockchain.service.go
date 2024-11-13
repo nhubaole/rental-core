@@ -6,7 +6,7 @@ import (
 )
 
 type BlockchainService interface {
-	GetRoomFromBlockchain(roomID int64)(*responses.RoomResOnChain, error)
+	GetRoomByIDOnChain(roomID int64)(*responses.RoomOnChainRes, error)
 	CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error)
-	CreateLeaseAgreementProducerContract() error
+	CreateLeaseAgreementProducerContract(privateKeyHex string, req requests.CreateLeaseAgreementOnChainReq,) (string, error)
 }

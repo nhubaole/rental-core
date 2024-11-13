@@ -3,7 +3,9 @@ package common
 import (
 	"mime/multipart"
 	"reflect"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func MapStruct(src interface{}, dst interface{}) error {
@@ -58,3 +60,20 @@ func MapStruct(src interface{}, dst interface{}) error {
 	}
 	return nil
 }
+
+func Int64ToPgTimestamptz(unixTimestamp int64, isMilliseconds bool) pgtype.Timestamptz {
+    var ts pgtype.Timestamptz
+    var t time.Time
+
+    if isMilliseconds {
+        t = time.Unix(0, unixTimestamp*int64(time.Millisecond))
+    } else {
+        t = time.Unix(unixTimestamp, 0)
+    }
+
+    ts.Time = t          // Set the time value
+    ts.Valid = true      // Set the status to valid
+    return ts
+}
+
+

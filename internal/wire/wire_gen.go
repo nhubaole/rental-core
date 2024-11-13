@@ -27,7 +27,8 @@ func InitUserRouterHandler() *controllers.UserController {
 
 func InitRoomRouterHandler() *controllers.RoomController {
 	storageSerivce := services.NewStorageServiceImpl()
-	roomService := services.NewRoomServiceImpl(storageSerivce)
+	blockchainService := services.NewBlockchainServiceImpl()
+	roomService := services.NewRoomServiceImpl(storageSerivce, blockchainService)
 	roomController := controllers.NewRoomController(roomService)
 	return roomController
 }
@@ -39,7 +40,8 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 }
 
 func InitContractRouterHandler() *controllers.ContractController {
-	contractService := services.NewContractServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	contractService := services.NewContractServiceImpl(blockchainService)
 	contractController := controllers.NewContractController(contractService)
 	return contractController
 }
