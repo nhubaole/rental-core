@@ -13,6 +13,12 @@ import (
 
 // Injectors from wire.go:
 
+func InitPaymentRouterHandler() *controllers.PaymentController {
+	paymentService := services.NewPaymentServiceImpl()
+	paymentController := controllers.NewPaymentController(paymentService)
+	return paymentController
+}
+
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	authenService := services.NewAuthenSerivceImpl()
 	authenController := controllers.NewAuthController(authenService)

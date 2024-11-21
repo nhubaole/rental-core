@@ -20,6 +20,7 @@ func NewRouter(
 	ratingController *controllers.RatingController,
 	ms *controllers.MessageController,
 	conversation *controllers.ConversationController,
+	payment *controllers.PaymentController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -36,6 +37,8 @@ func NewRouter(
 	userRouter.GET("/:id", middlewares.AuthenMiddleware, uc.GetUserByID)
 	userRouter.GET("/current-user", middlewares.AuthenMiddleware, uc.GetCurrentUser)
 	userRouter.PUT("/", middlewares.AuthenMiddleware, uc.Update)
+	userRouter.POST("/bank-info", middlewares.AuthenMiddleware, uc.CreateUserBank)
+	userRouter.PUT("/bank-info", middlewares.AuthenMiddleware, uc.UpdateUserBank)
 
 	roomRouter := baseRouter.Group("/rooms")
 	roomRouter.POST("", middlewares.AuthenMiddleware, rc.Create)
@@ -93,5 +96,8 @@ func NewRouter(
 	conversationRouter := baseRouter.Group("/conversations")
 	conversationRouter.POST("",middlewares.AuthenMiddleware, conversation.CreateConversation)
 	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
+
+	paymentRouter := baseRouter.Group("/payments")
+	paymentRouter.GET("/:id", middlewares.AuthenMiddleware, payment.GetByID)
 	return r
 }

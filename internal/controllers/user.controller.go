@@ -64,3 +64,44 @@ func (uc *UserController) GetCurrentUser(ctx *gin.Context) {
 
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+func (uc *UserController) UpdateUserBank(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	var updateUserBankBody dataaccess.UpdateUserBankParams
+	updateUserBankBody.UserID = user.ID
+	errParse := ctx.ShouldBindJSON(&updateUserBankBody)
+	if errParse != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	
+
+	result := uc.userService.UpdateBankInfo(&updateUserBankBody)
+
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (uc *UserController) CreateUserBank(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	var createUserBankBody dataaccess.CreateUserBankParams
+	createUserBankBody.UserID = user.ID
+	errParse := ctx.ShouldBindJSON(&createUserBankBody)
+	if errParse != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	
+
+	result := uc.userService.CreateBankInfo(&createUserBankBody)
+
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
