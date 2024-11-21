@@ -22,9 +22,9 @@ contract SmartLeaseContract {
         string responsibilityA;
         string responsibilityB;
         string generalResponsibility;
-        bytes32 signatureA;
+        string signatureA;
         uint256 signedTimeA;
-        bytes32 signatureB;
+        string signatureB;
         uint256 signedTimeB;
         uint256 createdAt;
         uint256 updatedAt;
@@ -134,8 +134,7 @@ contract SmartLeaseContract {
     }
 
     // Pre-Rental Stage Functions
-    function signContractByTenant(bytes32 _signatureB) public onlyTenant {
-        require(agreementInfo.signatureA != 0, "Landlord must sign first");
+    function signContractByTenant(string memory _signatureB) public onlyTenant {
         agreementInfo.signatureB = _signatureB;
         agreementInfo.signedTimeB = block.timestamp;
         agreement.preRentalStatus = PreRentalStatus.Signed;

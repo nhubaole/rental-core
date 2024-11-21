@@ -28,7 +28,7 @@ function createLeaseContract(
         uint256 beginDate,
         uint256 endDate,
         string memory contractCode,
-        bytes6 signatureA,        // Landlord's signature
+        string memory signatureA,        // Landlord's signature
         uint256 signedTimeA,       // Landlord's signing timestamp
         string memory paymentMethod,
         string memory electricityMethod,
@@ -61,7 +61,7 @@ function createLeaseContract(
             generalResponsibility: generalResponsibility,
             signatureA: signatureA,
             signedTimeA: signedTimeA,
-            signatureB: bytes32(0),
+            signatureB: "",
             signedTimeB: 0,
             createdAt: block.timestamp,
             updatedAt: block.timestamp,
