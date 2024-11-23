@@ -14,6 +14,7 @@ import (
 func InitPaymentRouterHandler() *controllers.PaymentController {
 	wire.Build(
 		services.NewPaymentServiceImpl,
+		services.NewStorageServiceImpl,
 		controllers.NewPaymentController,
 	)
 

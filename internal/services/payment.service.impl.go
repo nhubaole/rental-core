@@ -2,31 +2,61 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"smart-rental/global"
+	"smart-rental/internal/constants"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"time"
 )
 
 type PaymentServiceImpl struct {
 	repo *dataaccess.Queries
+	storageService StorageSerivce 
 }
 
 
 
-func NewPaymentServiceImpl() PaymentService {
+func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 	return &PaymentServiceImpl{
 		repo: dataaccess.New(global.Db),
+		storageService: storage,
 	}
 }
 
 // Create implements PaymentService.
-func (p *PaymentServiceImpl) Create(req dataaccess.CreatePaymentParams) *responses.ResponseData {
-	err := p.repo.CreatePayment(context.Background(), req)
+func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.ResponseData {
+	f, _ := req.EvidenceImage.Open() 
+	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+	fileExt := filepath.Ext(req.EvidenceImage.Filename)
+	contentType := mime.TypeByExtension(fileExt)
+	objKey := fmt.Sprintf("%s/%s/%d%s",constants.PAYMENT_OBJ, "payment", timestamp, fileExt)
+
+	url, err := p.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+
+	var params dataaccess.CreatePaymentParams
+	common.MapStruct(req, &params)
+	params.EvidenceImage = &url
+	
+	createErr := p.repo.CreatePayment(context.Background(), params)
+
+	if createErr != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    createErr.Error(),
 			Data:       false,
 		}
 	}

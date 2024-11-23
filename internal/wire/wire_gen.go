@@ -14,7 +14,8 @@ import (
 // Injectors from wire.go:
 
 func InitPaymentRouterHandler() *controllers.PaymentController {
-	paymentService := services.NewPaymentServiceImpl()
+	storageSerivce := services.NewStorageServiceImpl()
+	paymentService := services.NewPaymentServiceImpl(storageSerivce)
 	paymentController := controllers.NewPaymentController(paymentService)
 	return paymentController
 }

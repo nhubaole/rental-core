@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -31,12 +31,11 @@ func (c PaymentController) GetByID(ctx *gin.Context) {
 }
 
 func (controller PaymentController) Create(ctx *gin.Context) {
-	var body dataaccess.CreatePaymentParams
-	err := ctx.ShouldBindJSON(&body)
-	if err != nil {
+	var formData requests.CreatePaymentReq
+	if err := ctx.ShouldBind(&formData); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
-	result := controller.services.Create(body)
+	result := controller.services.Create(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
