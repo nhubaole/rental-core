@@ -7,8 +7,6 @@ package dataaccess
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createPayment = `-- name: CreatePayment :exec
@@ -24,20 +22,19 @@ INSERT INTO public.payments(
     evidence_image, 
     paid_time
     )VALUES(
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, now())
 `
 
 type CreatePaymentParams struct {
-	Code            string             `json:"code"`
-	SenderID        int32              `json:"sender_id"`
-	BillID          *int32             `json:"bill_id"`
-	ContractID      *int32             `json:"contract_id"`
-	Amount          float64            `json:"amount"`
-	Status          int32              `json:"status"`
-	ReturnRequestID *int32             `json:"return_request_id"`
-	TransferContent *string            `json:"transfer_content"`
-	EvidenceImage   *string            `json:"evidence_image"`
-	PaidTime        pgtype.Timestamptz `json:"paid_time"`
+	Code            string  `json:"code"`
+	SenderID        int32   `json:"sender_id"`
+	BillID          *int32  `json:"bill_id"`
+	ContractID      *int32  `json:"contract_id"`
+	Amount          float64 `json:"amount"`
+	Status          int32   `json:"status"`
+	ReturnRequestID *int32  `json:"return_request_id"`
+	TransferContent *string `json:"transfer_content"`
+	EvidenceImage   *string `json:"evidence_image"`
 }
 
 func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) error {
@@ -51,7 +48,6 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) er
 		arg.ReturnRequestID,
 		arg.TransferContent,
 		arg.EvidenceImage,
-		arg.PaidTime,
 	)
 	return err
 }

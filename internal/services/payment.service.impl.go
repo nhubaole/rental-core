@@ -30,7 +30,7 @@ func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 }
 
 // Create implements PaymentService.
-func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.ResponseData {
+func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32) *responses.ResponseData {
 	f, _ := req.EvidenceImage.Open() 
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	fileExt := filepath.Ext(req.EvidenceImage.Filename)
@@ -50,7 +50,8 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.Re
 	var params dataaccess.CreatePaymentParams
 	common.MapStruct(req, &params)
 	params.EvidenceImage = &url
-	
+	params.SenderID = userID
+
 	createErr := p.repo.CreatePayment(context.Background(), params)
 
 	if createErr != nil {
@@ -61,7 +62,7 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.Re
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusOK,
+		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
 		Data:       true,
 	}

@@ -12,9 +12,10 @@ type Bank struct {
 	ID        int32            `json:"id"`
 	BankName  string           `json:"bank_name"`
 	BankCode  string           `json:"bank_code"`
-	Country   *string          `json:"country"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ShortName *string          `json:"short_name"`
+	Logo      *string          `json:"logo"`
 }
 
 type Billing struct {
