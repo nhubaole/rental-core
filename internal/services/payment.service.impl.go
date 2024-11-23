@@ -20,6 +20,24 @@ func NewPaymentServiceImpl() PaymentService {
 	}
 }
 
+// Create implements PaymentService.
+func (p *PaymentServiceImpl) Create(req dataaccess.CreatePaymentParams) *responses.ResponseData {
+	err := p.repo.CreatePayment(context.Background(), req)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       true,
+	}
+
+}
+
 // GetByID implements PaymentService.
 func (p *PaymentServiceImpl) GetByID(id int) *responses.ResponseData {
 	payment, err := p.repo.GetPaymentByID(context.Background(), int32(id))

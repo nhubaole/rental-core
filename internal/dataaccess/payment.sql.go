@@ -7,7 +7,54 @@ package dataaccess
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createPayment = `-- name: CreatePayment :exec
+INSERT INTO public.payments(
+    code, 
+    sender_id,
+    bill_id,
+    contract_id,
+    amount, 
+    status, 
+    return_request_id, 
+    transfer_content, 
+    evidence_image, 
+    paid_time
+    )VALUES(
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+`
+
+type CreatePaymentParams struct {
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	BillID          *int32             `json:"bill_id"`
+	ContractID      *int32             `json:"contract_id"`
+	Amount          float64            `json:"amount"`
+	Status          int32              `json:"status"`
+	ReturnRequestID *int32             `json:"return_request_id"`
+	TransferContent *string            `json:"transfer_content"`
+	EvidenceImage   *string            `json:"evidence_image"`
+	PaidTime        pgtype.Timestamptz `json:"paid_time"`
+}
+
+func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) error {
+	_, err := q.db.Exec(ctx, createPayment,
+		arg.Code,
+		arg.SenderID,
+		arg.BillID,
+		arg.ContractID,
+		arg.Amount,
+		arg.Status,
+		arg.ReturnRequestID,
+		arg.TransferContent,
+		arg.EvidenceImage,
+		arg.PaidTime,
+	)
+	return err
+}
 
 const getPaymentByID = `-- name: GetPaymentByID :one
 SELECT id, code, sender_id, bill_id, contract_id, amount, status,return_request_id
@@ -15,9 +62,20 @@ FROM public.payments
 WHERE id = $1
 `
 
-func (q *Queries) GetPaymentByID(ctx context.Context, id int32) (Payment, error) {
+type GetPaymentByIDRow struct {
+	ID              int32   `json:"id"`
+	Code            string  `json:"code"`
+	SenderID        int32   `json:"sender_id"`
+	BillID          *int32  `json:"bill_id"`
+	ContractID      *int32  `json:"contract_id"`
+	Amount          float64 `json:"amount"`
+	Status          int32   `json:"status"`
+	ReturnRequestID *int32  `json:"return_request_id"`
+}
+
+func (q *Queries) GetPaymentByID(ctx context.Context, id int32) (GetPaymentByIDRow, error) {
 	row := q.db.QueryRow(ctx, getPaymentByID, id)
-	var i Payment
+	var i GetPaymentByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Code,

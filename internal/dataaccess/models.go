@@ -26,7 +26,6 @@ type Billing struct {
 	TotalAmount          float64            `json:"total_amount"`
 	Month                int32              `json:"month"`
 	Year                 int32              `json:"year"`
-	PaidTime             pgtype.Timestamptz `json:"paid_time"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
@@ -138,14 +137,17 @@ type Message struct {
 }
 
 type Payment struct {
-	ID              int32   `json:"id"`
-	Code            string  `json:"code"`
-	SenderID        int32   `json:"sender_id"`
-	BillID          *int32  `json:"bill_id"`
-	ContractID      int32   `json:"contract_id"`
-	Amount          float64 `json:"amount"`
-	Status          int32   `json:"status"`
-	ReturnRequestID *int32  `json:"return_request_id"`
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	BillID          *int32             `json:"bill_id"`
+	ContractID      *int32             `json:"contract_id"`
+	Amount          float64            `json:"amount"`
+	Status          int32              `json:"status"`
+	ReturnRequestID *int32             `json:"return_request_id"`
+	TransferContent *string            `json:"transfer_content"`
+	EvidenceImage   *string            `json:"evidence_image"`
+	PaidTime        pgtype.Timestamptz `json:"paid_time"`
 }
 
 type ProcessTracking struct {

@@ -1,8 +1,11 @@
 package services
 
-import "smart-rental/pkg/responses"
+import (
+	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/responses"
+)
 
 type PaymentService interface {
 	GetByID(id int) *responses.ResponseData
-	// CreatePayment()
+	Create(req dataaccess.CreatePaymentParams)*responses.ResponseData
 }

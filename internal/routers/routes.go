@@ -99,5 +99,6 @@ func NewRouter(
 
 	paymentRouter := baseRouter.Group("/payments")
 	paymentRouter.GET("/:id", middlewares.AuthenMiddleware, payment.GetByID)
+	paymentRouter.POST("", middlewares.AuthenMiddleware, payment.Create)
 	return r
 }
