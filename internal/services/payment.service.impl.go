@@ -17,7 +17,7 @@ import (
 
 type PaymentServiceImpl struct {
 	repo *dataaccess.Queries
-	storageService StorageSerivce 
+	storageService StorageSerivce
 }
 
 
@@ -31,7 +31,7 @@ func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 
 // Create implements PaymentService.
 func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.ResponseData {
-	f, _ := req.EvidenceImage.Open() 
+	f, _ := req.EvidenceImage.Open()
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	fileExt := filepath.Ext(req.EvidenceImage.Filename)
 	contentType := mime.TypeByExtension(fileExt)
@@ -50,7 +50,7 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq) *responses.Re
 	var params dataaccess.CreatePaymentParams
 	common.MapStruct(req, &params)
 	params.EvidenceImage = &url
-	
+
 	createErr := p.repo.CreatePayment(context.Background(), params)
 
 	if createErr != nil {
@@ -90,5 +90,24 @@ func (p *PaymentServiceImpl) GetByID(id int) *responses.ResponseData {
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
 		Data:       payment,
+	}
+}
+
+
+// GetAllBanks implements PaymentService.
+func (p *PaymentServiceImpl) GetAllBanks() *responses.ResponseData {
+	banks, err := p.repo.GetAllBanks(context.Background())
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       banks,
 	}
 }

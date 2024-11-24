@@ -39,3 +39,8 @@ func (controller PaymentController) Create(ctx *gin.Context) {
 	result := controller.services.Create(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (controller PaymentController) GetAllBanks(ctx *gin.Context) {
+	result := controller.services.GetAllBanks()
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
