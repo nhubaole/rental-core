@@ -17,7 +17,7 @@ import (
 
 type PaymentServiceImpl struct {
 	repo *dataaccess.Queries
-	storageService StorageSerivce 
+	storageService StorageSerivce
 }
 
 
@@ -91,5 +91,24 @@ func (p *PaymentServiceImpl) GetByID(id int) *responses.ResponseData {
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
 		Data:       payment,
+	}
+}
+
+
+// GetAllBanks implements PaymentService.
+func (p *PaymentServiceImpl) GetAllBanks() *responses.ResponseData {
+	banks, err := p.repo.GetAllBanks(context.Background())
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       banks,
 	}
 }

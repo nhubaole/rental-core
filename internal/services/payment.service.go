@@ -8,4 +8,5 @@ import (
 type PaymentService interface {
 	GetByID(id int) *responses.ResponseData
 	Create(req requests.CreatePaymentReq, userID int32)*responses.ResponseData
+	GetAllBanks() *responses.ResponseData
 }
