@@ -44,20 +44,20 @@ func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *respons
 
 	req.Password = string(passwordHash)
 	opt := int32(common.GenerateDigitOTP())
-	user.Otp = &opt
-		// Generate Ethereum Wallet during registration
-		walletAddress, _, errWallet := blockchain.CreateWallet(user.PhoneNumber)
-		if errWallet != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    "Failed to create wallet",
-				Data:       false,
-			}
+	req.Otp = &opt
+	// Generate Ethereum Wallet during registration
+	walletAddress, _, errWallet := blockchain.CreateWallet(user.PhoneNumber)
+	if errWallet != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to create wallet",
+			Data:       false,
 		}
-	
-		// Set wallet address in user params
-		user.WalletAddress = &walletAddress
-	err := as.repo.CreateUser(context.Background(), *user)
+	}
+
+	// Set wallet address in user params
+	req.WalletAddress = &walletAddress
+	err := as.repo.CreateUser(context.Background(), *req)
 
 	if err != nil {
 		return &responses.ResponseData{

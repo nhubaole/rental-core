@@ -82,21 +82,22 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, er
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, otp, created_at
+SELECT id, phone_number, password, role, full_name, address, wallet_address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1
 `
 
 type GetUserByPhoneRow struct {
-	ID          int32              `json:"id"`
-	PhoneNumber string             `json:"phone_number"`
-	Password    string             `json:"password"`
-	Role        int32              `json:"role"`
-	FullName    string             `json:"full_name"`
-	Address     *string            `json:"address"`
-	Otp         *int32             `json:"otp"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ID            int32              `json:"id"`
+	PhoneNumber   string             `json:"phone_number"`
+	Password      string             `json:"password"`
+	Role          int32              `json:"role"`
+	FullName      string             `json:"full_name"`
+	Address       *string            `json:"address"`
+	WalletAddress *string            `json:"wallet_address"`
+	Otp           *int32             `json:"otp"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUserByPhoneRow, error) {
@@ -109,6 +110,7 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 		&i.Role,
 		&i.FullName,
 		&i.Address,
+		&i.WalletAddress,
 		&i.Otp,
 		&i.CreatedAt,
 	)

@@ -21,7 +21,7 @@ INSERT INTO PUBLIC.USERS
 );
 
 -- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, otp, created_at
+SELECT id, phone_number, password, role, full_name, address, wallet_address, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
