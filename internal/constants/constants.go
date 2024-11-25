@@ -5,4 +5,5 @@ const (
 	ROOM_OBJ = "room-images"
 	RATING_OBJ = "rating-images"
 	SEARCH_INDEX = "rooms"
+	PAYMENT_OBJ = "evidence_image"
 )

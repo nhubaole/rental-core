@@ -27,30 +27,28 @@ INSERT INTO PUBLIC.BILLING
     total_amount, --10
     month, --11
     year, --12
-    paid_time,  --13
-    created_at,  --14
+    created_at,  --13
     updated_at --15
 ) VALUES
 (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now(), now()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  now(), now()
 )
 `
 
 type CreateBillParams struct {
-	Code                 string             `json:"code"`
-	ContractID           int32              `json:"contract_id"`
-	OldWaterIndex        *int32             `json:"old_water_index"`
-	OldElectricityIndex  *int32             `json:"old_electricity_index"`
-	NewWaterIndex        *int32             `json:"new_water_index"`
-	NewElectricityIndex  *int32             `json:"new_electricity_index"`
-	TotalWaterCost       *float64           `json:"total_water_cost"`
-	TotalElectricityCost *float64           `json:"total_electricity_cost"`
-	AdditionFee          *int32             `json:"addition_fee"`
-	AdditionNote         *string            `json:"addition_note"`
-	TotalAmount          float64            `json:"total_amount"`
-	Month                int32              `json:"month"`
-	Year                 int32              `json:"year"`
-	PaidTime             pgtype.Timestamptz `json:"paid_time"`
+	Code                 string   `json:"code"`
+	ContractID           int32    `json:"contract_id"`
+	OldWaterIndex        *int32   `json:"old_water_index"`
+	OldElectricityIndex  *int32   `json:"old_electricity_index"`
+	NewWaterIndex        *int32   `json:"new_water_index"`
+	NewElectricityIndex  *int32   `json:"new_electricity_index"`
+	TotalWaterCost       *float64 `json:"total_water_cost"`
+	TotalElectricityCost *float64 `json:"total_electricity_cost"`
+	AdditionFee          *int32   `json:"addition_fee"`
+	AdditionNote         *string  `json:"addition_note"`
+	TotalAmount          float64  `json:"total_amount"`
+	Month                int32    `json:"month"`
+	Year                 int32    `json:"year"`
 }
 
 func (q *Queries) CreateBill(ctx context.Context, arg CreateBillParams) error {
@@ -68,7 +66,6 @@ func (q *Queries) CreateBill(ctx context.Context, arg CreateBillParams) error {
 		arg.TotalAmount,
 		arg.Month,
 		arg.Year,
-		arg.PaidTime,
 	)
 	return err
 }
@@ -155,7 +152,6 @@ SELECT  code,
         total_amount,
         month,
         year,
-        paid_time,
         status,
         created_at,
         updated_at
@@ -172,7 +168,6 @@ type GetBillByIDRow struct {
 	TotalAmount  float64            `json:"total_amount"`
 	Month        int32              `json:"month"`
 	Year         int32              `json:"year"`
-	PaidTime     pgtype.Timestamptz `json:"paid_time"`
 	Status       *int32             `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
@@ -189,7 +184,6 @@ func (q *Queries) GetBillByID(ctx context.Context, id int32) (GetBillByIDRow, er
 		&i.TotalAmount,
 		&i.Month,
 		&i.Year,
-		&i.PaidTime,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -205,7 +199,6 @@ SELECT b.code,
         b.total_amount,
         b.month,
         b.year,
-        b.paid_time,
         b.created_at,
         b.updated_at
 FROM PUBLIC.BILLING as b
@@ -229,7 +222,6 @@ type GetBillByMonthRow struct {
 	TotalAmount  float64            `json:"total_amount"`
 	Month        int32              `json:"month"`
 	Year         int32              `json:"year"`
-	PaidTime     pgtype.Timestamptz `json:"paid_time"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
@@ -251,7 +243,6 @@ func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) 
 			&i.TotalAmount,
 			&i.Month,
 			&i.Year,
-			&i.PaidTime,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -273,7 +264,6 @@ SELECT  code,
         total_amount,
         month,
         year,
-        paid_time,
         status,
         created_at,
         updated_at
@@ -290,7 +280,6 @@ type GetBillByStatusRow struct {
 	TotalAmount  float64            `json:"total_amount"`
 	Month        int32              `json:"month"`
 	Year         int32              `json:"year"`
-	PaidTime     pgtype.Timestamptz `json:"paid_time"`
 	Status       *int32             `json:"status"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
@@ -313,7 +302,6 @@ func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBill
 			&i.TotalAmount,
 			&i.Month,
 			&i.Year,
-			&i.PaidTime,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,

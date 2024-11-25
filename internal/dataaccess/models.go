@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Bank struct {
+	ID        int32            `json:"id"`
+	BankName  string           `json:"bank_name"`
+	BankCode  string           `json:"bank_code"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ShortName *string          `json:"short_name"`
+	Logo      *string          `json:"logo"`
+}
+
 type Billing struct {
 	ID                   int32              `json:"id"`
 	Code                 string             `json:"code"`
@@ -17,7 +27,6 @@ type Billing struct {
 	TotalAmount          float64            `json:"total_amount"`
 	Month                int32              `json:"month"`
 	Year                 int32              `json:"year"`
-	PaidTime             pgtype.Timestamptz `json:"paid_time"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
@@ -129,13 +138,17 @@ type Message struct {
 }
 
 type Payment struct {
-	ID         int32   `json:"id"`
-	Code       string  `json:"code"`
-	SenderID   int32   `json:"sender_id"`
-	BillID     int32   `json:"bill_id"`
-	ContractID int32   `json:"contract_id"`
-	Amount     float64 `json:"amount"`
-	Status     int32   `json:"status"`
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	BillID          *int32             `json:"bill_id"`
+	ContractID      *int32             `json:"contract_id"`
+	Amount          float64            `json:"amount"`
+	Status          int32              `json:"status"`
+	ReturnRequestID *int32             `json:"return_request_id"`
+	TransferContent *string            `json:"transfer_content"`
+	EvidenceImage   *string            `json:"evidence_image"`
+	PaidTime        pgtype.Timestamptz `json:"paid_time"`
 }
 
 type ProcessTracking struct {
@@ -263,4 +276,15 @@ type User struct {
 	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
 	Otp           *int32             `json:"otp"`
 	WalletAddress *string            `json:"wallet_address"`
+}
+
+type UserBank struct {
+	UserID        int32            `json:"user_id"`
+	BankID        int32            `json:"bank_id"`
+	AccountNumber string           `json:"account_number"`
+	AccountName   string           `json:"account_name"`
+	CardNumber    *string          `json:"card_number"`
+	Currency      *string          `json:"currency"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }

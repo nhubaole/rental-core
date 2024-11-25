@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/common"
 
 	"net/http"
 	"strings"
@@ -65,5 +66,18 @@ func AuthenMiddleware(ctx *gin.Context) {
 		ctx.Next()
 	} else {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
+	}
+}
+
+func LandlordAuth() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		
+		error := common.ValidateLandlordRoleJWT(context)
+		if error != nil {
+			context.JSON(http.StatusUnauthorized, gin.H{"error": "Chủ nhà mới thực hiện được thao tác này"})
+			context.Abort()
+			return
+		}
+		context.Next()
 	}
 }

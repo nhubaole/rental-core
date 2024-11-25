@@ -24,8 +24,16 @@ func NewAuthenSerivceImpl() AuthenService {
 	}
 }
 
-func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *responses.ResponseData {
-	passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(string(user.Password)), 10)
+func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *responses.ResponseData {
+	user, _ := as.repo.GetUserByPhone(context.Background(), req.PhoneNumber)
+	if user.ID != 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusConflict,
+			Message:    "user already exists",
+			Data:       false,
+		}
+	}
+	passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(string(req.Password)), 10)
 	if errHash != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -34,7 +42,7 @@ func (as *AuthenServiceImpl) Register(user *dataaccess.CreateUserParams) *respon
 		}
 	}
 
-	user.Password = string(passwordHash)
+	req.Password = string(passwordHash)
 	opt := int32(common.GenerateDigitOTP())
 	user.Otp = &opt
 		// Generate Ethereum Wallet during registration

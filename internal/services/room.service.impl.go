@@ -103,8 +103,9 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 
 	}
 
+	room, _ := r.repo.GetRoomByID(context.Background(), int32(id))
 	var updateRoom dataaccess.UpdateRoomParams
-	updateRoom.ID = id
+	common.MapStruct(room, &updateRoom)
 	updateRoom.RoomImages = urls
 	_, updateErr := r.repo.UpdateRoom(context.Background(), updateRoom)
 	if updateErr != nil {
@@ -117,13 +118,21 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       true,
+		Data:       id,
 	}
 }
 
 // GetRooms implements RoomService.
 func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
 	rooms, err := r.repo.GetRooms(context.Background())
+
+	if len(rooms) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusNoData,
+			Data:       []dataaccess.GetRoomsRow{},
+		}
+	}
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -188,7 +197,14 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 // SearchRoomByAddress implements RoomService.
 func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.ResponseData {
 	rooms, err := r.repo.SearchRoomByAddress(context.Background(), &address)
-
+	
+	if len(rooms) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusNoData,
+			Data:       []dataaccess.SearchRoomByAddressRow{},
+		}
+	}
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,

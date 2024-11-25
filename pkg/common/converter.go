@@ -35,7 +35,20 @@ func MapStruct(src interface{}, dst interface{}) error {
 
 			case reflect.Ptr:
 				if !srcField.IsNil() {
-					dstField.Set(srcField)
+					if srcField.Type().Elem().Name() == "FileHeader" {
+						fileHeader := srcField.Interface().(*multipart.FileHeader)
+						if fileHeader != nil {
+							fileName := fileHeader.Filename            // Extract filename
+							fileNamePtr := &fileName                   // Create a *string
+							dstField.Set(reflect.ValueOf(fileNamePtr)) // Set as *string
+						} else {
+							// Handle nil case
+							dstField.Set(reflect.Zero(dstField.Type()))
+						}
+					} else {
+						dstField.Set(srcField)
+
+					}
 				}
 
 			case reflect.Slice:
@@ -55,7 +68,9 @@ func MapStruct(src interface{}, dst interface{}) error {
 					// Set the filenames to the destination field
 					dstField.Set(reflect.ValueOf(fileNames))
 				}
+
 			}
+
 		}
 	}
 	return nil
