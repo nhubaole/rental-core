@@ -11,6 +11,16 @@ import (
 	"github.com/google/wire"
 )
 
+func InitPaymentRouterHandler() *controllers.PaymentController {
+	wire.Build(
+		services.NewPaymentServiceImpl,
+		services.NewStorageServiceImpl,
+		controllers.NewPaymentController,
+	)
+
+	return &controllers.PaymentController{}
+}
+
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	wire.Build(
 		services.NewAuthenSerivceImpl,
