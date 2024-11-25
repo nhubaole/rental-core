@@ -17,6 +17,7 @@ import (
 
 type PaymentServiceImpl struct {
 	repo           *dataaccess.Queries
+	repo           *dataaccess.Queries
 	storageService StorageSerivce
 }
 
@@ -24,6 +25,7 @@ type PaymentServiceImpl struct {
 
 func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 	return &PaymentServiceImpl{
+		repo:           dataaccess.New(global.Db),
 		repo:           dataaccess.New(global.Db),
 		storageService: storage,
 	}
