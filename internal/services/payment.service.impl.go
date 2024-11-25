@@ -16,7 +16,7 @@ import (
 )
 
 type PaymentServiceImpl struct {
-	repo *dataaccess.Queries
+	repo           *dataaccess.Queries
 	storageService StorageSerivce
 }
 
@@ -24,18 +24,85 @@ type PaymentServiceImpl struct {
 
 func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 	return &PaymentServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:           dataaccess.New(global.Db),
 		storageService: storage,
+	}
+}
+
+// GetDetailInfo implements PaymentService.
+func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int) *responses.ResponseData {
+	if typeOfPayment == "contract" {
+		// Get deposit from contract on chain
+	} else if typeOfPayment == "bill" {
+		// Get total amount from billing on chain
+	} else if typeOfPayment == "return" {
+		// Get total return amount from return request on chain
+	}
+	//TODO: Get some info of user on chain 
+	
+	var response responses.GetPaymentInfoRes
+	prefix := fmt.Sprintf("SR%d", id)
+	response.TranferContent = common.GenerateCode(prefix)
+	response.BankName = "Techcombank"
+	response.AccountName = "Le Bao Nhu"
+	response.AccountNumber = "092321234123"
+	response.QrUrl = "httpasdasdakjdnakasdnasdk"
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       response,
+	}
+}
+
+// Confirm implements PaymentService.
+func (p *PaymentServiceImpl) Confirm(id int) *responses.ResponseData {
+	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       paymentIdUPdated,
+	}
+}
+
+// GetAll implements PaymentService.
+func (p *PaymentServiceImpl) GetAll() *responses.ResponseData {
+	payments, err := p.repo.GetAllPayments(context.Background())
+	if len(payments) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusNoData,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       payments,
 	}
 }
 
 // Create implements PaymentService.
 func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32) *responses.ResponseData {
-	f, _ := req.EvidenceImage.Open() 
+	f, _ := req.EvidenceImage.Open()
 	timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 	fileExt := filepath.Ext(req.EvidenceImage.Filename)
 	contentType := mime.TypeByExtension(fileExt)
-	objKey := fmt.Sprintf("%s/%s/%d%s",constants.PAYMENT_OBJ, "payment", timestamp, fileExt)
+	objKey := fmt.Sprintf("%s/%s/%d%s", constants.PAYMENT_OBJ, "payment", timestamp, fileExt)
 
 	url, err := p.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 	if err != nil {
@@ -46,11 +113,11 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 		}
 	}
 
-
 	var params dataaccess.CreatePaymentParams
 	common.MapStruct(req, &params)
 	params.EvidenceImage = &url
 	params.SenderID = userID
+	params.Status = 0
 
 	createErr := p.repo.CreatePayment(context.Background(), params)
 
@@ -93,7 +160,6 @@ func (p *PaymentServiceImpl) GetByID(id int) *responses.ResponseData {
 		Data:       payment,
 	}
 }
-
 
 // GetAllBanks implements PaymentService.
 func (p *PaymentServiceImpl) GetAllBanks() *responses.ResponseData {

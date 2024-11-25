@@ -101,5 +101,8 @@ func NewRouter(
 	paymentRouter.GET("/:id", middlewares.AuthenMiddleware, payment.GetByID)
 	paymentRouter.POST("", middlewares.AuthenMiddleware, payment.Create)
 	paymentRouter.GET("/banks", middlewares.AuthenMiddleware, payment.GetAllBanks)
+	paymentRouter.GET("", middlewares.AuthenMiddleware, payment.GetAll)
+	paymentRouter.PUT("/:id", middlewares.AuthenMiddleware, payment.Confirm)
+	paymentRouter.GET("/detail-info", middlewares.AuthenMiddleware, payment.GetPaymentInfo)
 	return r
 }

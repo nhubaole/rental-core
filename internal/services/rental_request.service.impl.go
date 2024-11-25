@@ -9,7 +9,6 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
-	"time"
 )
 
 type RentalRequestServiceImpl struct {
@@ -76,8 +75,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 	// add things
 	parseBody.Status = 1
 	parseBody.SenderID = userid
-	mytime := int(time.Now().UnixNano() / int64(time.Microsecond))
-	parseBody.Code = common.GenerateCode("RR", int(userid), int(body.RoomID), mytime)
+	parseBody.Code = common.GenerateCode("RR")
 
 	// push to database
 	res, err := rentalService.repo.CreateRentalRequest(context.Background(), parseBody)

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"net/http"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
@@ -49,5 +50,37 @@ func (controller PaymentController) Create(ctx *gin.Context) {
 
 func (controller PaymentController) GetAllBanks(ctx *gin.Context) {
 	result := controller.services.GetAllBanks()
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (controller PaymentController) GetAll(ctx *gin.Context) {
+	result := controller.services.GetAll()
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (c PaymentController) Confirm(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	result := c.services.Confirm(id)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (c PaymentController) GetPaymentInfo(ctx *gin.Context) {
+	typeOfPayment := ctx.Query("type")
+
+	if typeOfPayment != "contract" && typeOfPayment != "return" && typeOfPayment != "bill" {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+			return
+	}
+	id, err := strconv.Atoi(ctx.Query("id"))
+		if err != nil {
+			responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+			return
+		}
+	result := c.services.GetDetailInfo(typeOfPayment, id)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
