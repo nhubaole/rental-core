@@ -31,3 +31,6 @@ RETURNING
     currency, 
     created_at, 
     updated_at;
+
+-- name: GetBankInfoByUserID :one
+SELECT

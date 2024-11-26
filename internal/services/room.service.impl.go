@@ -219,6 +219,18 @@ func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.Respons
 	}
 }
 
+type BankAPI struct {
+	ID               int    `json:"id"`
+	Name             string `json:"name"`
+	Code             string `json:"code"`
+	Bin              string `json:"bin"`
+	ShortName        string `json:"shortName"`
+	Logo             string `json:"logo"`
+	TransferSupported int    `json:"transferSupported"`
+	LookupSupported   int    `json:"lookupSupported"`
+	SwiftCode        string `json:"swift_code"`
+}
+
 // LikeRoom implements RoomService.
 func (r *RoomServiceImpl) LikeRoom(roomID int, userID int) *responses.ResponseData {
 	param := dataaccess.CheckUserLikedRoomParams{

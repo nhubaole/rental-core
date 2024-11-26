@@ -1,9 +1,8 @@
 package common
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/base64"
+	"math/rand"
 	"math/rand"
 	"strconv"
 	"time"
@@ -11,8 +10,16 @@ import (
 )
 
 
-var b = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
 
+func GenerateCode(prefix string) string {
+	// Seed random generator
+	rand.Seed(time.Now().UnixNano())
+	
+	// Generate a random integer and convert it to string
+	randomID := strconv.Itoa(rand.Intn(1000000)) // Generates a random number up to 6 digits
+	
+	// Format the code as: prefix + random ID
+	return prefix + randomID
 func GenerateCode(prefix string) string {
 	// Seed random generator
 	rand.Seed(time.Now().UnixNano())
@@ -42,14 +49,4 @@ func Decode(s string) []byte {
 	}
 	return data
 }
-func Decrypt(text string) (string, error) {
-	block, err := aes.NewCipher([]byte(b))
-	if err != nil {
-		return "", err
-	}
-	cipherText := Decode(text)
-	cfb := cipher.NewCFBDecrypter(block, b)
-	plainText := make([]byte, len(cipherText))
-	cfb.XORKeyStream(plainText, cipherText)
-	return string(plainText), nil
-}
+
