@@ -129,12 +129,13 @@ type Like struct {
 }
 
 type Message struct {
-	ID             int32            `json:"id"`
-	ConversationID int32            `json:"conversation_id"`
-	SenderID       int32            `json:"sender_id"`
-	Type           int32            `json:"type"`
-	Content        string           `json:"content"`
-	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	ID              int32            `json:"id"`
+	ConversationID  int32            `json:"conversation_id"`
+	SenderID        int32            `json:"sender_id"`
+	Type            int32            `json:"type"`
+	Content         *string          `json:"content"`
+	CreatedAt       pgtype.Timestamp `json:"created_at"`
+	RentAutoContent []byte           `json:"rent_auto_content"`
 }
 
 type Payment struct {

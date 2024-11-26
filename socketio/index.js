@@ -42,8 +42,10 @@ loadConfig()
           console.log(savedMessage)
           io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
           io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
-          console.log(connectedClients[sender_id])
-
+          await query(
+            'UPDATE conversations SET last_message_id = $1 WHERE id = $2',
+            [savedMessage.id, savedMessage.conversation_id]
+          )
         } catch (error) {
           console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
         }
