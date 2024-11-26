@@ -9,6 +9,6 @@ const (
 	StatusUnAuthorize      = "unauthorize"
 	StatusAuthorizeFail    = "Mật khẩu hoặc số điện thoại không đúng"
 	StatusNoData           = "no data yet"
-	StatusInternalError    = "server error"
+	StatusInternalError    = "Lỗi hệ thống"
 	StatusVerifySuccess    = "verify success"
 )

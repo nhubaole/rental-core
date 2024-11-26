@@ -14,16 +14,37 @@ import (
 )
 
 type ContractServiceImpl struct {
-	repo *dataaccess.Queries
+	repo       *dataaccess.Queries
 	blockchain BlockchainService
 }
 
+
 func NewContractServiceImpl(blockchain BlockchainService) ContractService {
 	return &ContractServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:       dataaccess.New(global.Db),
 		blockchain: blockchain,
 	}
 }
+
+// GetContractByUser implements ContractService.
+func (c *ContractServiceImpl) GetContractByUser(userID int) *responses.ResponseData {
+	user, err := c.repo.GetUserByID(context.Background(), int32(userID))
+	contracts, err := c.blockchain.GetAllContractsOnChain(*user.WalletAddress)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       contracts,
+	}
+}
+
 
 // CreateTemplate implements ContractService.
 func (c *ContractServiceImpl) CreateTemplate(req dataaccess.CreateContractTemplateParams) *responses.ResponseData {
@@ -74,7 +95,7 @@ func (c *ContractServiceImpl) GetTemplateByAddress(address requests.GetTemplateB
 		Data:       template,
 	}
 }
-func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest) *responses.ResponseData {
+func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest, userID int) *responses.ResponseData {
 	template, err := c.repo.GetContractTemplateByAddress(context.Background(), req.Address)
 	if err != nil {
 		return &responses.ResponseData{
@@ -92,32 +113,33 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 			Data:       false,
 		}
 	}
-	parkingFee := common.IfNullInt64(req.ParkingFee,common.Float64PtrToInt64Ptr(&template.ParkingFee))
+	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
 	contract := &requests.CreateLeaseAgreementOnChainReq{
-		ContractCode:      req.Code,
-		TenantAddress:     "",
-		RoomID:            int64(req.RoomID),    // Converting int32 to int64
-		ActualPrice:       int(req.ActualPrice), // Converting float64 to int
-		PaymentMethod:     *req.PaymentMethod,
-		ElectricityMethod: common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),
-		ElectricityCost:   common.IfNullInt64((&req.ElectricityCost),common.Float64PtrToInt64Ptr(&template.ElectricityCost)),
-		WaterMethod:       common.IfNullStr(&req.WaterMethod, &template.WaterMethod),
-		WaterCost:         common.IfNullInt64(&req.WaterCost,common.Float64PtrToInt64Ptr(&template.WaterCost)),
-		InternetCost:      common.IfNullInt64(&req.InternetCost,common.Float64PtrToInt64Ptr(&template.InternetCost)),
-		ParkingFee:        parkingFee,
+		ContractCode:          req.Code,
+		TenantAddress:         "",
+		RoomID:                int64(req.RoomID),    // Converting int32 to int64
+		ActualPrice:           int(req.ActualPrice), // Converting float64 to int
+		PaymentMethod:         *req.PaymentMethod,
+		ElectricityMethod:     common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),
+		ElectricityCost:       common.IfNullInt64((&req.ElectricityCost), common.Float64PtrToInt64Ptr(&template.ElectricityCost)),
+		WaterMethod:           common.IfNullStr(&req.WaterMethod, &template.WaterMethod),
+		WaterCost:             common.IfNullInt64(&req.WaterCost, common.Float64PtrToInt64Ptr(&template.WaterCost)),
+		InternetCost:          common.IfNullInt64(&req.InternetCost, common.Float64PtrToInt64Ptr(&template.InternetCost)),
+		ParkingFee:            parkingFee,
 		DepositAmount:         int(req.Deposit),          // Assuming Deposit is a float64 in CreateLeaseAgreementOnChainReq as well
 		BeginDate:             req.BeginDate.Time.Unix(), // Assuming pgtype.Date type compatibility in CreateLeaseAgreementOnChainReq
 		EndDate:               req.EndDate.Time.Unix(),   // Assuming pgtype.Date type compatibility in CreateLeaseAgreementOnChainReq
 		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),
 		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),
 		GeneralResponsibility: generalResponsibility,
-		SignatureA:            signOfA,                   // Assuming you will handle converting the signature to a [6]byte type
+		SignatureA:            signOfA,                     // Assuming you will handle converting the signature to a [6]byte type
 		SignedTimeA:           req.SignedTimeA.Time.Unix(), // Assuming pgtype.Timestamptz type compatibility in CreateLeaseAgreementOnChainReq
 		ContractTemplateID:    int64(template.ID),          // Converting template.ID to int64
 	}
 
-	if _,err := c.blockchain.CreateLeaseAgreementProducerContract("", *contract); err != nil {
+	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
+	if _, err := c.blockchain.CreateLeaseAgreementProducerContract(*user.PrivateKeyHex, *contract); err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),

@@ -31,16 +31,48 @@ func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 
 // GetDetailInfo implements PaymentService.
 func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int) *responses.ResponseData {
-	if typeOfPayment == "contract" {
-		// Get deposit from contract on chain
-	} else if typeOfPayment == "bill" {
-		// Get total amount from billing on chain
-	} else if typeOfPayment == "return" {
-		// Get total return amount from return request on chain
-	}
-	//TODO: Get some info of user on chain 
-	
 	var response responses.GetPaymentInfoRes
+
+	// switch typeOfPayment {
+	// case "contract":
+	// 	_, depositAmount, err := getContractAmount(client, contractAddress, callerAddress)
+	// 	if err != nil {
+	// 		return &responses.ResponseData{
+	// 			StatusCode: http.StatusInternalServerError,
+	// 			Message:    responses.StatusInternalError,
+	// 			Data:       nil,
+	// 		}
+	// 	}
+	// 	response.Amount = depositAmount.String() // Sử dụng depositAmount
+	// case "bill":
+	// 	billingId := big.NewInt(int64(id)) // ID hóa đơn
+	// 	totalAmount, err := getBillingAmount(client, contractAddress, billingId)
+	// 	if err != nil {
+	// 		return &responses.ResponseData{
+	// 			StatusCode: http.StatusInternalServerError,
+	// 			Message:    responses.StatusInternalError,
+	// 			Data:       nil,
+	// 		}
+	// 	}
+	// 	response.Amount = totalAmount.String() // Sử dụng totalAmount
+	// case "return":
+	// 	_, totalReturnDeposit, err := getReturnRequestAmount(client, contractAddress, callerAddress)
+	// 	if err != nil {
+	// 		return &responses.ResponseData{
+	// 			StatusCode: http.StatusInternalServerError,
+	// 			Message:    responses.StatusInternalError,
+	// 			Data:       nil,
+	// 		}
+	// 	}
+	// 	response.Amount = totalReturnDeposit.String() // Sử dụng totalReturnDeposit
+	// default:
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusBadRequest,
+	// 		Message:    "Invalid type of payment",
+	// 		Data:       nil,
+	// 	}
+	// }
+	
 	prefix := fmt.Sprintf("SR%d", id)
 	response.TranferContent = common.GenerateCode(prefix)
 	response.BankName = "Techcombank"

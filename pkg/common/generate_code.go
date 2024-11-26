@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/base64"
 	"math/rand"
-	"math/rand"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -11,15 +10,6 @@ import (
 
 
 
-func GenerateCode(prefix string) string {
-	// Seed random generator
-	rand.Seed(time.Now().UnixNano())
-	
-	// Generate a random integer and convert it to string
-	randomID := strconv.Itoa(rand.Intn(1000000)) // Generates a random number up to 6 digits
-	
-	// Format the code as: prefix + random ID
-	return prefix + randomID
 func GenerateCode(prefix string) string {
 	// Seed random generator
 	rand.Seed(time.Now().UnixNano())

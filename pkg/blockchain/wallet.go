@@ -4,29 +4,40 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"path/filepath"
+	"crypto/ecdsa"
 	"smart-rental/global"
+	"encoding/hex"
+	"errors"
+	"crypto/rand"
 
-	"github.com/ethereum/go-ethereum/accounts/keystore"
+	
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 func CreateWallet(phoneNumber string) (string, string, error) {
-	// Define the keystore folder to store wallets
-	keystoreDir := "./keystore" // Ensure this folder is secured in production
-	ks := keystore.NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
-
-	// Password to encrypt the private key (for demo purposes, use stronger mechanisms in production)
-	password := global.Config.JWT.SecretKey
-
-	// Create a new account
-	account, err := ks.NewAccount(password)
+	// Generate a new private key
+	privateKey, err := ecdsa.GenerateKey(crypto.S256(), rand.Reader)
 	if err != nil {
 		return "", "", err
 	}
 
-	// Save the wallet details (you might want to store these in a more secure database)
-	return account.Address.Hex(), filepath.Join(keystoreDir, account.URL.Path), nil
+	// Convert the private key to a hex string
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+	privateKeyHex := hex.EncodeToString(privateKeyBytes)
+
+	// Derive the public key and Ethereum address
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return "", "", errors.New("cannot cast public key to ECDSA")
+	}
+
+	// Generate the Ethereum address
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+
+	// Return the private key (hex) and Ethereum address
+	return privateKeyHex, address, nil
 }
 
 func GetWalletBalance(walletAddress string) (*big.Int, error) {

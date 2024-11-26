@@ -46,7 +46,7 @@ func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *respons
 	opt := int32(common.GenerateDigitOTP())
 	req.Otp = &opt
 	// Generate Ethereum Wallet during registration
-	walletAddress, _, errWallet := blockchain.CreateWallet(user.PhoneNumber)
+	privateKeyHex, walletAddress, errWallet := blockchain.CreateWallet(user.PhoneNumber)
 	if errWallet != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -57,6 +57,7 @@ func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *respons
 
 	// Set wallet address in user params
 	req.WalletAddress = &walletAddress
+	req.PrivateKeyHex = &privateKeyHex
 	err := as.repo.CreateUser(context.Background(), *req)
 
 	if err != nil {
