@@ -10,3 +10,9 @@ sql:
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_pointers_for_null_types: true
+        overrides:
+          - column: "messages.rental_auto_content"
+            go_type:
+                import: "github.com/muhwyndhamhp/material-go/utils/typeext"
+                package: "typeext"
+                type: "JSONB"
