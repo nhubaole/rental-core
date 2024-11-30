@@ -60,7 +60,7 @@ func main() {
 	auth.GasLimit = uint64(3000000)
 	auth.Nonce = big.NewInt(int64(nonce))
 
-	a, tx, _, err := contract.DeployLeaseAgreementProducerContract(auth, client) //contract.DeployListingContract(auth, client)
+	a, tx, _, err := contract.DeployLeaseContractManagement(auth, client) //contract.DeployListingContract(auth, client)
 	if err != nil {
 		panic(err)
 	}
