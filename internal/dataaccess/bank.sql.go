@@ -101,3 +101,43 @@ func (q *Queries) GetAllBanks(ctx context.Context) ([]GetAllBanksRow, error) {
 	}
 	return items, nil
 }
+
+const getBankByID = `-- name: GetBankByID :one
+SELECT 
+    id,
+    bank_name,
+    bank_code,
+    short_name,
+    logo,
+    created_at,
+    updated_at
+FROM 
+    PUBLIC.BANKS
+WHERE 
+    id = $1
+`
+
+type GetBankByIDRow struct {
+	ID        int32            `json:"id"`
+	BankName  string           `json:"bank_name"`
+	BankCode  string           `json:"bank_code"`
+	ShortName *string          `json:"short_name"`
+	Logo      *string          `json:"logo"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) GetBankByID(ctx context.Context, id int32) (GetBankByIDRow, error) {
+	row := q.db.QueryRow(ctx, getBankByID, id)
+	var i GetBankByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.BankName,
+		&i.BankCode,
+		&i.ShortName,
+		&i.Logo,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

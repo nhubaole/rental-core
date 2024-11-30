@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"smart-rental/global"
 	"smart-rental/internal/constants"
@@ -12,75 +13,88 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"strconv"
 	"time"
 )
 
 type PaymentServiceImpl struct {
 	repo           *dataaccess.Queries
-	repo           *dataaccess.Queries
 	storageService StorageSerivce
 }
 
-
-
 func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
 	return &PaymentServiceImpl{
-		repo:           dataaccess.New(global.Db),
 		repo:           dataaccess.New(global.Db),
 		storageService: storage,
 	}
 }
 
 // GetDetailInfo implements PaymentService.
-func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int) *responses.ResponseData {
-	var response responses.GetPaymentInfoRes
+func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *responses.ResponseData {
+	var amount = 0.0
+	contractId := int32(0)
 
-	// switch typeOfPayment {
-	// case "contract":
-	// 	_, depositAmount, err := getContractAmount(client, contractAddress, callerAddress)
-	// 	if err != nil {
-	// 		return &responses.ResponseData{
-	// 			StatusCode: http.StatusInternalServerError,
-	// 			Message:    responses.StatusInternalError,
-	// 			Data:       nil,
-	// 		}
-	// 	}
-	// 	response.Amount = depositAmount.String() // Sử dụng depositAmount
-	// case "bill":
-	// 	billingId := big.NewInt(int64(id)) // ID hóa đơn
-	// 	totalAmount, err := getBillingAmount(client, contractAddress, billingId)
-	// 	if err != nil {
-	// 		return &responses.ResponseData{
-	// 			StatusCode: http.StatusInternalServerError,
-	// 			Message:    responses.StatusInternalError,
-	// 			Data:       nil,
-	// 		}
-	// 	}
-	// 	response.Amount = totalAmount.String() // Sử dụng totalAmount
-	// case "return":
-	// 	_, totalReturnDeposit, err := getReturnRequestAmount(client, contractAddress, callerAddress)
-	// 	if err != nil {
-	// 		return &responses.ResponseData{
-	// 			StatusCode: http.StatusInternalServerError,
-	// 			Message:    responses.StatusInternalError,
-	// 			Data:       nil,
-	// 		}
-	// 	}
-	// 	response.Amount = totalReturnDeposit.String() // Sử dụng totalReturnDeposit
-	// default:
-	// 	return &responses.ResponseData{
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    "Invalid type of payment",
-	// 		Data:       nil,
-	// 	}
-	// }
-	
+	if typeOfPayment == "contract" {
+		contractId = id
+	} else if typeOfPayment == "bill" {
+		bill, err := p.repo.GetBillByID(context.Background(), id)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    responses.StatusInternalError,
+				Data:       nil,
+			}
+		}
+		amount = bill.TotalAmount
+		contractId = bill.ContractID
+	} else if typeOfPayment == "return" {
+		returnRequest, err := p.repo.GetBillByID(context.Background(), id)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    responses.StatusInternalError,
+				Data:       nil,
+			}
+		}
+		amount = returnRequest.TotalAmount
+		contractId = returnRequest.ContractID
+	}
+
+	//get data user, amount on chain
+	fmt.Printf("Contract ID: %d\n", contractId)
+
+	userId := int32(1)
+
+	userBankInfo, err := p.repo.GetBankInfoByUserID(context.Background(), userId)
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    responses.StatusInternalError,
+			Data:       nil,
+		}
+	}
+
+	bankInfo, err := p.repo.GetBankByID(context.Background(), userBankInfo.BankID)
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    responses.StatusInternalError,
+			Data:       nil,
+		}
+	}
+
+
+	var response responses.GetPaymentInfoRes
 	prefix := fmt.Sprintf("SR%d", id)
 	response.TranferContent = common.GenerateCode(prefix)
-	response.BankName = "Techcombank"
-	response.AccountName = "Le Bao Nhu"
-	response.AccountNumber = "092321234123"
-	response.QrUrl = "httpasdasdakjdnakasdnasdk"
+	response.BankName = bankInfo.BankName
+	response.AccountName = userBankInfo.AccountName
+	response.AccountNumber = userBankInfo.AccountNumber
+	encodedName := url.QueryEscape(userBankInfo.AccountName)
+	response.QrUrl = "https://img.vietqr.io/image/" + bankInfo.BankCode + "-" + userBankInfo.AccountNumber + "-compact2.png?amount=" + strconv.Itoa(int(amount)) + "&addInfo=" + response.TranferContent + "&accountName=" + encodedName
+	response.Amount = amount
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,

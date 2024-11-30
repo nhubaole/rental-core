@@ -11,5 +11,5 @@ type PaymentService interface {
 	GetAllBanks() *responses.ResponseData
 	GetAll()*responses.ResponseData
 	Confirm(id int) *responses.ResponseData
-	GetDetailInfo(typeOfPayment string, id int) *responses.ResponseData
+	GetDetailInfo(typeOfPayment string, id int32) *responses.ResponseData
 }

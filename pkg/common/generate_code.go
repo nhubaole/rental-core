@@ -3,9 +3,7 @@ package common
 import (
 	"encoding/base64"
 	"math/rand"
-	"math/rand"
 	"strconv"
-	"time"
 	"time"
 	"unicode/utf8"
 )

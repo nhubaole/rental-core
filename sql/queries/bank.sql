@@ -29,3 +29,17 @@ SELECT id,
        created_at,
        updated_at
 FROM PUBLIC.BANKS;
+
+-- name: GetBankByID :one
+SELECT 
+    id,
+    bank_name,
+    bank_code,
+    short_name,
+    logo,
+    created_at,
+    updated_at
+FROM 
+    PUBLIC.BANKS
+WHERE 
+    id = $1;
