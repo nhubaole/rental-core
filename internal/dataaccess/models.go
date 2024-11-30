@@ -290,3 +290,14 @@ type UserBank struct {
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }
+
+type UserBank struct {
+	UserID        int32            `json:"user_id"`
+	BankID        int32            `json:"bank_id"`
+	AccountNumber string           `json:"account_number"`
+	AccountName   string           `json:"account_name"`
+	CardNumber    *string          `json:"card_number"`
+	Currency      *string          `json:"currency"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}

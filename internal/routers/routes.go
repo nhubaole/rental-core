@@ -21,6 +21,7 @@ func NewRouter(
 	ms *controllers.MessageController,
 	conversation *controllers.ConversationController,
 	payment *controllers.PaymentController,
+	payment *controllers.PaymentController,
 
 ) *gin.Engine {
 	r := gin.Default()
