@@ -9,12 +9,13 @@ import (
 	"context"
 )
 
-const createConversation = `-- name: CreateConversation :exec
+const createConversation = `-- name: CreateConversation :one
 INSERT INTO public.conversations
 (user_a, user_b, last_message_id, created_at)
 VALUES(
     $1, $2, $3, now()
 )
+RETURNING id
 `
 
 type CreateConversationParams struct {
@@ -23,9 +24,11 @@ type CreateConversationParams struct {
 	LastMessageID *int32 `json:"last_message_id"`
 }
 
-func (q *Queries) CreateConversation(ctx context.Context, arg CreateConversationParams) error {
-	_, err := q.db.Exec(ctx, createConversation, arg.UserA, arg.UserB, arg.LastMessageID)
-	return err
+func (q *Queries) CreateConversation(ctx context.Context, arg CreateConversationParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createConversation, arg.UserA, arg.UserB, arg.LastMessageID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getConversationByUserID = `-- name: GetConversationByUserID :many

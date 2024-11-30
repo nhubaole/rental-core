@@ -10,12 +10,12 @@ import (
 	"smart-rental/global"
 	"smart-rental/internal/constants"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/common"
 	c "smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strings"
 	"time"
-
 )
 
 type RoomServiceImpl struct {
@@ -33,7 +33,7 @@ func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) Ro
 }
 
 // CreateRoom implements RoomService.
-func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.ResponseData {
+func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *responses.ResponseData {
 	// create new room
 	if exist, _ := r.storageService.IsBucketExists(constants.BUCKET_NAME); !exist {
 		err := r.storageService.CreateBucket(constants.BUCKET_NAME)
@@ -56,8 +56,7 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 		}
 	}
 
-	// Add to blockchain
-	privateKeyHex := "e5a0d26cd7866afbea195c376b75a76d86d65e458c25f4702c46f1378ea0ce42"
+	user, err := r.repo.GetUserByID(context.Background(), int32(userID))
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -65,6 +64,15 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 			Data:       false,
 		}
 	}
+	// Add to blockchain
+	// privateKeyHex := "e5a0d26cd7866afbea195c376b75a76d86d65e458c25f4702c46f1378ea0ce42"
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 	paramsOnChain := &requests.CreateRoomOnChainReq {
 		RoomID: int64(id),
 		TotalPrice: int(*req.TotalPrice),
@@ -73,7 +81,7 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 		IsRent: req.IsRent,
 	}
 
-	if _,err := r.blockchainService.CreateRoomOnBlockchain(privateKeyHex, *paramsOnChain); err != nil {
+	if _,err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
@@ -103,8 +111,9 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 
 	}
 
+	room, _ := r.repo.GetRoomByID(context.Background(), int32(id))
 	var updateRoom dataaccess.UpdateRoomParams
-	updateRoom.ID = id
+	common.MapStruct(room, &updateRoom)
 	updateRoom.RoomImages = urls
 	_, updateErr := r.repo.UpdateRoom(context.Background(), updateRoom)
 	if updateErr != nil {
@@ -117,13 +126,21 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       true,
+		Data:       id,
 	}
 }
 
 // GetRooms implements RoomService.
 func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
 	rooms, err := r.repo.GetRooms(context.Background())
+
+	if len(rooms) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusNoData,
+			Data:       []dataaccess.GetRoomsRow{},
+		}
+	}
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -159,24 +176,25 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	}
 
 	//Fetch room details from the blockchain
-	roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
-	if err != nil {
-		if (roomData.ID == 0) {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       false,
-			}
-		}
-	}
+	// roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
+	// if err != nil {
+	// 	if (roomData.ID == 0) {
+	// 		return &responses.ResponseData{
+	// 			StatusCode: http.StatusInternalServerError,
+	// 			Message:    err.Error(),
+	// 			Data:       false,
+	// 		}
+	// 	}
+	// }
+
 
 	// Override attribute on chain to response
-	roomData.TotalPrice = roomData.TotalPrice
-	roomData.Deposit = float64(roomOnChain.Deposit)
-	roomData.Status = int32(roomOnChain.Status)
-	roomData.IsRent = roomOnChain.IsRent
-	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
-	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
+	// roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
+	// roomData.Deposit = float64(roomOnChain.Deposit)
+	// roomData.Status = int32(roomOnChain.Status)
+	// roomData.IsRent = roomOnChain.IsRent
+	// roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
+	// roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
@@ -188,7 +206,14 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 // SearchRoomByAddress implements RoomService.
 func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.ResponseData {
 	rooms, err := r.repo.SearchRoomByAddress(context.Background(), &address)
-
+	
+	if len(rooms) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusNoData,
+			Data:       []dataaccess.SearchRoomByAddressRow{},
+		}
+	}
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -201,6 +226,18 @@ func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.Respons
 		Message:    responses.StatusSuccess,
 		Data:       rooms,
 	}
+}
+
+type BankAPI struct {
+	ID               int    `json:"id"`
+	Name             string `json:"name"`
+	Code             string `json:"code"`
+	Bin              string `json:"bin"`
+	ShortName        string `json:"shortName"`
+	Logo             string `json:"logo"`
+	TransferSupported int    `json:"transferSupported"`
+	LookupSupported   int    `json:"lookupSupported"`
+	SwiftCode        string `json:"swift_code"`
 }
 
 // LikeRoom implements RoomService.

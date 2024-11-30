@@ -45,12 +45,18 @@ func(cc ContractController) GetTemplateByAddress(ctx *gin.Context) {
 
 func(cc ContractController) Create(ctx *gin.Context) {
 	var req	requests.CreateContractRequest
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
-
-	result := cc.services.CreateContract(req)
+	
+	result := cc.services.CreateContract(req, int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
 }
 
@@ -105,5 +111,17 @@ func (cc ContractController) DeclineContract(ctx *gin.Context) {
 	}
 
 	result := cc.services.DeclineContract(id, int(currentUser.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (cc ContractController) GetByUser(ctx *gin.Context) {
+	
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	result := cc.services.GetContractByUser(int(currentUser.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

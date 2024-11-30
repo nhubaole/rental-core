@@ -14,12 +14,11 @@ INSERT INTO PUBLIC.BILLING
     total_amount, --10
     month, --11
     year, --12
-    paid_time,  --13
-    created_at,  --14
+    created_at,  --13
     updated_at --15
 ) VALUES
 (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now(), now()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  now(), now()
 );
 
 
@@ -31,7 +30,6 @@ SELECT b.code,
         b.total_amount,
         b.month,
         b.year,
-        b.paid_time,
         b.created_at,
         b.updated_at
 FROM PUBLIC.BILLING as b
@@ -48,7 +46,6 @@ SELECT  code,
         total_amount,
         month,
         year,
-        paid_time,
         status,
         created_at,
         updated_at
@@ -92,7 +89,6 @@ SELECT  code,
         total_amount,
         month,
         year,
-        paid_time,
         status,
         created_at,
         updated_at

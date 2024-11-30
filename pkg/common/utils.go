@@ -17,6 +17,12 @@ func Float64PtrToInt64Ptr(f *float64) *int64 {
 	return &i
 }
 
+func IntToFloat64Ptr(i int) *float64 {
+	
+	f := float64(i)
+	return &f
+}
+
 func IfNullStr(requestVal, templateVal *string) string {
 	if requestVal != nil && *requestVal != "" {
 		return *requestVal
