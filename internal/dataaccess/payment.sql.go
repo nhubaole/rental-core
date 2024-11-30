@@ -9,12 +9,25 @@ import (
 	"context"
 )
 
+const confirmPayment = `-- name: ConfirmPayment :one
+UPDATE public.payments
+SET status = 1
+WHERE id = $1
+RETURNING id
+`
+
+func (q *Queries) ConfirmPayment(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, confirmPayment, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createPayment = `-- name: CreatePayment :exec
 INSERT INTO public.payments(
-    code, 
-    sender_id,
-    bill_id,
-    contract_id,
+    code, --1
+    sender_id, --2
+    bill_id, --3
+    contract_id, --4
     amount, 
     status, 
     return_request_id, 
@@ -50,6 +63,43 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) er
 		arg.EvidenceImage,
 	)
 	return err
+}
+
+const getAllPayments = `-- name: GetAllPayments :many
+SELECT id, code, sender_id, bill_id, contract_id, amount, status, return_request_id, transfer_content, evidence_image, paid_time
+FROM public.payments
+`
+
+func (q *Queries) GetAllPayments(ctx context.Context) ([]Payment, error) {
+	rows, err := q.db.Query(ctx, getAllPayments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.SenderID,
+			&i.BillID,
+			&i.ContractID,
+			&i.Amount,
+			&i.Status,
+			&i.ReturnRequestID,
+			&i.TransferContent,
+			&i.EvidenceImage,
+			&i.PaidTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getPaymentByID = `-- name: GetPaymentByID :one

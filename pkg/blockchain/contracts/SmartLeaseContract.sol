@@ -240,6 +240,23 @@ contract SmartLeaseContract {
         agreement.postRentalStatus = PostRentalStatus.Completed;
     }
 
+    function getContractAmount() public view returns (uint256 actualPrice, uint256 depositAmount) {
+        return (agreementInfo.actualPrice, agreementInfo.depositAmount);
+    }
+
+    function getBillingAmount(uint256 billingId) public view returns (uint256 totalAmount, uint256 paidTime) {
+        require(billingId > 0 && billingId <= billingRecords.length, "Invalid billing ID");
+        BillingRecord memory bill = billingRecords[billingId - 1];
+        return (bill.totalAmount, bill.paidTime);
+    }
+
+    function getReturnRequestAmount() public view returns (uint256 deductAmount, uint256 totalReturnDeposit) {
+        require(returnRequest.requestId != 0, "No return request exists");
+        return (returnRequest.deductAmount, returnRequest.totalReturnDeposit);
+    }
+
+
+
     // Helper function to convert uint to string
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
         if (_i == 0) {

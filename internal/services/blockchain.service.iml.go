@@ -31,6 +31,47 @@ func NewBlockchainServiceImpl() BlockchainService {
 	}
 }
 
+// GetAllContractsOnChain implements BlockchainService.
+func (b *BlockchainServiceImpl) GetAllContractsOnChain(participantAddress string) ([]responses.ContractOnChainRes, error) {
+    // Tạo một instance của hợp đồng LeaseAgreementProducerContract
+    leaseContract, err := room.NewLeaseAgreementProducerContract(b.lapcAddress, b.client)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create lease agreement producer contract instance: %w", err)
+    }
+
+    // Gọi hàm getContractsByParticipant từ smart contract
+    participant := common.HexToAddress(participantAddress)
+    contractAddresses, err := leaseContract.GetContractsByParticipant(&bind.CallOpts{}, participant)
+    if err != nil {
+        return nil, fmt.Errorf("failed to retrieve contracts from blockchain: %w", err)
+    }
+
+    // Tạo danh sách kết quả để trả về
+    var contracts []responses.ContractOnChainRes
+    for _, contractAddress := range contractAddresses {
+        // Lấy chi tiết từng hợp đồng bằng hàm getLeaseContractDetails
+        contractDetails, err := leaseContract.GetLeaseContractDetails(&bind.CallOpts{}, contractAddress)
+        if err != nil {
+            return nil, fmt.Errorf("failed to retrieve contract details for address %s: %w", contractAddress.Hex(), err)
+        }
+
+        // Thêm thông tin hợp đồng vào danh sách
+        contracts = append(contracts, responses.ContractOnChainRes{
+            ContractAddress: contractAddress.Hex(),
+            Landlord:        contractDetails.Landlord.Hex(),
+            Tenant:          contractDetails.Tenant.Hex(),
+            RoomID:          contractDetails.RoomId.Int64(),
+            ActualPrice:     contractDetails.ActualPrice.Int64(),
+            DepositAmount:   contractDetails.DepositAmount.Int64(),
+            BeginDate:       contractDetails.BeginDate.Int64(),
+            EndDate:         contractDetails.EndDate.Int64(),
+            ContractCode:    contractDetails.ContractCode,
+        })
+    }
+
+    return contracts, nil
+}
+
 // CreateLeaseAgreementProducerContract creates a new lease agreement on the blockchain
 func (b *BlockchainServiceImpl) CreateLeaseAgreementProducerContract(
 	privateKeyHex string,
@@ -96,6 +137,7 @@ func (b *BlockchainServiceImpl) CreateLeaseAgreementProducerContract(
 		return "", fmt.Errorf("failed to create lease agreement on blockchain: %w", err)
 	}
 
+	fmt.Println(tx.Hash())
 	// Return the transaction hash
 	return tx.Hash().Hex(), nil
 }

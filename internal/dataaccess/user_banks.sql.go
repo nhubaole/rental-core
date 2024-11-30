@@ -44,6 +44,35 @@ func (q *Queries) CreateUserBank(ctx context.Context, arg CreateUserBankParams) 
 	return err
 }
 
+const getBankInfoByUserID = `-- name: GetBankInfoByUserID :one
+SELECT user_id, bank_id, account_number, account_name, card_number, currency
+FROM public.user_banks
+WHERE user_id = $1
+`
+
+type GetBankInfoByUserIDRow struct {
+	UserID        int32   `json:"user_id"`
+	BankID        int32   `json:"bank_id"`
+	AccountNumber string  `json:"account_number"`
+	AccountName   string  `json:"account_name"`
+	CardNumber    *string `json:"card_number"`
+	Currency      *string `json:"currency"`
+}
+
+func (q *Queries) GetBankInfoByUserID(ctx context.Context, userID int32) (GetBankInfoByUserIDRow, error) {
+	row := q.db.QueryRow(ctx, getBankInfoByUserID, userID)
+	var i GetBankInfoByUserIDRow
+	err := row.Scan(
+		&i.UserID,
+		&i.BankID,
+		&i.AccountNumber,
+		&i.AccountName,
+		&i.CardNumber,
+		&i.Currency,
+	)
+	return i, err
+}
+
 const updateUserBank = `-- name: UpdateUserBank :one
 UPDATE user_banks
 SET

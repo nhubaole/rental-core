@@ -70,13 +70,14 @@ func NewRouter(
 	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
 
 	contractRouter := baseRouter.Group("/contracts")
-	contractRouter.POST("/template", cc.CreateTemplate)
-	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
-	contractRouter.POST("", cc.Create)
-	contractRouter.GET("/:id", cc.GetByID)
+	contractRouter.POST("/template",middlewares.AuthenMiddleware, cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address",middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
+	contractRouter.POST("",middlewares.AuthenMiddleware, cc.Create)
+	contractRouter.GET("/:id",middlewares.AuthenMiddleware, cc.GetByID)
 	contractRouter.GET("/status/:statusID", cc.GetByStatus)
 	contractRouter.PUT("/sign", middlewares.AuthenMiddleware, cc.SignContract)
 	contractRouter.PUT("/decline/:id", middlewares.AuthenMiddleware, cc.DeclineContract)
+	contractRouter.GET("/get-by-user", middlewares.AuthenMiddleware, cc.GetByUser)
 
 	returnRequestRouter := baseRouter.Group("/return-requests")
 	returnRequestRouter.POST("", middlewares.AuthenMiddleware, returnRequestController.Create)
@@ -100,5 +101,9 @@ func NewRouter(
 	paymentRouter := baseRouter.Group("/payments")
 	paymentRouter.GET("/:id", middlewares.AuthenMiddleware, payment.GetByID)
 	paymentRouter.POST("", middlewares.AuthenMiddleware, payment.Create)
+	paymentRouter.GET("/banks", middlewares.AuthenMiddleware, payment.GetAllBanks)
+	paymentRouter.GET("", middlewares.AuthenMiddleware, payment.GetAll)
+	paymentRouter.PUT("/:id", middlewares.AuthenMiddleware, payment.Confirm)
+	paymentRouter.GET("/detail-info", middlewares.AuthenMiddleware, payment.GetPaymentInfo)
 	return r
 }

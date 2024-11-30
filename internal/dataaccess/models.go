@@ -277,6 +277,7 @@ type User struct {
 	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
 	Otp           *int32             `json:"otp"`
 	WalletAddress *string            `json:"wallet_address"`
+	PrivateKeyHex *string            `json:"private_key_hex"`
 }
 
 type UserBank struct {
