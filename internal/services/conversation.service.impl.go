@@ -48,7 +48,7 @@ func (c *ConversationServiceImpl) GetByUserID(userID int) *responses.ResponseDat
 	conversations, err := c.repo.GetConversationByUserID(context.Background(), int32(userID))
 	for _, conversation := range conversations {
 		
-		lastMessage, messErr := c.repo.GetMessageByID(context.Background(), conversation.ID)
+		lastMessage, messErr := c.repo.GetMessageByID(context.Background(), *conversation.LastMessageID)
 		if messErr != nil {
 			return &responses.ResponseData{
 				StatusCode: http.StatusInternalServerError,

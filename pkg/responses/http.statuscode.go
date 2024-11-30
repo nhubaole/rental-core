@@ -8,7 +8,7 @@ const (
 	StatusResourceNotFound = "resource not found"
 	StatusUnAuthorize = "unauthorize"
 	StatusAuthorizeFail = "Mật khẩu hoặc số điện thoại không đúng"
-	StatusNoData = "no data yet"
+	StatusNoData = "no data"
 	StatusInternalError = "server error"
 	StatusVerifySuccess = "verify success"
 )
