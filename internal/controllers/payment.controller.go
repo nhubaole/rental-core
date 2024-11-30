@@ -81,6 +81,6 @@ func (c PaymentController) GetPaymentInfo(ctx *gin.Context) {
 			responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 			return
 		}
-	result := c.services.GetDetailInfo(typeOfPayment, id)
+	result := c.services.GetDetailInfo(typeOfPayment, int32(id))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

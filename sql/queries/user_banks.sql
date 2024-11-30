@@ -33,6 +33,16 @@ RETURNING
     updated_at;
 
 -- name: GetBankInfoByUserID :one
-SELECT user_id, bank_id, account_number, account_name, card_number, currency
-FROM public.user_banks
-WHERE user_id = $1;
+SELECT 
+    user_id, 
+    bank_id, 
+    account_number, 
+    account_name, 
+    card_number, 
+    currency, 
+    created_at, 
+    updated_at
+FROM 
+    user_banks
+WHERE 
+    user_id = $1;
