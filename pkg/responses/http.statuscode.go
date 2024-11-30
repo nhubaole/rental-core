@@ -7,7 +7,7 @@ const (
 	StatusUserExist = "user already exists"
 	StatusResourceNotFound = "resource not found"
 	StatusUnAuthorize = "unauthorize"
-	StatusAuthorizeFail = "invalid phone number or password"
+	StatusAuthorizeFail = "Mật khẩu hoặc số điện thoại không đúng"
 	StatusNoData = "no data"
 	StatusInternalError = "server error"
 	StatusVerifySuccess = "verify success"

@@ -267,15 +267,16 @@ type Transaction struct {
 }
 
 type User struct {
-	ID          int32              `json:"id"`
-	PhoneNumber string             `json:"phone_number"`
-	FullName    string             `json:"full_name"`
-	Password    string             `json:"password"`
-	Address     *string            `json:"address"`
-	Role        int32              `json:"role"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
-	Otp         *int32             `json:"otp"`
+	ID            int32              `json:"id"`
+	PhoneNumber   string             `json:"phone_number"`
+	FullName      string             `json:"full_name"`
+	Password      string             `json:"password"`
+	Address       *string            `json:"address"`
+	Role          int32              `json:"role"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	Otp           *int32             `json:"otp"`
+	WalletAddress *string            `json:"wallet_address"`
 }
 
 type UserBank struct {

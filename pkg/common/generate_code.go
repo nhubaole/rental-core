@@ -4,30 +4,24 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 	"unicode/utf8"
 )
 
-// user id + room id + date
-// user id + bill id + date
-var secret = "nhar94##coratnhieue@edat"
+
 var b = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
 
-func GenerateCode(context string, key1 int, key2 int, key3 int) string {
-	// Combine key1 and key2, key3 into a single integer
-	combinedID := strconv.Itoa(key1) + strconv.Itoa(key2) + strconv.Itoa(key3)
-	fmt.Println(combinedID )
-	plainText := []byte(combinedID)
-	block, err := aes.NewCipher([]byte(secret))
-	if err != nil {
-		fmt.Println(err.Error())
-		return ""
-	}
-	cfb := cipher.NewCFBEncrypter(block, b)
-	cipherText := make([]byte, len(plainText))
-	cfb.XORKeyStream(cipherText, plainText)
-	return context + StringToAsciiNumbers(Encode(cipherText))
+func GenerateCode(prefix string) string {
+	// Seed random generator
+	rand.Seed(time.Now().UnixNano())
+	
+	// Generate a random integer and convert it to string
+	randomID := strconv.Itoa(rand.Intn(1000000)) // Generates a random number up to 6 digits
+	
+	// Format the code as: prefix + random ID
+	return prefix + randomID
 }
 func Encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)

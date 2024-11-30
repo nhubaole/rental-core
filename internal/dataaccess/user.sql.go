@@ -20,20 +20,23 @@ INSERT INTO PUBLIC.USERS
     password,
     role,
     otp,
+    wallet_address,
     created_at
+    
 ) VALUES
 (
-    $1,$2,$3,$4,$5,$6,now()
+    $1,$2,$3,$4,$5,$6, $7,now()
 )
 `
 
 type CreateUserParams struct {
-	PhoneNumber string  `json:"phone_number"`
-	FullName    string  `json:"full_name"`
-	Address     *string `json:"address"`
-	Password    string  `json:"password"`
-	Role        int32   `json:"role"`
-	Otp         *int32  `json:"otp"`
+	PhoneNumber   string  `json:"phone_number"`
+	FullName      string  `json:"full_name"`
+	Address       *string `json:"address"`
+	Password      string  `json:"password"`
+	Role          int32   `json:"role"`
+	Otp           *int32  `json:"otp"`
+	WalletAddress *string `json:"wallet_address"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -44,22 +47,24 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.Password,
 		arg.Role,
 		arg.Otp,
+		arg.WalletAddress,
 	)
 	return err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, phone_number, full_name, address, created_at
+SELECT id, phone_number, full_name, address, wallet_address, created_at
 FROM PUBLIC.USERS
 WHERE id = $1 AND deleted_at IS NULL
 `
 
 type GetUserByIDRow struct {
-	ID          int32              `json:"id"`
-	PhoneNumber string             `json:"phone_number"`
-	FullName    string             `json:"full_name"`
-	Address     *string            `json:"address"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ID            int32              `json:"id"`
+	PhoneNumber   string             `json:"phone_number"`
+	FullName      string             `json:"full_name"`
+	Address       *string            `json:"address"`
+	WalletAddress *string            `json:"wallet_address"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, error) {
@@ -70,6 +75,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, er
 		&i.PhoneNumber,
 		&i.FullName,
 		&i.Address,
+		&i.WalletAddress,
 		&i.CreatedAt,
 	)
 	return i, err

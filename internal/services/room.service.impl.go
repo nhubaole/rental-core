@@ -10,29 +10,31 @@ import (
 	"smart-rental/global"
 	"smart-rental/internal/constants"
 	"smart-rental/internal/dataaccess"
-	"smart-rental/pkg/common"
+	c "smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strings"
 	"time"
+
 )
 
 type RoomServiceImpl struct {
 	repo           *dataaccess.Queries
 	storageService StorageSerivce
+	blockchainService BlockchainService
 }
 
-
-
-func NewRoomServiceImpl(storage StorageSerivce) RoomService {
+func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
 		repo:           dataaccess.New(global.Db),
 		storageService: storage,
+		blockchainService: blockchain,
 	}
 }
 
 // CreateRoom implements RoomService.
 func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.ResponseData {
+	// create new room
 	if exist, _ := r.storageService.IsBucketExists(constants.BUCKET_NAME); !exist {
 		err := r.storageService.CreateBucket(constants.BUCKET_NAME)
 		if err != nil {
@@ -44,8 +46,7 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 		}
 	}
 	var params dataaccess.CreateRoomParams
-
-	common.MapStruct(req, &params)
+	c.MapStruct(req, &params)
 	id, err := r.repo.CreateRoom(context.Background(), params)
 	if err != nil {
 		return &responses.ResponseData{
@@ -54,14 +55,41 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm) *responses.Res
 			Data:       false,
 		}
 	}
+
+	// Add to blockchain
+	privateKeyHex := "e5a0d26cd7866afbea195c376b75a76d86d65e458c25f4702c46f1378ea0ce42"
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+	paramsOnChain := &requests.CreateRoomOnChainReq {
+		RoomID: int64(id),
+		TotalPrice: int(*req.TotalPrice),
+		Deposit: int64(req.Deposit),
+		Status: int64(req.Status),
+		IsRent: req.IsRent,
+	}
+
+	if _,err := r.blockchainService.CreateRoomOnBlockchain(privateKeyHex, *paramsOnChain); err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	// update images url
 	var urls []string
 	for _, fileName := range req.RoomImages {
-		f, _ := fileName.Open() 
+		f, _ := fileName.Open()
 		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 		fileExt := filepath.Ext(fileName.Filename)
 		contentType := mime.TypeByExtension(fileExt)
 		roomID := fmt.Sprintf("room_%d", id)
-		objKey := fmt.Sprintf("%s/%s/%d%s",constants.ROOM_OBJ, roomID, timestamp, fileExt)
+		objKey := fmt.Sprintf("%s/%s/%d%s", constants.ROOM_OBJ, roomID, timestamp, fileExt)
 
 		url, err := r.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 		if err != nil {
@@ -122,19 +150,47 @@ func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
 
 // GetRoomByID implements RoomService.
 func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
-	room, err := r.repo.GetRoomByID(context.Background(), int32(id))
-
+	// Fetch from database
+	roomData, err := r.repo.GetRoomByID(context.Background(), int32(id))
 	if err != nil {
+		if (roomData.ID == 0) {
+			return &responses.ResponseData{
+				StatusCode: http.StatusNoContent,
+				Message:    "Phòng không tồn tại",
+				Data:       false,
+			}
+		}
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
 			Data:       nil,
 		}
 	}
+
+	//Fetch room details from the blockchain
+	roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
+	if err != nil {
+		if (roomData.ID == 0) {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+
+	// Override attribute on chain to response
+	roomData.TotalPrice = roomData.TotalPrice
+	roomData.Deposit = float64(roomOnChain.Deposit)
+	roomData.Status = int32(roomOnChain.Status)
+	roomData.IsRent = roomOnChain.IsRent
+	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
+	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       room,
+		Data:       roomData,
 	}
 }
 
@@ -249,7 +305,7 @@ func (r *RoomServiceImpl) GetRoomByStatus(status int) *responses.ResponseData {
 // UpdateRoom implements RoomService.
 func (r *RoomServiceImpl) UpdateRoom(req requests.UpdateRoomRequest) *responses.ResponseData {
 	// delete file from s3
-	for _, urlString :=range req.DeleteFiles{
+	for _, urlString := range req.DeleteFiles {
 		parsedURL, err := url.Parse(urlString)
 		if err != nil {
 			return &responses.ResponseData{
@@ -275,12 +331,12 @@ func (r *RoomServiceImpl) UpdateRoom(req requests.UpdateRoomRequest) *responses.
 	// update file to s3
 	var urls []string
 	for _, fileName := range req.RoomImages {
-		f, _ := fileName.Open() 
+		f, _ := fileName.Open()
 		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 		fileExt := filepath.Ext(fileName.Filename)
 		contentType := mime.TypeByExtension(fileExt)
 		roomID := fmt.Sprintf("room_%d", req.ID)
-		objKey := fmt.Sprintf("%s/%s/%d%s",constants.ROOM_OBJ, roomID, timestamp, fileExt)
+		objKey := fmt.Sprintf("%s/%s/%d%s", constants.ROOM_OBJ, roomID, timestamp, fileExt)
 
 		url, err := r.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
 		if err != nil {
@@ -296,7 +352,7 @@ func (r *RoomServiceImpl) UpdateRoom(req requests.UpdateRoomRequest) *responses.
 
 	// update data in db
 	var param dataaccess.UpdateRoomParams
-	common.MapStruct(req,&param)
+	c.MapStruct(req, &param)
 	param.RoomImages = urls
 
 	_, updateErr := r.repo.UpdateRoom(context.Background(), param)

@@ -94,8 +94,18 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 			Data:       nil,
 		}
 	}
+	// balance, errGetWallet := blockchain.GetWalletBalance(*user.WalletAddress)
+	// if errGetWallet != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    errGetWallet.Error(),
+	// 		Data:       nil,
+	// 	}
+	// }
+	// balanceStr := string(balance.String())
+	// user.WalletAddress = &balanceStr
 	return &responses.ResponseData{
-		StatusCode: http.StatusOK,
+		StatusCode: http.StatusOK, 	 	
 		Message:    responses.StatusSuccess,
 		Data:       user,
 	}
