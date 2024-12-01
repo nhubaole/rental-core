@@ -176,25 +176,25 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	}
 
 	//Fetch room details from the blockchain
-	// roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
-	// if err != nil {
-	// 	if (roomData.ID == 0) {
-	// 		return &responses.ResponseData{
-	// 			StatusCode: http.StatusInternalServerError,
-	// 			Message:    err.Error(),
-	// 			Data:       false,
-	// 		}
-	// 	}
-	// }
+	roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
+	if err != nil {
+		if (roomData.ID == 0) {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
 
 
 	// Override attribute on chain to response
-	// roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
-	// roomData.Deposit = float64(roomOnChain.Deposit)
-	// roomData.Status = int32(roomOnChain.Status)
-	// roomData.IsRent = roomOnChain.IsRent
-	// roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
-	// roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
+	roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
+	roomData.Deposit = float64(roomOnChain.Deposit)
+	roomData.Status = int32(roomOnChain.Status)
+	roomData.IsRent = roomOnChain.IsRent
+	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
+	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,

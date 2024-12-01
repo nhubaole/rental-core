@@ -60,5 +60,6 @@ type ElasticSearch struct {
 type SmartContract struct {
 	ListingContractAddress         string `mapstructure:"listing_contract"`
 	LeaseAgreementProducerContract string `mapstructure:"lease_agreement_producer_contract"`
-	LeaseContractManagement string `mapstructure:"lease_contract_management"`
+	LeaseContractManagement        string `mapstructure:"lease_contract_management"`
+	ContractManagement             string `mapstructure:"contract_management"`
 }

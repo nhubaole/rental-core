@@ -56,3 +56,30 @@ type CreateRoomOnChainReq struct {
 	Status     int64
 	IsRent     bool
 }
+
+type CreateMContractOnChainReq struct {
+	ContractId            int64
+	ContractCode          string
+	LandlordId            int64
+	TenantId              int64
+	RoomId                int64
+	ActualPrice           int64
+	Deposit               int64
+	BeginDate             int64
+	EndDate               int64
+	PaymentMethod         string
+	ElectricityMethod     string
+	ElectricityCost       int64
+	WaterMethod           string
+	WaterCost             int64
+	InternetCost          int64
+	ParkingFee            int64
+	ResponsibilityA       string
+	ResponsibilityB       string
+	GeneralResponsibility string
+	SignatureA            string
+	SignedTimeA           int64
+	SignatureB            string
+	SignedTimeB           int64
+	ContractTemplateId    int64
+}

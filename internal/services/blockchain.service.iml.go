@@ -28,7 +28,7 @@ func NewBlockchainServiceImpl() BlockchainService {
 		client:                    global.EtherClient,
 		listingContractAddress:    common.HexToAddress(global.Config.SmartContract.ListingContractAddress),
 		lapcAddress:               common.HexToAddress(global.Config.SmartContract.LeaseAgreementProducerContract),
-		contractManagementAddress: common.HexToAddress(global.Config.SmartContract.LeaseAgreementProducerContract),
+		contractManagementAddress: common.HexToAddress(global.Config.SmartContract.ContractManagement),
 	}
 }
 
@@ -217,6 +217,123 @@ func (b *BlockchainServiceImpl) GetRoomByIDOnChain(roomID int64) (*responses.Roo
 	return blockchainRoom, nil
 }
 
+func (b *BlockchainServiceImpl) CreateMContractOnChain(privateKeyHex string, req requests.CreateMContractOnChainReq) (string, error) {
+	chainID, err := b.client.NetworkID(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to get network ID: %w", err)
+	}
+
+	// Parse the private key provided by the user
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	gasPrice, err := b.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to suggest gas price: %w", err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create transactor: %w", err)
+	}
+	auth.GasLimit = 3000000
+	auth.GasPrice = gasPrice
+
+	// owner := crypto.PubkeyToAddress(privateKey.PublicKey)
+	roomContract, err := gen.NewContractManagement(b.contractManagementAddress, b.client)
+	if err != nil {
+		return "", fmt.Errorf("failed to create room contract instance: %w", err)
+	}
+
+	// Prepare parameters for the room creation
+	tx, err := roomContract.CreateMContract(
+		auth,
+		big.NewInt(req.ContractId),          // Contract ID
+		req.ContractCode,                    // Contract code
+		big.NewInt(req.LandlordId),          // Landlord ID
+		big.NewInt(req.TenantId),            // Tenant ID
+		big.NewInt(req.RoomId),              // Room ID
+		big.NewInt(req.ActualPrice),         // Actual price
+		big.NewInt(req.Deposit),             // Deposit
+		big.NewInt(req.BeginDate),           // Begin date
+		big.NewInt(req.EndDate),             // End date
+		req.PaymentMethod,                   // Payment method
+		req.ElectricityMethod,               // Electricity method
+		big.NewInt(req.ElectricityCost),     // Electricity cost
+		req.WaterMethod,                     // Water method
+		big.NewInt(req.WaterCost),           // Water cost
+		big.NewInt(req.InternetCost),        // Internet cost
+		big.NewInt(req.ParkingFee),          // Parking fee
+		req.ResponsibilityA,                 // Responsibility A
+		req.ResponsibilityB,                 // Responsibility B
+		req.GeneralResponsibility,           // General responsibility
+		req.SignatureA,                      // Signature A
+		big.NewInt(req.SignedTimeA),         // Signed time A
+		req.SignatureB,                      // Signature B
+		big.NewInt(req.SignedTimeB),         // Signed time B
+		big.NewInt(req.ContractTemplateId),  // Contract template ID
+	)
+	
+	if err != nil {
+		return "", fmt.Errorf("failed to create room on blockchain: %w", err)
+	}
+
+	return tx.Hash().Hex(), nil
+}
+
+// GetRoomFromBlockchain implements BlockchainService.
+func (b *BlockchainServiceImpl) GetMContractByIDOnChain(contractId int64) (*responses.MContractOnChainRes, error) {
+	roomContract, err := gen.NewContractManagement(b.contractManagementAddress, b.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create room contract instance: %w", err)
+	}
+
+	// Fetch room details
+	bigContractId := big.NewInt(contractId)
+	out0, out1, out2, out3, out4, out5, out6, out7, out8, out9, out10, out11, out12, out13, out14, out15, out16, out17, out18, out19, out20, out21, out22, out23, out24, out25, out26, out27, out28, err := roomContract.GetMContract(&bind.CallOpts{}, bigContractId)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve room data from blockchain: %w", err)
+	}
+
+	// Format data for the response
+	blockchainContract := &responses.MContractOnChainRes{
+		ID:                 out0.Int64(),
+		Code:               out1,
+		Landlord:           out2.Int64(),
+		Tenant:             out3.Int64(),
+		RoomID:             out4.Int64(),
+		ActualPrice:        out5.Int64(),
+		Deposit:            out6.Int64(),
+		BeginDate:          out7.Int64(),
+		EndDate:            out8.Int64(),
+		PaymentMethod:      out9,
+		ElectricityMethod:  out10,
+		ElectricityCost:    out11.Int64(),
+		WaterMethod:        out12,
+		WaterCost:          out13.Int64(),
+		InternetCost:       out14.Int64(),
+		ParkingFee:         out15.Int64(),
+		ResponsibilityA:    out16,
+		ResponsibilityB:    out17,
+		GeneralResponsibility: out18,
+		SignatureA:         out19,
+		SignedTimeA:        out20.Int64(),
+		SignatureB:         out21,
+		SignedTimeB:        out22.Int64(),
+		ContractTemplateID: out23.Int64(),
+		PreRentalStatus:    uint8(out24),
+		RentalProcessStatus: uint8(out25),
+		PostRentalStatus:   uint8(out26),
+		CreatedAt:          out27.Int64(),
+		UpdatedAt:          out28.Int64(),
+	}
+	
+	return blockchainContract, nil
+}
+
 type CreateLeaseContractParams struct {
 	Code                  string
 	Landlord              common.Address
@@ -324,7 +441,32 @@ func (b *BlockchainServiceImpl) CreateContractOnBlockchain(privateKeyHex string,
 		ContractTemplateId:    big.NewInt(1),
 	}
 
-	tx, err := callCreateLeaseContract(auth, contractManagement, params)
+	tx, err := contractManagement.CreateLeaseContract(
+		auth,
+		params.Code,
+		params.Landlord,
+		params.Tenant,
+		params.RoomID,
+		params.ActualPrice,
+		params.DepositAmount,
+		params.BeginDate,
+		params.EndDate,
+		params.PaymentMethod,
+		params.ElectricityMethod,
+		params.ElectricityCost,
+		params.WaterMethod,
+		params.WaterCost,
+		params.InternetCost,
+		params.ParkingFee,
+		params.ResponsibilityA,
+		params.ResponsibilityB,
+		params.GeneralResponsibility,
+		params.SignatureA,
+		params.SignedTimeA,
+		params.ContractTemplateId,
+	)
+	// return tx, err
+	// tx, err := callCreateLeaseContract(auth, contractManagement, params)
 	if err != nil {
 		fmt.Println("Transaction failed:", err)
 	} else {

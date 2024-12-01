@@ -24,7 +24,7 @@ func main() {
 	// 	panic(err)
 	// }
 	// key, err := keystore.DecryptKey(b, "F42C765A563F2D7BA8ED57AECD8B6")
-	privateKeyHex := "e5a0d26cd7866afbea195c376b75a76d86d65e458c25f4702c46f1378ea0ce42"
+	privateKeyHex := "2da01a1b767463db18eabaf32a93bf8b0b8816e2b01a68e0c8e5e3baac2f2e61"
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		panic(err)
@@ -60,7 +60,7 @@ func main() {
 	auth.GasLimit = uint64(3000000)
 	auth.Nonce = big.NewInt(int64(nonce))
 
-	a, tx, _, err := contract.DeployLeaseContractManagement(auth, client) //contract.DeployListingContract(auth, client)
+	a, tx, _, err := contract.DeployContractManagement(auth, client) //contract.DeployListingContract(auth, client)
 	if err != nil {
 		panic(err)
 	}

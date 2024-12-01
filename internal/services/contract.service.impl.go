@@ -29,7 +29,7 @@ func NewContractServiceImpl(blockchain BlockchainService) ContractService {
 // GetContractByUser implements ContractService.
 func (c *ContractServiceImpl) GetContractByUser(userID int) *responses.ResponseData {
 	// user, err := c.repo.GetUserByID(context.Background(), int32(userID))
-	contracts, err := c.blockchain.GetContractByIDOnChain(1)
+	contracts, err := c.blockchain.GetMContractByIDOnChain(3)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -105,7 +105,6 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 		}
 	}
 	signOfA, encryptedErrA := common.EncryptBase64AES(req.SignatureA, global.Config.JWT.AESKey)
-	//signOfB, encryptedErrB := common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
 	if encryptedErrA != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -116,31 +115,35 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
 
-	contract := &requests.CreateContractOnChainReq{
-		Code:                req.Code,
-		RoomID:              int64(req.RoomID),
-		Tenant:              "", //TODO: ??
-		TotalPrice:          req.ActualPrice,
-		Deposit:             req.Deposit,
-		BeginDate:           req.BeginDate.Time.Unix(),
-		EndDate:             req.EndDate.Time.Unix(),
-		PaymentMethod:       *req.PaymentMethod,
-		ElectricityMethod:   common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),
-		ElectricityCost:     common.IfNullInt64((&req.ElectricityCost), common.Float64PtrToInt64Ptr(&template.ElectricityCost)),
-		WaterMethod:         common.IfNullStr(&req.WaterMethod, &template.WaterMethod),
-		WaterCost:           common.IfNullInt64(&req.WaterCost, common.Float64PtrToInt64Ptr(&template.WaterCost)),
-		InternetCost:        common.IfNullInt64(&req.InternetCost, common.Float64PtrToInt64Ptr(&template.InternetCost)),
-		ParkingFee:          parkingFee,
-		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),
-		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),
-		GeneralResponsibility: generalResponsibility,
-		SignatureA:            signOfA,                     // Assuming you will handle converting the signature to a [6]byte type
-		SignedTimeA:           req.SignedTimeA.Time.Unix(), // Assuming pgtype.Timestamptz type compatibility in CreateLeaseAgreementOnChainReq
-		ContractTemplateId:    int64(template.ID),  
+	contract := &requests.CreateMContractOnChainReq{
+		ContractId:          int64(3),           // ID duy nhất của hợp đồng
+		ContractCode:        req.Code,          // Mã hợp đồng
+		LandlordId:          int64(req.PartyA),           // ID của chủ nhà
+		TenantId:            int64(req.PartyB),           // ID của người thuê
+		RoomId:              int64(req.RoomID),         // ID của phòng
+		ActualPrice:         int64(req.ActualPrice),         // Giá thực tế của hợp đồng
+		Deposit:             int64(req.Deposit),          // Tiền đặt cọc
+		BeginDate:           int64(req.BeginDate.Time.Unix()),  // Thời gian bắt đầu hợp đồng (Unix timestamp)
+		EndDate:             int64(req.EndDate.Time.Unix()),  // Thời gian kết thúc hợp đồng (Unix timestamp)
+		PaymentMethod:       *req.PaymentMethod,     // Phương thức thanh toán
+		ElectricityMethod:   common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),        // Phương thức tính điện
+		ElectricityCost:     common.IfNullInt64((&req.ElectricityCost), common.Float64PtrToInt64Ptr(&template.ElectricityCost)),         // Giá điện
+		WaterMethod:         common.IfNullStr(&req.WaterMethod, &template.WaterMethod),          // Phương thức tính nước
+		WaterCost:           common.IfNullInt64(&req.WaterCost, common.Float64PtrToInt64Ptr(&template.WaterCost)),         // Giá nước
+		InternetCost:        common.IfNullInt64(&req.InternetCost, common.Float64PtrToInt64Ptr(&template.InternetCost)),          // Giá internet
+		ParkingFee:          parkingFee,          // Phí gửi xe
+		ResponsibilityA:     common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA), // Trách nhiệm bên A
+		ResponsibilityB:     common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB), // Trách nhiệm bên B
+		GeneralResponsibility: generalResponsibility, // Trách nhiệm chung
+		SignatureA:          signOfA,   // Chữ ký của bên A
+		SignedTimeA:         req.SignedTimeA.Time.Unix(),  // Thời gian ký của bên A
+		SignatureB:          "",   // Chữ ký của bên B
+		SignedTimeB:         int64(0),  // Thời gian ký của bên B
+		ContractTemplateId:  int64(template.ID),         // ID mẫu hợp đồng
 	}
 
 	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
-	if _, err := c.blockchain.CreateContractOnBlockchain(*user.PrivateKeyHex, *contract); err != nil {
+	if _, err := c.blockchain.CreateMContractOnChain(*user.PrivateKeyHex, *contract); err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
