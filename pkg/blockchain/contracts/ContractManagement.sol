@@ -56,7 +56,6 @@ contract ContractManagement {
     event MContractUpdated(uint id);
     event MContractDeleted(uint id);
 
-    // Tạo hợp đồng mới
     function createMContract(
         uint _id,
         string memory _code,
@@ -132,7 +131,6 @@ contract ContractManagement {
         );
     }
 
-    // Lấy thông tin hợp đồng
     function getMContract(
         uint _id
     )
@@ -204,5 +202,121 @@ contract ContractManagement {
             mContract.createdAt,
             mContract.updatedAt
         );
+    }
+
+    function signContractByTenant(
+        uint _id,
+        string memory _signatureB
+    ) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.preRentalStatus == PreRentalStatus.Activated,
+            "Contract is not ready for signing"
+        );
+
+        leaseContract.signatureB = _signatureB;
+        leaseContract.signedTimeB = block.timestamp;
+
+        leaseContract.preRentalStatus = PreRentalStatus.Signed;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function payDeposit(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.preRentalStatus == PreRentalStatus.Signed,
+            "Contract must be signed before paying deposit"
+        );
+
+        leaseContract.preRentalStatus = PreRentalStatus.PaidDeposit;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function inputMeterReading(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.preRentalStatus == PreRentalStatus.PaidDeposit,
+            "Deposit must be paid before recording meter"
+        );
+        require(
+            leaseContract.rentalProcessStatus != RentalProcessStatus.FirstPhase,
+            "Meter reading can only be recorded after the first phase"
+        );
+
+        leaseContract.rentalProcessStatus = RentalProcessStatus.RecordedMeter;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function createBill(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.rentalProcessStatus == RentalProcessStatus.FirstPhase ||
+            leaseContract.rentalProcessStatus == RentalProcessStatus.RecordedMeter,
+            "Bill creation requires first phase or recorded meter reading in subsequent phases"
+        );
+
+        leaseContract.rentalProcessStatus = RentalProcessStatus.Unpaid;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function payBill(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.rentalProcessStatus == RentalProcessStatus.Unpaid,
+            "No unpaid bill to pay"
+        );
+
+        leaseContract.rentalProcessStatus = RentalProcessStatus.Paid;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function createReturnRequest(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.postRentalStatus == PostRentalStatus.NotRequested,
+            "Return request already exists"
+        );
+
+        leaseContract.postRentalStatus = PostRentalStatus.UnreturnedDeposit;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
+    }
+
+    function approveReturnRequest(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+        require(
+            leaseContract.postRentalStatus == PostRentalStatus.UnreturnedDeposit,
+            "No pending return request"
+        );
+
+        leaseContract.postRentalStatus = PostRentalStatus.Completed;
+
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
     }
 }
