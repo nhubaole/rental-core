@@ -10,13 +10,13 @@ import (
 
 type ReturnRequestServiceImpl struct {
 	repo *dataaccess.Queries
+	blockchain BlockchainService
 }
 
-
-
-func NewReturnRequestServiceImpl() ReturnRequestService {
+func NewReturnRequestServiceImpl(blockchain BlockchainService) ReturnRequestService {
 	return &ReturnRequestServiceImpl{
 		repo: dataaccess.New(global.Db),
+		blockchain: blockchain,
 	}
 }
 
@@ -33,6 +33,17 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 			Data:       false,
 		}
 	}
+
+	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+	_, err = r.blockchain.CreateReturnRequestOnChain(*user.PrivateKeyHex, int64(*req.ContractID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -69,6 +80,19 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
+
+	if returnRequest.TotalReturnDeposit != nil && *returnRequest.TotalReturnDeposit == float64(0) {
+		user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+		_, err = r.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+
 	// update status = 2 in return request table
 	updateErr := r.repo.ApproveReturnRequest(context.Background(), returnRequest.ID)
 	if updateErr != nil {

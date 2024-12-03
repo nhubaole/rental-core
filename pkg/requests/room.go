@@ -83,3 +83,8 @@ type CreateMContractOnChainReq struct {
 	SignedTimeB           int64
 	ContractTemplateId    int64
 }
+
+type SignMContractOnChainReq struct {
+	ContractId int64
+	SignatureB string
+}

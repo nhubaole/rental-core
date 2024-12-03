@@ -3,7 +3,7 @@ SELECT id, code, sender_id, bill_id, contract_id, amount, status,return_request_
 FROM public.payments
 WHERE id = $1;
 
--- name: CreatePayment :exec
+-- name: CreatePayment :one
 INSERT INTO public.payments(
     code, --1
     sender_id, --2
@@ -16,7 +16,8 @@ INSERT INTO public.payments(
     evidence_image, 
     paid_time
     )VALUES(
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, now());
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+    RETURNING id;
 
 -- name: GetAllPayments :many
 SELECT id, code, sender_id, bill_id, contract_id, amount, status, return_request_id, transfer_content, evidence_image, paid_time

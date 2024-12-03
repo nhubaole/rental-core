@@ -65,7 +65,13 @@ func (c PaymentController) Confirm(ctx *gin.Context) {
 		return
 	}
 
-	result := c.services.Confirm(id)
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	result := c.services.Confirm(id, int(currentUser.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
@@ -74,13 +80,13 @@ func (c PaymentController) GetPaymentInfo(ctx *gin.Context) {
 
 	if typeOfPayment != "contract" && typeOfPayment != "return" && typeOfPayment != "bill" {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
-			return
+		return
 	}
 	id, err := strconv.Atoi(ctx.Query("id"))
-		if err != nil {
-			responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
-			return
-		}
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
 	result := c.services.GetDetailInfo(typeOfPayment, int32(id))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

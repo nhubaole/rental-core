@@ -20,12 +20,14 @@ import (
 type PaymentServiceImpl struct {
 	repo           *dataaccess.Queries
 	storageService StorageSerivce
+	blockchain BlockchainService
 }
 
-func NewPaymentServiceImpl(storage StorageSerivce) PaymentService {
+func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService) PaymentService {
 	return &PaymentServiceImpl{
 		repo:           dataaccess.New(global.Db),
 		storageService: storage,
+		blockchain: blockchain,
 	}
 }
 
@@ -48,7 +50,7 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 		amount = bill.TotalAmount
 		contractId = bill.ContractID
 	} else if typeOfPayment == "return" {
-		returnRequest, err := p.repo.GetBillByID(context.Background(), id)
+		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), id)
 		if err != nil {
 			return &responses.ResponseData{
 				StatusCode: http.StatusInternalServerError,
@@ -56,11 +58,22 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 				Data:       nil,
 			}
 		}
-		amount = returnRequest.TotalAmount
-		contractId = returnRequest.ContractID
+		amount = *returnRequest.TotalReturnDeposit
+		contractId = *returnRequest.ContractID
 	}
 
-	//get data user, amount on chain
+	contract, err := p.blockchain.GetMContractByIDOnChain(int64(contractId))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+	if typeOfPayment == "contract" {
+		amount = float64(contract.Deposit)
+	}
+
 	fmt.Printf("Contract ID: %d\n", contractId)
 
 	userId := int32(1)
@@ -104,7 +117,7 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 }
 
 // Confirm implements PaymentService.
-func (p *PaymentServiceImpl) Confirm(id int) *responses.ResponseData {
+func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData {
 	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
 	if err != nil {
 		return &responses.ResponseData{
@@ -113,6 +126,62 @@ func (p *PaymentServiceImpl) Confirm(id int) *responses.ResponseData {
 			Data:       nil,
 		}
 	}
+
+	payment, err := p.repo.GetPaymentByID(context.Background(), int32(id))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	user, _ := p.repo.GetUserByID(context.Background(), int32(userID))
+	if payment.ContractID != nil {
+		_, err = p.blockchain.PayDepositOnChain(*user.PrivateKeyHex, int64(*payment.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	} else if payment.BillID != nil {
+		bill, err := p.repo.GetBillByID(context.Background(), *payment.BillID)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    responses.StatusInternalError,
+				Data:       nil,
+			}
+		}
+		_, err = p.blockchain.PayBillOnChain(*user.PrivateKeyHex, int64(bill.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	} else if payment.ReturnRequestID != nil {
+		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *payment.ReturnRequestID)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    responses.StatusInternalError,
+				Data:       nil,
+			}
+		}
+		_, err = p.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
@@ -167,7 +236,7 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 	params.SenderID = userID
 	params.Status = 0
 
-	createErr := p.repo.CreatePayment(context.Background(), params)
+	paymentId, createErr := p.repo.CreatePayment(context.Background(), params)
 
 	if createErr != nil {
 		return &responses.ResponseData{
@@ -179,7 +248,7 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       true,
+		Data:       paymentId,
 	}
 
 }

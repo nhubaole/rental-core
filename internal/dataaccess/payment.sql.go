@@ -22,7 +22,7 @@ func (q *Queries) ConfirmPayment(ctx context.Context, id int32) (int32, error) {
 	return id, err
 }
 
-const createPayment = `-- name: CreatePayment :exec
+const createPayment = `-- name: CreatePayment :one
 INSERT INTO public.payments(
     code, --1
     sender_id, --2
@@ -36,6 +36,7 @@ INSERT INTO public.payments(
     paid_time
     )VALUES(
         $1, $2, $3, $4, $5, $6, $7, $8, $9, now())
+    RETURNING id
 `
 
 type CreatePaymentParams struct {
@@ -50,8 +51,8 @@ type CreatePaymentParams struct {
 	EvidenceImage   *string `json:"evidence_image"`
 }
 
-func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) error {
-	_, err := q.db.Exec(ctx, createPayment,
+func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createPayment,
 		arg.Code,
 		arg.SenderID,
 		arg.BillID,
@@ -62,7 +63,9 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) er
 		arg.TransferContent,
 		arg.EvidenceImage,
 	)
-	return err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getAllPayments = `-- name: GetAllPayments :many

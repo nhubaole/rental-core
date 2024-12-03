@@ -10,6 +10,6 @@ type PaymentService interface {
 	Create(req requests.CreatePaymentReq, userID int32)*responses.ResponseData
 	GetAllBanks() *responses.ResponseData
 	GetAll()*responses.ResponseData
-	Confirm(id int) *responses.ResponseData
+	Confirm(id int, userID int) *responses.ResponseData
 	GetDetailInfo(typeOfPayment string, id int32) *responses.ResponseData
 }

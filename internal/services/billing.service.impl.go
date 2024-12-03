@@ -10,13 +10,13 @@ import (
 
 type BillingServiceImpl struct {
 	query *dataaccess.Queries
+	blockchain BlockchainService
 }
 
-
-
-func NewBillingServiceImpl() BillingService {
+func NewBillingServiceImpl(blockchain BlockchainService) BillingService {
 	return &BillingServiceImpl{
 		query: dataaccess.New(global.Db),
+		blockchain: blockchain,
 	}
 }
 
@@ -29,6 +29,17 @@ func (service *BillingServiceImpl) CreateBill(userID int32, body dataaccess.Crea
 			Data:       false,
 		}
 	}
+
+	user, _ := service.query.GetUserByID(context.Background(), int32(userID))
+	_, err = service.blockchain.CreateBillOnChain(*user.PrivateKeyHex, int64(body.ContractID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,

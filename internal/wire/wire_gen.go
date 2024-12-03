@@ -15,7 +15,8 @@ import (
 
 func InitPaymentRouterHandler() *controllers.PaymentController {
 	storageSerivce := services.NewStorageServiceImpl()
-	paymentService := services.NewPaymentServiceImpl(storageSerivce)
+	blockchainService := services.NewBlockchainServiceImpl()
+	paymentService := services.NewPaymentServiceImpl(storageSerivce, blockchainService)
 	paymentController := controllers.NewPaymentController(paymentService)
 	return paymentController
 }
@@ -66,13 +67,15 @@ func InitIndexRouterHandler() *controllers.IndexController {
 }
 
 func InitBillingRouterHandler() *controllers.BillingController {
-	billingService := services.NewBillingServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	billingService := services.NewBillingServiceImpl(blockchainService)
 	billingController := controllers.NewBillingController(billingService)
 	return billingController
 }
 
 func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
-	returnRequestService := services.NewReturnRequestServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	returnRequestService := services.NewReturnRequestServiceImpl(blockchainService)
 	returnRequestController := controllers.NewReturnRequestController(returnRequestService)
 	return returnRequestController
 }

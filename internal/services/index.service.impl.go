@@ -22,6 +22,8 @@ func NewIndexServiceImpl() IndexService {
 func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.CreateIndexParams) *responses.ResponseData {
 	// Find room if match the owner
 	rs, er := is.query.GetRoomByID(context.Background(), body.RoomID)
+
+	//TODO: get contract id??
 	if er != nil {
 		fmt.Println(er.Error())
 		return &responses.ResponseData{

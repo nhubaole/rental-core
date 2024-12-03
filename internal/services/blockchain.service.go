@@ -11,9 +11,11 @@ type BlockchainService interface {
 
 	GetMContractByIDOnChain(roomID int64)(*responses.MContractOnChainRes, error)
 	CreateMContractOnChain(privateKeyHex string, req requests.CreateMContractOnChainReq) (string, error)
-
-	GetContractByIDOnChain(contractID int64)(*responses.ContractOnChainRes, error)
-	CreateContractOnBlockchain(privateKeyHex string, req requests.CreateContractOnChainReq) (string, error)
-	// CreateLeaseAgreementProducerContract(privateKeyHex string, req requests.CreateLeaseAgreementOnChainReq,) (string, error)
-	// GetAllContractsOnChain(participantAddress string)([]responses.ContractOnChainRes, error)
+	SignMContractOnChain(privateKeyHex string, req requests.SignMContractOnChainReq) (string, error)
+	PayDepositOnChain(privateKeyHex string, ContractId int64) (string, error)
+	InputMeterReadingOnChain(privateKeyHex string, ContractId int64) (string, error)
+	CreateBillOnChain(privateKeyHex string, ContractId int64) (string, error)
+	PayBillOnChain(privateKeyHex string, ContractId int64) (string, error)
+	CreateReturnRequestOnChain(privateKeyHex string, ContractId int64) (string, error)
+	ApproveReturnRequestOnChain(privateKeyHex string, ContractId int64) (string, error)
 }
