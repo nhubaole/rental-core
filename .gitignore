@@ -30,5 +30,5 @@ main
 *templ.go
 *.yaml
 configs/
-
+keystore
 node_modules
