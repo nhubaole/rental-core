@@ -122,7 +122,7 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	}
 
 	contract := &requests.CreateMContractOnChainReq{
-		ContractId:            int64(contractId),                                                                                           // ID duy nhất của hợp đồng
+		ContractId:            int64(contractId),                                                                                  // ID duy nhất của hợp đồng
 		ContractCode:          req.Code,                                                                                           // Mã hợp đồng
 		LandlordId:            int64(req.PartyA),                                                                                  // ID của chủ nhà
 		TenantId:              int64(req.PartyB),                                                                                  // ID của người thuê
@@ -238,6 +238,15 @@ func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, user
 			Data:       false,
 		}
 	}
+
+	if contract.PreRentalStatus != 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Trạng thái hợp đồng không hợp lệ",
+			Data:       false,
+		}
+	}
+
 	params := &requests.SignMContractOnChainReq{
 		ContractId: int64(req.Id),
 		SignatureB: req.SignatureB,

@@ -21,7 +21,23 @@ func NewBillingServiceImpl(blockchain BlockchainService) BillingService {
 }
 
 func (service *BillingServiceImpl) CreateBill(userID int32, body dataaccess.CreateBillParams) *responses.ResponseData {
-	err := service.query.CreateBill(context.Background(), body)
+	contract, err := service.blockchain.GetMContractByIDOnChain(int64(body.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	if !(contract.RentalProcessStatus == 0 || contract.RentalProcessStatus == 1) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Trạng thái hợp đồng không hợp lệ",
+			Data:       false,
+		}
+	}
+
+	err = service.query.CreateBill(context.Background(), body)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,

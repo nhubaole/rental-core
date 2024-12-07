@@ -20,14 +20,14 @@ import (
 type PaymentServiceImpl struct {
 	repo           *dataaccess.Queries
 	storageService StorageSerivce
-	blockchain BlockchainService
+	blockchain     BlockchainService
 }
 
 func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService) PaymentService {
 	return &PaymentServiceImpl{
 		repo:           dataaccess.New(global.Db),
 		storageService: storage,
-		blockchain: blockchain,
+		blockchain:     blockchain,
 	}
 }
 
@@ -118,15 +118,6 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 
 // Confirm implements PaymentService.
 func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData {
-	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       nil,
-		}
-	}
-
 	payment, err := p.repo.GetPaymentByID(context.Background(), int32(id))
 	if err != nil {
 		return &responses.ResponseData{
@@ -138,6 +129,21 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 
 	user, _ := p.repo.GetUserByID(context.Background(), int32(userID))
 	if payment.ContractID != nil {
+		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*payment.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+		if contract.PreRentalStatus != 1 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Trạng thái hợp đồng không hợp lệ",
+				Data:       false,
+			}
+		}
 		_, err = p.blockchain.PayDepositOnChain(*user.PrivateKeyHex, int64(*payment.ContractID))
 		if err != nil {
 			return &responses.ResponseData{
@@ -153,6 +159,21 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				StatusCode: http.StatusInternalServerError,
 				Message:    responses.StatusInternalError,
 				Data:       nil,
+			}
+		}
+		contract, err := p.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+		if contract.RentalProcessStatus != 2 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Trạng thái hợp đồng không hợp lệ",
+				Data:       false,
 			}
 		}
 		_, err = p.blockchain.PayBillOnChain(*user.PrivateKeyHex, int64(bill.ContractID))
@@ -172,6 +193,21 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       nil,
 			}
 		}
+		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+		if contract.PostRentalStatus != 1 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Trạng thái hợp đồng không hợp lệ",
+				Data:       false,
+			}
+		}
 		_, err = p.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
 		if err != nil {
 			return &responses.ResponseData{
@@ -179,6 +215,15 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Message:    err.Error(),
 				Data:       false,
 			}
+		}
+	}
+
+	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
 		}
 	}
 

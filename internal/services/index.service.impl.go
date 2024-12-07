@@ -79,6 +79,14 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.CreateInd
         }
     }
 
+	if !(matchedContract.PreRentalStatus == 2 && matchedContract.RentalProcessStatus != 0) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Trạng thái hợp đồng không hợp lệ",
+			Data:       false,
+		}
+	}
+
 	user, _ := is.query.GetUserByID(context.Background(), userid)
 	_, err = is.blockchain.InputMeterReadingOnChain(*user.PrivateKeyHex, matchedContract.ID)
 	if err != nil {
