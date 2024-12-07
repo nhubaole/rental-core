@@ -48,24 +48,42 @@ func (service *BillingServiceImpl) CreateBill(userID int32, body dataaccess.Crea
 }
 
 func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, year int32) *responses.ResponseData {
-	param := dataaccess.GetBillByMonthParams{
-		Year:   year,
-		Month:  month,
-		PartyA: userID,
-	}
-	bill, err := service.query.GetBillByMonth(context.Background(), param)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Can't find your bill",
-			Data:       false,
-		}
-	}
-	return &responses.ResponseData{
-		StatusCode: http.StatusOK,
-		Message:    "Ok",
-		Data:       bill,
-	}
+    param := dataaccess.GetBillByMonthParams{
+        Year:  year,
+        Month: month,
+    }
+
+    bills, err := service.query.GetBillByMonth(context.Background(), param)
+    if err != nil {
+        return &responses.ResponseData{
+            StatusCode: http.StatusBadRequest,
+            Message:    "Can't find your bill",
+            Data:       false,
+        }
+    }
+
+    var filteredBills []dataaccess.GetBillByMonthRow
+
+    for _, bill := range bills {
+        contract, err := service.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
+        if err != nil {
+            return &responses.ResponseData{
+                StatusCode: http.StatusInternalServerError,
+                Message:    "Error retrieving contract for bill",
+                Data:       false,
+            }
+        }
+
+        if int32(contract.Landlord) == userID || int32(contract.Tenant) == userID {
+            filteredBills = append(filteredBills, bill)
+        }
+    }
+
+    return &responses.ResponseData{
+        StatusCode: http.StatusOK,
+        Message:    "Ok",
+        Data:       filteredBills,
+    }
 }
 
 // GetBillByID implements BillingService.
@@ -95,20 +113,64 @@ func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData
 
 // GetBillMetric implements BillingService.
 func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4BillByRoomIDParams) *responses.ResponseData {
-	metric, err := service.query.GetAllMetric4BillByRoomID(context.Background(), req)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+    metric, err := service.query.GetAllMetric4BillByRoomID(context.Background(), req)
+    if err != nil {
+        return &responses.ResponseData{
+            StatusCode: http.StatusInternalServerError,
+            Message:    err.Error(),
+            Data:       false,
+        }
+    }
 
-	return &responses.ResponseData{
-		StatusCode: http.StatusOK,
-		Message:    responses.StatusSuccess,
-		Data:       metric,
-	}
+    contracts, err := service.query.ListContractByRoomId(context.Background(), &req.RoomID)
+    if err != nil {
+        return &responses.ResponseData{
+            StatusCode: http.StatusInternalServerError,
+            Message:    err.Error(),
+            Data:       false,
+        }
+    }
+
+    var matchedContract responses.MContractOnChainRes
+    for _, contract := range contracts {
+        onChainContract, err := service.blockchain.GetMContractByIDOnChain(int64(contract))
+        if err != nil {
+            return &responses.ResponseData{
+                StatusCode: http.StatusInternalServerError,
+                Message:    err.Error(),
+                Data:       false,
+            }
+        }
+
+        if onChainContract.PreRentalStatus == 2 {
+            matchedContract = *onChainContract
+            break
+        }
+    }
+
+    combinedResponse := responses.GetAllMetric4BillByRoomID{
+        RoomID:          metric.RoomID,
+        PrevMonth:       metric.PrevMonth,
+        CurrMonth:       metric.CurrMonth,
+        PrevWater:       metric.PrevWater,
+        CurrWater:       metric.CurrWater,
+        PrevElectricity: metric.PrevElectricity,
+        CurrElectricity: metric.CurrElectricity,
+        Year:            metric.Year,
+		ContractID: int32(matchedContract.ID),
+        ActualPrice: matchedContract.ActualPrice,
+        WaterCost: matchedContract.WaterCost,
+        ElectricityCost: matchedContract.ElectricityCost,
+        InternetCost: matchedContract.InternetCost,
+        ParkingFee: matchedContract.ParkingFee,
+    }
+
+    // Return the combined response
+    return &responses.ResponseData{
+        StatusCode: http.StatusOK,
+        Message:    responses.StatusSuccess,
+        Data:       combinedResponse,
+    }
 }
 
 // GetBillByStatus implements BillingService.

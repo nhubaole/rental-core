@@ -7,117 +7,23 @@ package dataaccess
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createContract = `-- name: CreateContract :exec
+const createContract = `-- name: CreateContract :one
 INSERT INTO PUBLIC.contracts
 (
-    code,                   -- Mã hợp đồng
-    party_a,                -- ID của bên A
-    party_b,                -- ID của bên B
-    request_id,             -- ID của yêu cầu liên quan đến hợp đồng
-    room_id,                -- ID của phòng
-    actual_price,           -- Giá thực tế
-    payment_method,         -- Phương thức thanh toán
-    electricity_method,     -- Phương thức tính tiền điện
-    electricity_cost,       -- Chi phí điện
-    water_method,           -- Phương thức tính tiền nước
-    water_cost,             -- Chi phí nước
-    internet_cost,          -- Chi phí Internet
-    parking_fee,            -- Phí giữ xe
-    deposit,                -- Tiền cọc
-    begin_date,             -- Ngày bắt đầu
-    end_date,               -- Ngày kết thúc
-    responsibility_a,       -- Trách nhiệm của bên A
-    responsibility_b,       -- Trách nhiệm của bên B
-    general_responsibility, -- Trách nhiệm chung
-    signature_a,            -- Chữ ký của bên A
-    signed_time_a,          -- Thời gian ký của bên A
-    contract_template_id,   -- ID mẫu hợp đồng
-    created_at,             -- Thời gian tạo
-    updated_at              -- Thời gian cập nhật
+    room_id
 ) VALUES
 (
-    $1,  -- Mã hợp đồng
-    $2,  -- ID của bên A
-    $3,  -- ID của bên B
-    $4,  -- ID của yêu cầu
-    $5,  -- ID của phòng
-    $6,  -- Giá thực tế
-    $7,  -- Phương thức thanh toán
-    $8,  -- Phương thức tính tiền điện
-    $9,  -- Chi phí điện
-    $10, -- Phương thức tính tiền nước
-    $11, -- Chi phí nước
-    $12, -- Chi phí Internet
-    $13, -- Phí giữ xe
-    $14, -- Tiền cọc
-    $15, -- Ngày bắt đầu
-    $16, -- Ngày kết thúc
-    $17, -- Trách nhiệm bên A
-    $18, -- Trách nhiệm bên B
-    $19, -- Trách nhiệm chung
-    $20, -- Chữ ký bên A
-    $21, -- Thời gian ký của bên A
-    $22, -- ID mẫu hợp đồng
-    NOW(), -- Thời gian tạo
-    NOW()  -- Thời gian cập nhật
-)
+    $1
+) RETURNING id
 `
 
-type CreateContractParams struct {
-	Code                  string             `json:"code"`
-	PartyA                int32              `json:"party_a"`
-	PartyB                int32              `json:"party_b"`
-	RequestID             int32              `json:"request_id"`
-	RoomID                int32              `json:"room_id"`
-	ActualPrice           float64            `json:"actual_price"`
-	PaymentMethod         *string            `json:"payment_method"`
-	ElectricityMethod     string             `json:"electricity_method"`
-	ElectricityCost       float64            `json:"electricity_cost"`
-	WaterMethod           string             `json:"water_method"`
-	WaterCost             float64            `json:"water_cost"`
-	InternetCost          float64            `json:"internet_cost"`
-	ParkingFee            *float64           `json:"parking_fee"`
-	Deposit               float64            `json:"deposit"`
-	BeginDate             pgtype.Date        `json:"begin_date"`
-	EndDate               pgtype.Date        `json:"end_date"`
-	ResponsibilityA       string             `json:"responsibility_a"`
-	ResponsibilityB       string             `json:"responsibility_b"`
-	GeneralResponsibility *string            `json:"general_responsibility"`
-	SignatureA            string             `json:"signature_a"`
-	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	ContractTemplateID    *int32             `json:"contract_template_id"`
-}
-
-func (q *Queries) CreateContract(ctx context.Context, arg CreateContractParams) error {
-	_, err := q.db.Exec(ctx, createContract,
-		arg.Code,
-		arg.PartyA,
-		arg.PartyB,
-		arg.RequestID,
-		arg.RoomID,
-		arg.ActualPrice,
-		arg.PaymentMethod,
-		arg.ElectricityMethod,
-		arg.ElectricityCost,
-		arg.WaterMethod,
-		arg.WaterCost,
-		arg.InternetCost,
-		arg.ParkingFee,
-		arg.Deposit,
-		arg.BeginDate,
-		arg.EndDate,
-		arg.ResponsibilityA,
-		arg.ResponsibilityB,
-		arg.GeneralResponsibility,
-		arg.SignatureA,
-		arg.SignedTimeA,
-		arg.ContractTemplateID,
-	)
-	return err
+func (q *Queries) CreateContract(ctx context.Context, roomID *int32) (int32, error) {
+	row := q.db.QueryRow(ctx, createContract, roomID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createContractTemplate = `-- name: CreateContractTemplate :exec
@@ -186,89 +92,6 @@ func (q *Queries) CreateContractTemplate(ctx context.Context, arg CreateContract
 	return err
 }
 
-const declineContract = `-- name: DeclineContract :exec
-UPDATE public.contracts
-SET status = 3,
-    updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL
-`
-
-func (q *Queries) DeclineContract(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, declineContract, id)
-	return err
-}
-
-const getContractByID = `-- name: GetContractByID :one
-SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
-FROM public.contracts
-WHERE id = $1 AND deleted_at IS NULL
-`
-
-type GetContractByIDRow struct {
-	ID                    int32              `json:"id"`
-	Code                  string             `json:"code"`
-	PartyA                int32              `json:"party_a"`
-	PartyB                int32              `json:"party_b"`
-	RequestID             int32              `json:"request_id"`
-	RoomID                int32              `json:"room_id"`
-	ActualPrice           float64            `json:"actual_price"`
-	PaymentMethod         *string            `json:"payment_method"`
-	ElectricityMethod     string             `json:"electricity_method"`
-	ElectricityCost       float64            `json:"electricity_cost"`
-	WaterMethod           string             `json:"water_method"`
-	WaterCost             float64            `json:"water_cost"`
-	InternetCost          float64            `json:"internet_cost"`
-	ParkingFee            *float64           `json:"parking_fee"`
-	Deposit               float64            `json:"deposit"`
-	BeginDate             pgtype.Date        `json:"begin_date"`
-	EndDate               pgtype.Date        `json:"end_date"`
-	ResponsibilityA       string             `json:"responsibility_a"`
-	ResponsibilityB       string             `json:"responsibility_b"`
-	GeneralResponsibility *string            `json:"general_responsibility"`
-	SignatureA            string             `json:"signature_a"`
-	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            *string            `json:"signature_b"`
-	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
-	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
-	ContractTemplateID    *int32             `json:"contract_template_id"`
-}
-
-func (q *Queries) GetContractByID(ctx context.Context, id int32) (GetContractByIDRow, error) {
-	row := q.db.QueryRow(ctx, getContractByID, id)
-	var i GetContractByIDRow
-	err := row.Scan(
-		&i.ID,
-		&i.Code,
-		&i.PartyA,
-		&i.PartyB,
-		&i.RequestID,
-		&i.RoomID,
-		&i.ActualPrice,
-		&i.PaymentMethod,
-		&i.ElectricityMethod,
-		&i.ElectricityCost,
-		&i.WaterMethod,
-		&i.WaterCost,
-		&i.InternetCost,
-		&i.ParkingFee,
-		&i.Deposit,
-		&i.BeginDate,
-		&i.EndDate,
-		&i.ResponsibilityA,
-		&i.ResponsibilityB,
-		&i.GeneralResponsibility,
-		&i.SignatureA,
-		&i.SignedTimeA,
-		&i.SignatureB,
-		&i.SignedTimeB,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ContractTemplateID,
-	)
-	return i, err
-}
-
 const getContractTemplateByAddress = `-- name: GetContractTemplateByAddress :one
 SELECT 
     id,
@@ -316,83 +139,25 @@ func (q *Queries) GetContractTemplateByAddress(ctx context.Context, dollar_1 []s
 	return i, err
 }
 
-const listContractByStatus = `-- name: ListContractByStatus :many
-SELECT id, code, party_a, party_b, request_id, room_id, actual_price, payment_method, electricity_method, electricity_cost, water_method, water_cost, internet_cost, parking_fee, deposit, begin_date, end_date, responsibility_a, responsibility_b, general_responsibility, signature_a, signed_time_a, signature_b, signed_time_b, created_at, updated_at, contract_template_id
+const listContractByRoomId = `-- name: ListContractByRoomId :many
+SELECT id
 FROM public.contracts
-WHERE status = $1 AND deleted_at IS NULL
+WHERE room_id = $1
 `
 
-type ListContractByStatusRow struct {
-	ID                    int32              `json:"id"`
-	Code                  string             `json:"code"`
-	PartyA                int32              `json:"party_a"`
-	PartyB                int32              `json:"party_b"`
-	RequestID             int32              `json:"request_id"`
-	RoomID                int32              `json:"room_id"`
-	ActualPrice           float64            `json:"actual_price"`
-	PaymentMethod         *string            `json:"payment_method"`
-	ElectricityMethod     string             `json:"electricity_method"`
-	ElectricityCost       float64            `json:"electricity_cost"`
-	WaterMethod           string             `json:"water_method"`
-	WaterCost             float64            `json:"water_cost"`
-	InternetCost          float64            `json:"internet_cost"`
-	ParkingFee            *float64           `json:"parking_fee"`
-	Deposit               float64            `json:"deposit"`
-	BeginDate             pgtype.Date        `json:"begin_date"`
-	EndDate               pgtype.Date        `json:"end_date"`
-	ResponsibilityA       string             `json:"responsibility_a"`
-	ResponsibilityB       string             `json:"responsibility_b"`
-	GeneralResponsibility *string            `json:"general_responsibility"`
-	SignatureA            string             `json:"signature_a"`
-	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            *string            `json:"signature_b"`
-	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
-	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
-	ContractTemplateID    *int32             `json:"contract_template_id"`
-}
-
-func (q *Queries) ListContractByStatus(ctx context.Context, status *int32) ([]ListContractByStatusRow, error) {
-	rows, err := q.db.Query(ctx, listContractByStatus, status)
+func (q *Queries) ListContractByRoomId(ctx context.Context, roomID *int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, listContractByRoomId, roomID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListContractByStatusRow
+	var items []int32
 	for rows.Next() {
-		var i ListContractByStatusRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.PartyA,
-			&i.PartyB,
-			&i.RequestID,
-			&i.RoomID,
-			&i.ActualPrice,
-			&i.PaymentMethod,
-			&i.ElectricityMethod,
-			&i.ElectricityCost,
-			&i.WaterMethod,
-			&i.WaterCost,
-			&i.InternetCost,
-			&i.ParkingFee,
-			&i.Deposit,
-			&i.BeginDate,
-			&i.EndDate,
-			&i.ResponsibilityA,
-			&i.ResponsibilityB,
-			&i.GeneralResponsibility,
-			&i.SignatureA,
-			&i.SignedTimeA,
-			&i.SignatureB,
-			&i.SignedTimeB,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.ContractTemplateID,
-		); err != nil {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -400,32 +165,27 @@ func (q *Queries) ListContractByStatus(ctx context.Context, status *int32) ([]Li
 	return items, nil
 }
 
-const setExpiredContract = `-- name: SetExpiredContract :exec
-UPDATE public.contracts
-SET status = 4,
-    updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL
+const listContractIds = `-- name: ListContractIds :many
+SELECT id
+FROM public.contracts
 `
 
-func (q *Queries) SetExpiredContract(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, setExpiredContract, id)
-	return err
-}
-
-const signContract = `-- name: SignContract :exec
-UPDATE public.contracts
-SET signature_b = $2,
-    signed_time_b = NOW(),
-    updated_at = NOW()
-WHERE id = $1 AND deleted_at IS NULL
-`
-
-type SignContractParams struct {
-	ID         int32   `json:"id"`
-	SignatureB *string `json:"signature_b"`
-}
-
-func (q *Queries) SignContract(ctx context.Context, arg SignContractParams) error {
-	_, err := q.db.Exec(ctx, signContract, arg.ID, arg.SignatureB)
-	return err
+func (q *Queries) ListContractIds(ctx context.Context) ([]int32, error) {
+	rows, err := q.db.Query(ctx, listContractIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

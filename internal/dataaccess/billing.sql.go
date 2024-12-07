@@ -72,12 +72,6 @@ func (q *Queries) CreateBill(ctx context.Context, arg CreateBillParams) error {
 
 const getAllMetric4BillByRoomID = `-- name: GetAllMetric4BillByRoomID :one
 SELECT t.room_id,
-       c.id as contract_id,
-       c.actual_price,
-       c.water_cost,
-       c.electricity_cost,
-       c.internet_cost,
-       c.parking_fee,
        t.prev_month,
        t.curr_month,
        t.prev_water,
@@ -92,9 +86,8 @@ FROM (
 	room_id, year
 	FROM public.index as i
 ) AS t
-LEFT JOIN PUBLIC.CONTRACTS AS c ON t.room_id = c.room_id
 LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE c.room_id = $1
+WHERE idx.room_id = $1
 AND idx.month = $2
 AND idx.year = $3
 `
@@ -107,12 +100,6 @@ type GetAllMetric4BillByRoomIDParams struct {
 
 type GetAllMetric4BillByRoomIDRow struct {
 	RoomID          int32       `json:"room_id"`
-	ContractID      *int32      `json:"contract_id"`
-	ActualPrice     *float64    `json:"actual_price"`
-	WaterCost       *float64    `json:"water_cost"`
-	ElectricityCost *float64    `json:"electricity_cost"`
-	InternetCost    *float64    `json:"internet_cost"`
-	ParkingFee      *float64    `json:"parking_fee"`
 	PrevMonth       interface{} `json:"prev_month"`
 	CurrMonth       int32       `json:"curr_month"`
 	PrevWater       interface{} `json:"prev_water"`
@@ -127,12 +114,6 @@ func (q *Queries) GetAllMetric4BillByRoomID(ctx context.Context, arg GetAllMetri
 	var i GetAllMetric4BillByRoomIDRow
 	err := row.Scan(
 		&i.RoomID,
-		&i.ContractID,
-		&i.ActualPrice,
-		&i.WaterCost,
-		&i.ElectricityCost,
-		&i.InternetCost,
-		&i.ParkingFee,
 		&i.PrevMonth,
 		&i.CurrMonth,
 		&i.PrevWater,
@@ -202,16 +183,13 @@ SELECT b.code,
         b.created_at,
         b.updated_at
 FROM PUBLIC.BILLING as b
-LEFT JOIN public.contracts as ct on ct.id = b.contract_id
 WHERE b.year = $1 
-    AND b.month=$2 
-    AND (ct.party_a = $3 OR ct.party_b = $3)
+    AND b.month=$2
 `
 
 type GetBillByMonthParams struct {
-	Year   int32 `json:"year"`
-	Month  int32 `json:"month"`
-	PartyA int32 `json:"party_a"`
+	Year  int32 `json:"year"`
+	Month int32 `json:"month"`
 }
 
 type GetBillByMonthRow struct {
@@ -227,7 +205,7 @@ type GetBillByMonthRow struct {
 }
 
 func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) ([]GetBillByMonthRow, error) {
-	rows, err := q.db.Query(ctx, getBillByMonth, arg.Year, arg.Month, arg.PartyA)
+	rows, err := q.db.Query(ctx, getBillByMonth, arg.Year, arg.Month)
 	if err != nil {
 		return nil, err
 	}

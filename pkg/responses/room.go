@@ -41,3 +41,21 @@ type MContractOnChainRes struct {
 	CreatedAt            int64  // Thời gian tạo hợp đồng (timestamp)
 	UpdatedAt            int64  // Thời gian cập nhật hợp đồng (timestamp)
 }
+
+
+type GetAllMetric4BillByRoomID struct {
+	RoomID          int32       `json:"room_id"`
+	PrevMonth       interface{} `json:"prev_month"`
+	CurrMonth       int32       `json:"curr_month"`
+	PrevWater       interface{} `json:"prev_water"`
+	CurrWater       float64     `json:"curr_water"`
+	PrevElectricity interface{} `json:"prev_electricity"`
+	CurrElectricity float64     `json:"curr_electricity"`
+	Year            int32       `json:"year"`
+	ContractID      int32       `json:"contract_id"`       // Contract ID
+	ActualPrice     int64     `json:"actual_price"`      // Actual price of the contract
+	WaterCost       int64     `json:"water_cost"`        // Water cost
+	ElectricityCost int64     `json:"electricity_cost"`  // Electricity cost
+	InternetCost    int64     `json:"internet_cost"`     // Internet cost
+	ParkingFee      int64     `json:"parking_fee"`       // Parking fee
+}

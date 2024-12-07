@@ -33,10 +33,8 @@ SELECT b.code,
         b.created_at,
         b.updated_at
 FROM PUBLIC.BILLING as b
-LEFT JOIN public.contracts as ct on ct.id = b.contract_id
 WHERE b.year = $1 
-    AND b.month=$2 
-    AND (ct.party_a = $3 OR ct.party_b = $3);
+    AND b.month=$2;
 
 -- name: GetBillByID :one
 SELECT  code,
@@ -55,12 +53,6 @@ WHERE deleted_at IS NULL
 
 -- name: GetAllMetric4BillByRoomID :one
 SELECT t.room_id,
-       c.id as contract_id,
-       c.actual_price,
-       c.water_cost,
-       c.electricity_cost,
-       c.internet_cost,
-       c.parking_fee,
        t.prev_month,
        t.curr_month,
        t.prev_water,
@@ -75,9 +67,8 @@ FROM (
 	room_id, year
 	FROM public.index as i
 ) AS t
-LEFT JOIN PUBLIC.CONTRACTS AS c ON t.room_id = c.room_id
 LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE c.room_id = $1
+WHERE idx.room_id = $1
 AND idx.month = $2
 AND idx.year = $3;
 

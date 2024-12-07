@@ -61,7 +61,8 @@ func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 }
 
 func InitIndexRouterHandler() *controllers.IndexController {
-	indexService := services.NewIndexServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	indexService := services.NewIndexServiceImpl(blockchainService)
 	indexController := controllers.NewIndexController(indexService)
 	return indexController
 }

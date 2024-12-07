@@ -135,12 +135,13 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-	// update status = 4 - expire in contract
-	updateContractErr := r.repo.SetExpiredContract(context.Background(), *returnRequest.ContractID)
-	if updateContractErr != nil {
+
+	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+	_, err = r.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(id))
+	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:    updateContractErr.Error(),
+			Message:    err.Error(),
 			Data:       false,
 		}
 	}

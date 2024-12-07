@@ -57,24 +57,29 @@ type CreateLeaseAgreementOnChainReq struct {
 }
 
 type CreateContractOnChainReq struct {
-	Code                 string  `json:"code"`                  // Mã hợp đồng
-	RoomID               int64   `json:"room_id"`              // ID phòng
-	Tenant               string  `json:"tenant"` 
-	TotalPrice           int64 `json:"total_price"`          // Giá thuê thực tế
-	Deposit              int64 `json:"deposit"`              // Số tiền đặt cọc
-	BeginDate            int64   `json:"begin_date"`           // Ngày bắt đầu (timestamp)
-	EndDate              int64   `json:"end_date"`             // Ngày kết thúc (timestamp)
-	PaymentMethod        string  `json:"payment_method"`       // Phương thức thanh toán
-	ElectricityMethod    string  `json:"electricity_method"`   // Phương thức thanh toán điện
-	ElectricityCost      int64 `json:"electricity_cost"`     // Chi phí điện
-	WaterMethod          string  `json:"water_method"`         // Phương thức thanh toán nước
-	WaterCost            int64 `json:"water_cost"`           // Chi phí nước
-	InternetCost         int64 `json:"internet_cost"`        // Chi phí Internet
-	ParkingFee           int64 `json:"parking_fee"`          // Phí đỗ xe
-	ResponsibilityA      string  `json:"responsibility_a"`     // Trách nhiệm của bên A (chủ nhà)
-	ResponsibilityB      string  `json:"responsibility_b"`     // Trách nhiệm của bên B (người thuê)
+	Code                  string `json:"code"`    // Mã hợp đồng
+	RoomID                int64  `json:"room_id"` // ID phòng
+	Tenant                string `json:"tenant"`
+	TotalPrice            int64  `json:"total_price"`            // Giá thuê thực tế
+	Deposit               int64  `json:"deposit"`                // Số tiền đặt cọc
+	BeginDate             int64  `json:"begin_date"`             // Ngày bắt đầu (timestamp)
+	EndDate               int64  `json:"end_date"`               // Ngày kết thúc (timestamp)
+	PaymentMethod         string `json:"payment_method"`         // Phương thức thanh toán
+	ElectricityMethod     string `json:"electricity_method"`     // Phương thức thanh toán điện
+	ElectricityCost       int64  `json:"electricity_cost"`       // Chi phí điện
+	WaterMethod           string `json:"water_method"`           // Phương thức thanh toán nước
+	WaterCost             int64  `json:"water_cost"`             // Chi phí nước
+	InternetCost          int64  `json:"internet_cost"`          // Chi phí Internet
+	ParkingFee            int64  `json:"parking_fee"`            // Phí đỗ xe
+	ResponsibilityA       string `json:"responsibility_a"`       // Trách nhiệm của bên A (chủ nhà)
+	ResponsibilityB       string `json:"responsibility_b"`       // Trách nhiệm của bên B (người thuê)
 	GeneralResponsibility string `json:"general_responsibility"` // Trách nhiệm chung
-	SignatureA           string  `json:"signature_a"`          // Chữ ký của bên A
-	SignedTimeA          int64   `json:"signed_time_a"`        // Thời gian ký của bên A (timestamp)
-	ContractTemplateId   int64   `json:"contract_template_id"` // ID mẫu hợp đồng
+	SignatureA            string `json:"signature_a"`            // Chữ ký của bên A
+	SignedTimeA           int64  `json:"signed_time_a"`          // Thời gian ký của bên A (timestamp)
+	ContractTemplateId    int64  `json:"contract_template_id"`   // ID mẫu hợp đồng
+}
+
+type SignContractParams struct {
+	Id         int32  `json:"id"`
+	SignatureB string `json:"signature_b"`
 }

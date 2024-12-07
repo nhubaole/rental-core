@@ -74,7 +74,7 @@ func NewRouter(
 	contractRouter.POST("/template/get-by-address",middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
 	contractRouter.POST("",middlewares.AuthenMiddleware, cc.Create)
 	contractRouter.GET("/:id",middlewares.AuthenMiddleware, cc.GetByID)
-	contractRouter.GET("/status/:statusID", cc.GetByStatus)
+	contractRouter.GET("/status/:statusID", middlewares.AuthenMiddleware, cc.GetByStatus)
 	contractRouter.PUT("/sign", middlewares.AuthenMiddleware, cc.SignContract)
 	contractRouter.PUT("/decline/:id", middlewares.AuthenMiddleware, cc.DeclineContract)
 	contractRouter.GET("/get-by-user", middlewares.AuthenMiddleware, cc.GetByUser)

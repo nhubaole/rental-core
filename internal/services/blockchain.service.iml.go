@@ -222,6 +222,68 @@ func (b *BlockchainServiceImpl) GetMContractByIDOnChain(contractId int64) (*resp
 	return blockchainContract, nil
 }
 
+func (b *BlockchainServiceImpl) GetListMContractByStatus(contractIds []int32, statusID int64, userId int64, isLandlord bool) ([]gen.ContractManagementMContract, error) {
+	contractManagement, err := gen.NewContractManagement(b.contractManagementAddress, b.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create contract instance: %w", err)
+	}
+
+	bigUserId := big.NewInt(userId)
+	ids := make([]*big.Int, len(contractIds))
+	for i, id := range contractIds {
+		ids[i] = big.NewInt(int64(id))
+	}
+
+	contracts, err := contractManagement.GetContractsByPreRentalStatus(&bind.CallOpts{}, uint8(statusID), ids, isLandlord, bigUserId)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve contracts data from blockchain: %w", err)
+	}
+
+	return contracts, nil
+}
+
+func (b *BlockchainServiceImpl) DeclineMContractOnChain(privateKeyHex string, ContractId int64) (string, error) {
+	chainID, err := b.client.NetworkID(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to get network ID: %w", err)
+	}
+
+	// Parse the private key provided by the user
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	gasPrice, err := b.client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to suggest gas price: %w", err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create transactor: %w", err)
+	}
+	auth.GasLimit = 3000000
+	auth.GasPrice = gasPrice
+
+	contractManagement, err := gen.NewContractManagement(b.contractManagementAddress, b.client)
+	if err != nil {
+		return "", fmt.Errorf("failed to create contract instance: %w", err)
+	}
+
+	tx, err := contractManagement.DeclineContract(
+		auth,
+		big.NewInt(ContractId),
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to decline contract on blockchain: %w", err)
+	}
+
+	return tx.Hash().Hex(), nil
+}
+
 func (b *BlockchainServiceImpl) SignMContractOnChain(privateKeyHex string, req requests.SignMContractOnChainReq) (string, error) {
 	chainID, err := b.client.NetworkID(context.Background())
 	if err != nil {

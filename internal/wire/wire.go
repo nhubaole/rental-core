@@ -77,6 +77,7 @@ func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 func InitIndexRouterHandler() *controllers.IndexController {
 	wire.Build(
 		services.NewIndexServiceImpl,
+		services.NewBlockchainServiceImpl,
 		controllers.NewIndexController,
 	)
 	return &controllers.IndexController{}
