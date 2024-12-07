@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract ContractManagement {
-    enum PreRentalStatus { Activated, Signed, PaidDeposit }
+    enum PreRentalStatus { Activated, Signed, PaidDeposit, InActivated }
     enum RentalProcessStatus { FirstPhase, RecordedMeter, Unpaid, Paid }
     enum PostRentalStatus { NotRequested, UnreturnedDeposit, Completed }
     
@@ -202,6 +202,53 @@ contract ContractManagement {
             mContract.createdAt,
             mContract.updatedAt
         );
+    }
+
+    function getContractsByPreRentalStatus(
+        PreRentalStatus _status,
+        uint[] memory ids,
+        bool isLandlord,
+        uint userId
+    ) public view returns (MContract[] memory) {
+        uint count = 0;
+
+        for (uint i = 0; i < ids.length; i++) {
+            MContract storage mContract = mContracts[ids[i]];
+            if (
+                mContract.exists &&
+                mContract.preRentalStatus == _status &&
+                ((isLandlord && mContract.landlord == userId) || (!isLandlord && mContract.tenant == userId))
+            ) {
+                count++;
+            }
+        }
+
+        MContract[] memory results = new MContract[](count);
+        uint index = 0;
+
+        for (uint i = 0; i < ids.length; i++) {
+            MContract storage mContract = mContracts[ids[i]];
+            if (
+                mContract.exists &&
+                mContract.preRentalStatus == _status &&
+                ((isLandlord && mContract.landlord == userId) || (!isLandlord && mContract.tenant == userId))
+            ) {
+                results[index] = mContract;
+                index++;
+            }
+        }
+
+        return results;
+    }
+
+    function declineContract(uint _id) public {
+        MContract storage leaseContract = mContracts[_id];
+        require(leaseContract.exists == true, "MContract does not exist");
+
+        leaseContract.preRentalStatus = PreRentalStatus.InActivated;
+        leaseContract.updatedAt = block.timestamp;
+
+        emit MContractUpdated(_id);
     }
 
     function signContractByTenant(
