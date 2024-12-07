@@ -11,4 +11,5 @@ type RentalRequestService interface {
 	GetRentalRequestById(rentid int32, myid int32) *responses.ResponseData
 	GetAllRentalRequest(phone string) *responses.ResponseData
 	ReviewRentalRequest(result string, reqid int32, userid int32) *responses.ResponseData
+	GetRentalRequestByRoomID( roomID int)*responses.ResponseData
 }

@@ -41,7 +41,7 @@ func NewRouter(
 	roomRouter.POST("", middlewares.AuthenMiddleware, rc.Create)
 	roomRouter.GET("", middlewares.AuthenMiddleware, rc.GetAll)
 	roomRouter.GET("/:id", middlewares.AuthenMiddleware, rc.GetByID)
-	roomRouter.GET("/search-by-address", middlewares.AuthenMiddleware, rc.SearchByAddress)
+	roomRouter.GET("/search-by-address",  rc.SearchByAddress)
 	roomRouter.GET("/like/:id", middlewares.AuthenMiddleware, rc.Like)
 	roomRouter.GET("/like", middlewares.AuthenMiddleware, rc.GetLikedRooms)
 	roomRouter.GET("/status/:status", middlewares.AuthenMiddleware, rc.GetByStatus)
@@ -54,6 +54,7 @@ func NewRouter(
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
 	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, ptc.GetProcessTrackingByRentalId)
 	rentalRequestRouter.GET("/all/tracking-process", middlewares.AuthenMiddleware, ptc.GetAllProcessTracking)
+	rentalRequestRouter.GET("/room/:id", middlewares.AuthenMiddleware, rrc.GetRentalRequestByRoomId)
 
 	billingRouter := baseRouter.Group("/billings")
 	billingRouter.GET("/index/:year/:month", middlewares.AuthenMiddleware, ic.GetIndexFromOwner)
@@ -91,6 +92,7 @@ func NewRouter(
 
 	conversationRouter := baseRouter.Group("/conversations")
 	conversationRouter.POST("",middlewares.AuthenMiddleware, conversation.CreateConversation)
-	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
+	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByCurrentUser)
+	conversationRouter.GET("/user/:id", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
 	return r
 }
