@@ -71,3 +71,21 @@ WHERE room_id = $1
   AND status = 2
   AND begin_date <= now()
   AND end_date >= now();
+
+-- name: GetRequestByRoomID :many
+SELECT     
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR 
+WHERE RR.room_id = $1
+	and RR.deleted_at is NULL ;

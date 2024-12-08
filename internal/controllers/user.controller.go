@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -39,7 +40,7 @@ func (uc *UserController) GetUserByID(ctx *gin.Context) {
 func (uc *UserController) Update(ctx *gin.Context) {
 	// Parse request body
 	var updateUserParam *dataaccess.UpdateUserParams
-	err := ctx.BindJSON(&updateUserParam)
+	err := ctx.ShouldBindJSON(&updateUserParam)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
 		return
@@ -47,6 +48,55 @@ func (uc *UserController) Update(ctx *gin.Context) {
 
 	// Call service layer Update function
 	result := uc.userService.Update(updateUserParam)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
 
+func (uc *UserController) GetCurrentUser(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+
+	result := uc.userService.GetUserByID(int(user.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (uc *UserController) UpdateUserBank(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	var updateUserBankBody dataaccess.UpdateUserBankParams
+	updateUserBankBody.UserID = user.ID
+	errParse := ctx.ShouldBindJSON(&updateUserBankBody)
+	if errParse != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	
+	result := uc.userService.UpdateBankInfo(&updateUserBankBody)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (uc *UserController) CreateUserBank(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	var createUserBankBody dataaccess.CreateUserBankParams
+	createUserBankBody.UserID = user.ID
+	errParse := ctx.ShouldBindJSON(&createUserBankBody)
+	if errParse != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	result := uc.userService.CreateBankInfo(&createUserBankBody)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

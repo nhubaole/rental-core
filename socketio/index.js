@@ -1,56 +1,68 @@
-const express = require('express');
-const http = require('http');
-const socketIO = require('socket.io');
-  
-const app = express();
-const server = http.createServer(app);
-const io = socketIO(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
- 
+import { Server as SocketIOServer } from "socket.io";
+import express from 'express';
+import http from 'http';
+import loadConfig from './config/config.js';
+import {query } from "./config/database.js";
 
-const port = 3000;
+const app = express();
+const server = http.createServer(app);  
+
+let config;
+let connectedClients = {};
+loadConfig()
+  .then((loadedConfig) => {
+    config = loadedConfig;
+    const serverPort = config.node_server.port || 3001;
+    
+    const io = new SocketIOServer(server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
+    });
+
+    io.on('connection', (socket) => {
+      const userId = socket.handshake.query.userID;
+      if (userId) {
+        connectedClients[userId] = socket.id;
+        console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+      } else {
+        console.log(`User ID not found in query parameters for socket ID: ${socket.id}`);
+      }
+      
+      socket.on('sendMessage', async (message) => {
+        const { sender_id, receiver_id,conversation_id, content, type } = message;
+
+        try {
+          const result = await query(
+            'INSERT INTO messages (sender_id,conversation_id, content, type) VALUES ($1, $2, $3, $4) RETURNING *',
+            [sender_id, conversation_id,content, type]
+          );
+          const savedMessage = result.rows[0]; 
+          console.log(savedMessage)
+          io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
+          io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
+          await query(
+            'UPDATE conversations SET last_message_id = $1 WHERE id = $2',
+            [savedMessage.id, savedMessage.conversation_id]
+          )
+        } catch (error) {
+          console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
+        }
+      });
+
+      socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        delete connectedClients[socket.id];
+      });
+    });
+
+    server.listen(serverPort, () => {
+      console.log(`Listening on port ${serverPort}`);
+    });
+  })
+  .catch((error) => {
+    console.error(`Failed to load configuration: ${error}`);
+  });
 
 app.use(express.json());
-
-let connectedClients = {};
-
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-  
-  connectedClients[socket.id] = socket;
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    delete connectedClients[socket.id];
-  });
-
-  socket.on('send-to-server', (data) => {
-    console.log(`Message from ${socket.id}:`, data);
-  });
-});
-
-app.post('/send-message', (req, res) => {
-  const { message, socket_id } = req.body;
-
-  if (!message || !socket_id) {
-    return res.status(400).json({ error: 'Message and socket_id are required' });
-  }
-
-  const targetSocket = connectedClients[socket_id];
-
-  if (targetSocket) {
-    targetSocket.emit('connection', { message });
-    console.log(message)
-    res.status(200).json({ success: true, message: 'Message sent successfully' });
-  } else {
-    res.status(404).json({ error: 'Socket not found or user is not connected' });
-  }
-});
-
-server.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});

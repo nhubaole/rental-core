@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Bank struct {
+	ID        int32            `json:"id"`
+	BankName  string           `json:"bank_name"`
+	BankCode  string           `json:"bank_code"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ShortName *string          `json:"short_name"`
+	Logo      *string          `json:"logo"`
+}
+
 type Billing struct {
 	ID                   int32              `json:"id"`
 	Code                 string             `json:"code"`
@@ -17,7 +27,6 @@ type Billing struct {
 	TotalAmount          float64            `json:"total_amount"`
 	Month                int32              `json:"month"`
 	Year                 int32              `json:"year"`
-	PaidTime             pgtype.Timestamptz `json:"paid_time"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
@@ -31,35 +40,8 @@ type Billing struct {
 }
 
 type Contract struct {
-	ID                    int32              `json:"id"`
-	Code                  string             `json:"code"`
-	PartyA                int32              `json:"party_a"`
-	PartyB                int32              `json:"party_b"`
-	RequestID             int32              `json:"request_id"`
-	RoomID                int32              `json:"room_id"`
-	ActualPrice           float64            `json:"actual_price"`
-	PaymentMethod         *string            `json:"payment_method"`
-	ElectricityMethod     string             `json:"electricity_method"`
-	ElectricityCost       float64            `json:"electricity_cost"`
-	WaterMethod           string             `json:"water_method"`
-	WaterCost             float64            `json:"water_cost"`
-	InternetCost          float64            `json:"internet_cost"`
-	ParkingFee            *float64           `json:"parking_fee"`
-	Deposit               float64            `json:"deposit"`
-	BeginDate             pgtype.Date        `json:"begin_date"`
-	EndDate               pgtype.Date        `json:"end_date"`
-	ResponsibilityA       string             `json:"responsibility_a"`
-	ResponsibilityB       string             `json:"responsibility_b"`
-	GeneralResponsibility *string            `json:"general_responsibility"`
-	SignatureA            string             `json:"signature_a"`
-	SignedTimeA           pgtype.Timestamptz `json:"signed_time_a"`
-	SignatureB            *string            `json:"signature_b"`
-	SignedTimeB           pgtype.Timestamptz `json:"signed_time_b"`
-	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt             pgtype.Timestamp   `json:"deleted_at"`
-	ContractTemplateID    *int32             `json:"contract_template_id"`
-	Status                *int32             `json:"status"`
+	ID     int32  `json:"id"`
+	RoomID *int32 `json:"room_id"`
 }
 
 type ContractTemplate struct {
@@ -78,6 +60,14 @@ type ContractTemplate struct {
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt             pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type Conversation struct {
+	ID            int32            `json:"id"`
+	UserA         int32            `json:"user_a"`
+	UserB         int32            `json:"user_b"`
+	LastMessageID *int32           `json:"last_message_id"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
 type Index struct {
@@ -111,14 +101,28 @@ type Like struct {
 	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type Message struct {
+	ID              int32            `json:"id"`
+	ConversationID  int32            `json:"conversation_id"`
+	SenderID        int32            `json:"sender_id"`
+	Type            int32            `json:"type"`
+	Content         *string          `json:"content"`
+	CreatedAt       pgtype.Timestamp `json:"created_at"`
+	RentAutoContent []byte           `json:"rent_auto_content"`
+}
+
 type Payment struct {
-	ID         int32   `json:"id"`
-	Code       string  `json:"code"`
-	SenderID   int32   `json:"sender_id"`
-	BillID     int32   `json:"bill_id"`
-	ContractID int32   `json:"contract_id"`
-	Amount     float64 `json:"amount"`
-	Status     int32   `json:"status"`
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	BillID          *int32             `json:"bill_id"`
+	ContractID      *int32             `json:"contract_id"`
+	Amount          float64            `json:"amount"`
+	Status          int32              `json:"status"`
+	ReturnRequestID *int32             `json:"return_request_id"`
+	TransferContent *string            `json:"transfer_content"`
+	EvidenceImage   *string            `json:"evidence_image"`
+	PaidTime        pgtype.Timestamptz `json:"paid_time"`
 }
 
 type ProcessTracking struct {
@@ -236,13 +240,26 @@ type Transaction struct {
 }
 
 type User struct {
-	ID          int32              `json:"id"`
-	PhoneNumber string             `json:"phone_number"`
-	FullName    string             `json:"full_name"`
-	Password    string             `json:"password"`
-	Address     *string            `json:"address"`
-	Role        int32              `json:"role"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
-	Otp         *int32             `json:"otp"`
+	ID            int32              `json:"id"`
+	PhoneNumber   string             `json:"phone_number"`
+	FullName      string             `json:"full_name"`
+	Password      string             `json:"password"`
+	Address       *string            `json:"address"`
+	Role          int32              `json:"role"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	Otp           *int32             `json:"otp"`
+	WalletAddress *string            `json:"wallet_address"`
+	PrivateKeyHex *string            `json:"private_key_hex"`
+}
+
+type UserBank struct {
+	UserID        int32            `json:"user_id"`
+	BankID        int32            `json:"bank_id"`
+	AccountNumber string           `json:"account_number"`
+	AccountName   string           `json:"account_name"`
+	CardNumber    *string          `json:"card_number"`
+	Currency      *string          `json:"currency"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }

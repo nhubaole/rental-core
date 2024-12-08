@@ -178,6 +178,73 @@ func (q *Queries) GetRequestByID(ctx context.Context, roomID int32) (RentalReque
 	return i, err
 }
 
+const getRequestByRoomID = `-- name: GetRequestByRoomID :many
+SELECT     
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR 
+WHERE RR.room_id = $1
+	and RR.deleted_at is NULL
+`
+
+type GetRequestByRoomIDRow struct {
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	RoomID          int32              `json:"room_id"`
+	SuggestedPrice  *float64           `json:"suggested_price"`
+	NumOfPerson     *int32             `json:"num_of_person"`
+	BeginDate       pgtype.Timestamptz `json:"begin_date"`
+	EndDate         pgtype.Timestamptz `json:"end_date"`
+	AdditionRequest *string            `json:"addition_request"`
+	Status          int32              `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetRequestByRoomID(ctx context.Context, roomID int32) ([]GetRequestByRoomIDRow, error) {
+	rows, err := q.db.Query(ctx, getRequestByRoomID, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRequestByRoomIDRow
+	for rows.Next() {
+		var i GetRequestByRoomIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.SenderID,
+			&i.RoomID,
+			&i.SuggestedPrice,
+			&i.NumOfPerson,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.AdditionRequest,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRequestBySenderID = `-- name: GetRequestBySenderID :many
 SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 

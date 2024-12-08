@@ -9,31 +9,90 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
-	"time"
 )
 
 type RentalRequestServiceImpl struct {
 	repo *dataaccess.Queries
 }
 
+
+
 func NewRentalRequestServiceImpl() RentalRequestService {
 	return &RentalRequestServiceImpl{repo: dataaccess.New(global.Db)}
 }
 
+// GetRentalRequestByRoomID implements RentalRequestService.
+func (rentalService *RentalRequestServiceImpl) GetRentalRequestByRoomID(roomID int) *responses.ResponseData {
+	requests, err := rentalService.repo.GetRequestByRoomID(context.Background(), int32(roomID))
+
+	if len(requests) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusResourceNotFound,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	var detailedRequests []responses.GetRequestByRoomIDRes
+	for _, request := range requests {
+        // Lấy thông tin chi tiết của người gửi dựa trên sender_id
+        sender, err := rentalService.repo.GetUserByID(context.Background(), request.SenderID)
+        if err != nil {
+            return &responses.ResponseData{
+                StatusCode: http.StatusInternalServerError,
+                Message:    err.Error(),
+                Data:       nil,
+            }
+        }
+		var user responses.UserResponse
+		common.MapStruct(sender, &user)
+
+        // Xây dựng đối tượng chi tiết
+        detailedRequest := responses.GetRequestByRoomIDRes{
+            ID:              int(request.ID),
+            Code:            request.Code,
+            Sender:          user,
+            RoomID:          request.RoomID,
+            SuggestedPrice:  request.SuggestedPrice,
+            NumOfPerson:     request.NumOfPerson,
+            BeginDate:       request.BeginDate,
+            EndDate:         request.EndDate,
+            AdditionRequest: request.AdditionRequest,
+            Status:          request.Status,
+            CreatedAt:       request.CreatedAt,
+            UpdatedAt:       request.UpdatedAt,
+        }
+
+        // Thêm đối tượng vào danh sách kết quả
+        detailedRequests = append(detailedRequests, detailedRequest)
+    }
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       detailedRequests,
+	}
+}
 func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *requests.CreateRentalRequest, userid int32) *responses.ResponseData {
 	// check if the room reqId existed
 	rs, checkEr := rentalService.repo.GetRoomByID(context.Background(), body.RoomID)
 	if checkEr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "We can't find this room",
-			Data:       "nothing here",
+			Message:    "Phòng không tồn tại",
+			Data:       false,
 		}
 	}
 	if rs.Owner == userid {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "You can't rent your room!! You have already owned it",
+			Message:    "Bạn không thể thực hiện thao tác này",
 			Data:       false,
 		}
 	}
@@ -48,23 +107,22 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		if rentStatus.Status != 3 {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNotAcceptable,
-				Message:    "You have to wait until the owner responds",
-				Data:       "nothing here",
+				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
+				Data:       false,
 			}
 		}
 		fmt.Println(rentStatus.DeletedAt)
 		if !rentStatus.DeletedAt.Valid {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNotAcceptable,
-				Message:    "You have to wait until the owner responds",
-				Data:       "nothing here",
+				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
+				Data:       false,
 			}
 		}
 	}
 	// parse to the new body
 	parseBody := dataaccess.CreateRentalRequestParams{
 		SenderID:        userid,
-		Code:            "",
 		RoomID:          body.RoomID,
 		SuggestedPrice:  body.SuggestedPrice,
 		NumOfPerson:     body.NumOfPerson,
@@ -73,11 +131,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		AdditionRequest: body.AdditionRequest,
 		Status:          1,
 	}
-	// add things
-	parseBody.Status = 1
-	parseBody.SenderID = userid
-	mytime := int(time.Now().UnixNano() / int64(time.Microsecond))
-	parseBody.Code = common.GenerateCode("RR", int(userid), int(body.RoomID), mytime)
+	parseBody.Code = common.GenerateCode("YC")
 
 	// push to database
 	res, err := rentalService.repo.CreateRentalRequest(context.Background(), parseBody)

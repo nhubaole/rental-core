@@ -45,12 +45,18 @@ func(cc ContractController) GetTemplateByAddress(ctx *gin.Context) {
 
 func(cc ContractController) Create(ctx *gin.Context) {
 	var req	requests.CreateContractRequest
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
-
-	result := cc.services.CreateContract(req)
+	
+	result := cc.services.CreateContract(req, int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
 }
 
@@ -71,13 +77,19 @@ func (cc ContractController) GetByStatus(ctx *gin.Context) {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
 	}
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+	isLandlord := currentUser.Role == 1
 
-	result := cc.services.ListContractByStatus(statusID)
+	result := cc.services.ListContractByStatus(statusID, int(currentUser.ID), isLandlord)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
 func (cc ContractController) SignContract(ctx *gin.Context) {
-	var req	dataaccess.SignContractParams
+	var req	requests.SignContractParams
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
@@ -93,7 +105,7 @@ func (cc ContractController) SignContract(ctx *gin.Context) {
 }
 
 func (cc ContractController) DeclineContract(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("statusID"))
+	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		responses.APIResponse(ctx, 400, "Bad request", nil)
 		return
@@ -105,5 +117,17 @@ func (cc ContractController) DeclineContract(ctx *gin.Context) {
 	}
 
 	result := cc.services.DeclineContract(id, int(currentUser.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
+func (cc ContractController) GetByUser(ctx *gin.Context) {
+	
+	currentUser, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	result := cc.services.GetContractByUser(int(currentUser.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
