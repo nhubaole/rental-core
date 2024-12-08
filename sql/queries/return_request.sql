@@ -25,3 +25,10 @@ SET status = 2,
     updated_at= now()
 WHERE deleted_at IS NULL
     AND id = $1;
+
+-- name: GetReturnRequestByLandlordID :many
+SELECT rr.id, rr.contract_id, rr.reason, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at
+FROM public.return_requests rr LEFT JOIN public.contracts c
+ON rr.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE r.owner = $1;

@@ -13,10 +13,35 @@ type ReturnRequestServiceImpl struct {
 }
 
 
-
 func NewReturnRequestServiceImpl() ReturnRequestService {
 	return &ReturnRequestServiceImpl{
 		repo: dataaccess.New(global.Db),
+	}
+}
+
+// GetByLandlordID implements ReturnRequestService.
+func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.ResponseData {
+	requests, err := r.repo.GetReturnRequestByLandlordID(context.Background(),int32(userID))
+
+	if len(requests) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusNoData,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       requests,
 	}
 }
 
@@ -96,10 +121,10 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
-	
+
 	// set room available
 	updateRoomParam := dataaccess.UpdateRoomParams{
-		ID: room.RoomID,
+		ID:     room.RoomID,
 		IsRent: false,
 	}
 	_, updateRoomErr := r.repo.UpdateRoom(context.Background(), updateRoomParam)
@@ -120,7 +145,7 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
-	
+
 	// update tenants table
 	updateTenantErr := r.repo.DeleteTenantByRoomID(context.Background(), room.RoomID)
 	if updateTenantErr != nil {

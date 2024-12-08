@@ -48,6 +48,17 @@ func (rrc *ReturnRequestController) GetReturnRequestByID(ctx *gin.Context) {
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
+func (rrc *ReturnRequestController) GetReturnRequestByLandlordID(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	
+	result := rrc.service.GetByLandlordID(id)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
 func (rrc *ReturnRequestController) ApproveReturnRequest(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

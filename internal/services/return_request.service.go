@@ -9,4 +9,5 @@ type ReturnRequestService interface {
 	Create(req dataaccess.CreateReturnRequestParams, userID int) *responses.ResponseData
 	GetByID(id int) *responses.ResponseData
 	Aprrove(id int, userID int) *responses.ResponseData
+	GetByLandlordID(userID int) *responses.ResponseData
 }
