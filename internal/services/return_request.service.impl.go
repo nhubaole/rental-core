@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
 )
 
@@ -22,7 +23,7 @@ func NewReturnRequestServiceImpl(blockchain BlockchainService) ReturnRequestServ
 
 // GetByLandlordID implements ReturnRequestService.
 func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.ResponseData {
-	requests, err := r.repo.GetReturnRequestByLandlordID(context.Background(),int32(userID))
+	requests, err := r.repo.GetReturnRequestByLandlordID(context.Background(), int32(userID))
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
@@ -38,11 +39,43 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 			Data:       false,
 		}
 	}
+	var detailedRequests []responses.GetReturnRequestByLandlordIDRes
+	for _, request := range requests {
+		// Lấy thông tin chi tiết của người gửi dựa trên sender_id
+		sender, err := r.repo.GetUserByID(context.Background(), *request.CreatedUser)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		var user responses.UserResponse
+		common.MapStruct(sender, &user)
+
+		// Xây dựng đối tượng chi tiết
+		detailedRequest := responses.GetReturnRequestByLandlordIDRes{
+			ID:                 request.ID,
+			ContractID:         request.ContractID,
+			RoomID: *request.RoomID,
+			Reason:             request.Reason,
+			ReturnDate:         request.ReturnDate,
+			Status:             request.Status,
+			DeductAmount:       request.DeductAmount,
+			TotalReturnDeposit: request.TotalReturnDeposit,
+			CreatedUser:        user,
+			CreatedAt:          request.CreatedAt,
+			UpdatedAt:          request.UpdatedAt,
+		}
+
+		// Thêm đối tượng vào danh sách kết quả
+		detailedRequests = append(detailedRequests, detailedRequest)
+	}
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       requests,
+		Data:       detailedRequests,
 	}
 }
 
@@ -178,7 +211,6 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-
 	// set room available
 	updateRoomParam := dataaccess.UpdateRoomParams{
 		ID:     room.RoomID,
@@ -193,7 +225,6 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-
 	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
 	_, err = r.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(id))
 	if err != nil {
@@ -203,7 +234,6 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
-
 
 	// update tenants table
 	updateTenantErr := r.repo.DeleteTenantByRoomID(context.Background(), room.RoomID)

@@ -102,7 +102,7 @@ func (q *Queries) GetReturnRequestByID(ctx context.Context, id int32) (GetReturn
 }
 
 const getReturnRequestByLandlordID = `-- name: GetReturnRequestByLandlordID :many
-SELECT rr.id, rr.contract_id, rr.reason, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at
+SELECT rr.id, rr.contract_id, r.id as room_id, rr.reason, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at
 FROM public.return_requests rr LEFT JOIN public.contracts c
 ON rr.contract_id = c.id
 LEFT JOIN public.rooms r ON c.room_id = r.id
@@ -112,6 +112,7 @@ WHERE r.owner = $1
 type GetReturnRequestByLandlordIDRow struct {
 	ID                 int32            `json:"id"`
 	ContractID         *int32           `json:"contract_id"`
+	RoomID             *int32           `json:"room_id"`
 	Reason             *string          `json:"reason"`
 	ReturnDate         pgtype.Timestamp `json:"return_date"`
 	Status             *int32           `json:"status"`
@@ -134,6 +135,7 @@ func (q *Queries) GetReturnRequestByLandlordID(ctx context.Context, owner int32)
 		if err := rows.Scan(
 			&i.ID,
 			&i.ContractID,
+			&i.RoomID,
 			&i.Reason,
 			&i.ReturnDate,
 			&i.Status,
