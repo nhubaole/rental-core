@@ -20,6 +20,7 @@ func NewRouter(
 	ratingController *controllers.RatingController,
 	ms *controllers.MessageController,
 	conversation *controllers.ConversationController,
+	payment *controllers.PaymentController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -36,15 +37,18 @@ func NewRouter(
 	userRouter.GET("/:id", middlewares.AuthenMiddleware, uc.GetUserByID)
 	userRouter.GET("/current-user", middlewares.AuthenMiddleware, uc.GetCurrentUser)
 	userRouter.PUT("/", middlewares.AuthenMiddleware, uc.Update)
+	userRouter.POST("/bank-info", middlewares.AuthenMiddleware, uc.CreateUserBank)
+	userRouter.PUT("/bank-info", middlewares.AuthenMiddleware, uc.UpdateUserBank)
 
 	roomRouter := baseRouter.Group("/rooms")
 	roomRouter.POST("", middlewares.AuthenMiddleware, rc.Create)
-	roomRouter.GET("", middlewares.AuthenMiddleware, rc.GetAll)
+	roomRouter.GET("", rc.GetAll)
 	roomRouter.GET("/:id", middlewares.AuthenMiddleware, rc.GetByID)
-	roomRouter.GET("/search-by-address",  rc.SearchByAddress)
+	roomRouter.GET("/search-by-address", rc.SearchByAddress)
 	roomRouter.GET("/like/:id", middlewares.AuthenMiddleware, rc.Like)
 	roomRouter.GET("/like", middlewares.AuthenMiddleware, rc.GetLikedRooms)
 	roomRouter.GET("/status/:status", middlewares.AuthenMiddleware, rc.GetByStatus)
+	roomRouter.PUT("", middlewares.AuthenMiddleware, rc.UpdateRoom)
 
 	rentalRequestRouter := baseRouter.Group("/requests")
 	rentalRequestRouter.POST("", middlewares.AuthenMiddleware, rrc.Create)
@@ -67,13 +71,14 @@ func NewRouter(
 	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
 
 	contractRouter := baseRouter.Group("/contracts")
-	contractRouter.POST("/template", cc.CreateTemplate)
-	contractRouter.POST("/template/get-by-address", cc.GetTemplateByAddress)
-	contractRouter.POST("", cc.Create)
-	contractRouter.GET("/:id", cc.GetByID)
-	contractRouter.GET("/status/:statusID", cc.GetByStatus)
+	contractRouter.POST("/template",middlewares.AuthenMiddleware, cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address",middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
+	contractRouter.POST("",middlewares.AuthenMiddleware, cc.Create)
+	contractRouter.GET("/:id",middlewares.AuthenMiddleware, cc.GetByID)
+	contractRouter.GET("/status/:statusID", middlewares.AuthenMiddleware, cc.GetByStatus)
 	contractRouter.PUT("/sign", middlewares.AuthenMiddleware, cc.SignContract)
 	contractRouter.PUT("/decline/:id", middlewares.AuthenMiddleware, cc.DeclineContract)
+	contractRouter.GET("/get-by-user", middlewares.AuthenMiddleware, cc.GetByUser)
 
 	returnRequestRouter := baseRouter.Group("/return-requests")
 	returnRequestRouter.POST("", middlewares.AuthenMiddleware, returnRequestController.Create)
@@ -94,5 +99,13 @@ func NewRouter(
 	conversationRouter.POST("",middlewares.AuthenMiddleware, conversation.CreateConversation)
 	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByCurrentUser)
 	conversationRouter.GET("/user/:id", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
+
+	paymentRouter := baseRouter.Group("/payments")
+	paymentRouter.GET("/:id", middlewares.AuthenMiddleware, payment.GetByID)
+	paymentRouter.POST("", middlewares.AuthenMiddleware, payment.Create)
+	paymentRouter.GET("/banks", middlewares.AuthenMiddleware, payment.GetAllBanks)
+	paymentRouter.GET("", middlewares.AuthenMiddleware, payment.GetAll)
+	paymentRouter.PUT("/:id", middlewares.AuthenMiddleware, payment.Confirm)
+	paymentRouter.GET("/detail-info", middlewares.AuthenMiddleware, payment.GetPaymentInfo)
 	return r
 }

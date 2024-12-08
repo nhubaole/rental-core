@@ -12,20 +12,23 @@ INSERT INTO PUBLIC.USERS
     password,
     role,
     otp,
+    wallet_address,
+    private_key_hex,
     created_at
+    
 ) VALUES
 (
-    $1,$2,$3,$4,$5,$6,now()
+    $1,$2,$3,$4,$5,$6, $7, $8, now()
 );
 
 -- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, otp, created_at
+SELECT id, phone_number, password, role, full_name, address, wallet_address, private_key_hex, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
 
 -- name: GetUserByID :one
-SELECT id, phone_number, full_name, address, created_at
+SELECT id, phone_number, full_name, address, wallet_address,private_key_hex, created_at
 FROM PUBLIC.USERS
 WHERE id = $1 AND deleted_at IS NULL;
 

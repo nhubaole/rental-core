@@ -26,7 +26,7 @@ func (c *ConversationServiceImpl) Create(req requests.CreateConversationReq, use
 
 	common.MapStruct(req, &params)
 	params.UserA = int32(userID)
-	id,err := c.repo.CreateConversation(context.Background(), params)
+	id, err := c.repo.CreateConversation(context.Background(), params)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,

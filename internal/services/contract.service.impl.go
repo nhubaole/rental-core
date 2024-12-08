@@ -9,19 +9,36 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ContractServiceImpl struct {
-	repo *dataaccess.Queries
+	repo       *dataaccess.Queries
+	blockchain BlockchainService
 }
 
-
-
-func NewContractServiceImpl() ContractService {
+func NewContractServiceImpl(blockchain BlockchainService) ContractService {
 	return &ContractServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:       dataaccess.New(global.Db),
+		blockchain: blockchain,
+	}
+}
+
+// GetContractByUser implements ContractService.
+func (c *ContractServiceImpl) GetContractByUser(userID int) *responses.ResponseData {
+	// user, err := c.repo.GetUserByID(context.Background(), int32(userID))
+	// contracts, err := c.blockchain.GetMContractByIDOnChain(1)
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       nil,
 	}
 }
 
@@ -74,7 +91,7 @@ func (c *ContractServiceImpl) GetTemplateByAddress(address requests.GetTemplateB
 		Data:       template,
 	}
 }
-func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest) *responses.ResponseData {
+func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest, userID int) *responses.ResponseData {
 	template, err := c.repo.GetContractTemplateByAddress(context.Background(), req.Address)
 	if err != nil {
 		return &responses.ResponseData{
@@ -84,7 +101,6 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 		}
 	}
 	signOfA, encryptedErrA := common.EncryptBase64AES(req.SignatureA, global.Config.JWT.AESKey)
-	//signOfB, encryptedErrB := common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
 	if encryptedErrA != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -92,34 +108,48 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 			Data:       false,
 		}
 	}
-	parkingFee := common.IfNullFloat64(req.ParkingFee, &template.ParkingFee)
+	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
-	contract := &dataaccess.CreateContractParams{
-		Code:                  req.Code,
-		PartyA:                req.PartyA,
-		PartyB:                req.PartyB,
-		RequestID:             req.RequestID,
-		RoomID:                req.RoomID,
-		ActualPrice:           req.ActualPrice,
-		PaymentMethod:         req.PaymentMethod,
-		ElectricityMethod:     common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),
-		ElectricityCost:       common.IfNullFloat64(&req.ElectricityCost, &template.ElectricityCost),
-		WaterMethod:           common.IfNullStr(&req.WaterMethod, &template.WaterMethod),
-		WaterCost:             common.IfNullFloat64(&req.WaterCost, &template.WaterCost),
-		InternetCost:          common.IfNullFloat64(&req.InternetCost, &template.InternetCost),
-		ParkingFee:            &parkingFee,
-		Deposit:               req.Deposit,
-		BeginDate:             req.BeginDate,
-		EndDate:               req.EndDate,
-		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),
-		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),
-		GeneralResponsibility: &generalResponsibility,
-		SignatureA:            signOfA,
-		SignedTimeA:           req.SignedTimeA,
-		ContractTemplateID:    &template.ID,
+
+
+	contractId, err := c.repo.CreateContract(context.Background(), &req.RoomID)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
 	}
 
-	if err := c.repo.CreateContract(context.Background(), *contract); err != nil {
+	contract := &requests.CreateMContractOnChainReq{
+		ContractId:            int64(contractId),                                                                                  // ID duy nhất của hợp đồng
+		ContractCode:          req.Code,                                                                                           // Mã hợp đồng
+		LandlordId:            int64(req.PartyA),                                                                                  // ID của chủ nhà
+		TenantId:              int64(req.PartyB),                                                                                  // ID của người thuê
+		RoomId:                int64(req.RoomID),                                                                                  // ID của phòng
+		ActualPrice:           int64(req.ActualPrice),                                                                             // Giá thực tế của hợp đồng
+		Deposit:               int64(req.Deposit),                                                                                 // Tiền đặt cọc
+		BeginDate:             int64(req.BeginDate.Time.Unix()),                                                                   // Thời gian bắt đầu hợp đồng (Unix timestamp)
+		EndDate:               int64(req.EndDate.Time.Unix()),                                                                     // Thời gian kết thúc hợp đồng (Unix timestamp)
+		PaymentMethod:         *req.PaymentMethod,                                                                                 // Phương thức thanh toán
+		ElectricityMethod:     common.IfNullStr(&req.ElectricityMethod, &template.ElectricityMethod),                              // Phương thức tính điện
+		ElectricityCost:       common.IfNullInt64((&req.ElectricityCost), common.Float64PtrToInt64Ptr(&template.ElectricityCost)), // Giá điện
+		WaterMethod:           common.IfNullStr(&req.WaterMethod, &template.WaterMethod),                                          // Phương thức tính nước
+		WaterCost:             common.IfNullInt64(&req.WaterCost, common.Float64PtrToInt64Ptr(&template.WaterCost)),               // Giá nước
+		InternetCost:          common.IfNullInt64(&req.InternetCost, common.Float64PtrToInt64Ptr(&template.InternetCost)),         // Giá internet
+		ParkingFee:            parkingFee,                                                                                         // Phí gửi xe
+		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),                                  // Trách nhiệm bên A
+		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),                                  // Trách nhiệm bên B
+		GeneralResponsibility: generalResponsibility,                                                                              // Trách nhiệm chung
+		SignatureA:            signOfA,                                                                                            // Chữ ký của bên A
+		SignedTimeA:           req.SignedTimeA.Time.Unix(),                                                                        // Thời gian ký của bên A
+		SignatureB:            "",                                                                                                 // Chữ ký của bên B
+		SignedTimeB:           int64(0),                                                                                           // Thời gian ký của bên B
+		ContractTemplateId:    int64(template.ID),                                                                                 // ID mẫu hợp đồng
+	}
+
+	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
+	if _, err := c.blockchain.CreateMContractOnChain(*user.PrivateKeyHex, *contract); err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
@@ -136,24 +166,17 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest)
 
 // GetContractByID implements ContractService.
 func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
-	contract, err := c.repo.GetContractByID(context.Background(), int32(id))
-	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
-	signB, _ := common.DecryptBase64AES(*contract.SignatureB, global.Config.JWT.AESKey)
-	contract.SignatureB = &signB
+	contract, err := c.blockchain.GetMContractByIDOnChain(int64(id))
 	if err != nil {
-		if (contract == dataaccess.GetContractByIDRow{}) {
-			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
-				Message:    responses.StatusNoData,
-				Data:       nil,
-			}
-		}
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:    responses.StatusInternalError,
-			Data:       nil,
+			Message:    err.Error(),
+			Data:       false,
 		}
 	}
+	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
+	signB, _ := common.DecryptBase64AES(*&contract.SignatureB, global.Config.JWT.AESKey)
+	contract.SignatureB = signB
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
@@ -163,9 +186,9 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 }
 
 // ListContractByStatus implements ContractService.
-func (c *ContractServiceImpl) ListContractByStatus(statusID int) *responses.ResponseData {
-	status := int32(statusID)
-	contracts, err := c.repo.ListContractByStatus(context.Background(), &status)
+func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isLandlord bool) *responses.ResponseData {
+	contractIds, _ := c.repo.ListContractIds(context.Background())
+	contracts, err := c.blockchain.GetListMContractByStatus(contractIds, int64(statusID), int64(userId), isLandlord)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -190,25 +213,8 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int) *responses.Resp
 }
 
 // SignContract implements ContractService.
-func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, userID int) *responses.ResponseData {
-	contract, _ := c.repo.GetContractByID(context.Background(), int32(req.ID))
-	if userID != int(contract.PartyB) {
-		return &responses.ResponseData{
-			StatusCode: http.StatusForbidden,
-			Message:    "Bạn không có quyền thực hiện thao tác này",
-			Data:       false,
-		}
-	}
-	signB, encryptErr := common.EncryptBase64AES(*req.SignatureB, global.Config.JWT.AESKey)
-	req.SignatureB = &signB
-	if encryptErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Lỗi ký hợp đồng",
-			Data:       false,
-		}
-	}
-	err := c.repo.SignContract(context.Background(), req)
+func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, userID int) *responses.ResponseData {
+	contract, err := c.blockchain.GetMContractByIDOnChain(int64(req.Id))
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -216,19 +222,62 @@ func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, us
 			Data:       false,
 		}
 	}
-	createTenantParam := dataaccess.CreateTenantParams{
-		RoomID: contract.RoomID,
-		TenantID: contract.PartyB,
-		BeginDate: pgtype.Timestamptz(contract.BeginDate),
-	}
-	errUpdateTenant := c.repo.CreateTenant(context.Background(), createTenantParam)
-	if errUpdateTenant != nil {
+	if userID != int(contract.Tenant) {
 		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    errUpdateTenant.Error(),
+			StatusCode: http.StatusForbidden,
+			Message:    "Bạn không có quyền thực hiện thao tác này",
 			Data:       false,
 		}
 	}
+	signB, encryptErr := common.EncryptBase64AES(*&req.SignatureB, global.Config.JWT.AESKey)
+	req.SignatureB = signB
+	if encryptErr != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Lỗi ký hợp đồng",
+			Data:       false,
+		}
+	}
+
+	if contract.PreRentalStatus != 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Trạng thái hợp đồng không hợp lệ",
+			Data:       false,
+		}
+	}
+
+	params := &requests.SignMContractOnChainReq{
+		ContractId: int64(req.Id),
+		SignatureB: req.SignatureB,
+	}
+	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
+	_, err = c.blockchain.SignMContractOnChain(*user.PrivateKeyHex, *params)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	// createTenantParam := dataaccess.CreateTenantParams{
+	// 	RoomID:   int32(contract.RoomID),
+	// 	TenantID: int32(contract.Tenant),
+	// 	BeginDate: pgtype.Timestamptz{
+	// 		Time:  time.Unix(contract.BeginDate, 0),
+	// 		Valid: true,
+	// 	},
+	// }
+
+	// errUpdateTenant := c.repo.CreateTenant(context.Background(), createTenantParam)
+	// if errUpdateTenant != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    errUpdateTenant.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -238,8 +287,10 @@ func (c *ContractServiceImpl) SignContract(req dataaccess.SignContractParams, us
 
 // DeclineContract implements ContractService.
 func (c *ContractServiceImpl) DeclineContract(id int, userID int) *responses.ResponseData {
-	contract, _ := c.repo.GetContractByID(context.Background(), int32(id))
-	if userID != int(contract.PartyB) {
+	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
+
+	contract, _ := c.blockchain.GetMContractByIDOnChain(int64(id))
+	if userID != int(contract.Tenant) {
 		return &responses.ResponseData{
 			StatusCode: http.StatusForbidden,
 			Message:    "Bạn không có quyền thực hiện thao tác này",
@@ -247,7 +298,7 @@ func (c *ContractServiceImpl) DeclineContract(id int, userID int) *responses.Res
 		}
 	}
 
-	err := c.repo.DeclineContract(context.Background(), contract.ID)
+	_, err := c.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(id))
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,

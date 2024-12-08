@@ -9,14 +9,14 @@ import (
 )
 
 type ReturnRequestServiceImpl struct {
-	repo *dataaccess.Queries
+	repo       *dataaccess.Queries
+	blockchain BlockchainService
 }
 
-
-
-func NewReturnRequestServiceImpl() ReturnRequestService {
+func NewReturnRequestServiceImpl(blockchain BlockchainService) ReturnRequestService {
 	return &ReturnRequestServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:       dataaccess.New(global.Db),
+		blockchain: blockchain,
 	}
 }
 
@@ -25,7 +25,7 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 	id := int32(userID)
 	req.CreatedUser = &id
 
-	err := r.repo.CreateReturnRequest(context.Background(), req)
+	contract, err := r.blockchain.GetMContractByIDOnChain(int64(*req.ContractID))
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -33,6 +33,33 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 			Data:       false,
 		}
 	}
+	if contract.PostRentalStatus != 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Trạng thái hợp đồng không hợp lệ",
+			Data:       false,
+		}
+	}
+
+	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+	_, err = r.blockchain.CreateReturnRequestOnChain(*user.PrivateKeyHex, int64(*req.ContractID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	err = r.repo.CreateReturnRequest(context.Background(), req)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -69,6 +96,34 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
+
+	if returnRequest.TotalReturnDeposit != nil && *returnRequest.TotalReturnDeposit == float64(0) {
+		contract, err := r.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+		if contract.PostRentalStatus != 1 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Trạng thái hợp đồng không hợp lệ",
+				Data:       false,
+			}
+		}
+		user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+		_, err = r.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+
 	// update status = 2 in return request table
 	updateErr := r.repo.ApproveReturnRequest(context.Background(), returnRequest.ID)
 	if updateErr != nil {
@@ -96,10 +151,10 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 			Data:       false,
 		}
 	}
-	
+
 	// set room available
 	updateRoomParam := dataaccess.UpdateRoomParams{
-		ID: room.RoomID,
+		ID:     room.RoomID,
 		IsRent: false,
 	}
 	_, updateRoomErr := r.repo.UpdateRoom(context.Background(), updateRoomParam)
@@ -111,16 +166,17 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-	// update status = 4 - expire in contract
-	updateContractErr := r.repo.SetExpiredContract(context.Background(), *returnRequest.ContractID)
-	if updateContractErr != nil {
+
+	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+	_, err = r.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(id))
+	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
-			Message:    updateContractErr.Error(),
+			Message:    err.Error(),
 			Data:       false,
 		}
 	}
-	
+
 	// update tenants table
 	updateTenantErr := r.repo.DeleteTenantByRoomID(context.Background(), room.RoomID)
 	if updateTenantErr != nil {

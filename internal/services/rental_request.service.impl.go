@@ -9,7 +9,6 @@ import (
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
-	"time"
 )
 
 type RentalRequestServiceImpl struct {
@@ -86,14 +85,14 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 	if checkEr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "We can't find this room",
-			Data:       "nothing here",
+			Message:    "Phòng không tồn tại",
+			Data:       false,
 		}
 	}
 	if rs.Owner == userid {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "You can't rent your room!! You have already owned it",
+			Message:    "Bạn không thể thực hiện thao tác này",
 			Data:       false,
 		}
 	}
@@ -108,23 +107,22 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		if rentStatus.Status != 3 {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNotAcceptable,
-				Message:    "You have to wait until the owner responds",
-				Data:       "nothing here",
+				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
+				Data:       false,
 			}
 		}
 		fmt.Println(rentStatus.DeletedAt)
 		if !rentStatus.DeletedAt.Valid {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNotAcceptable,
-				Message:    "You have to wait until the owner responds",
-				Data:       "nothing here",
+				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
+				Data:       false,
 			}
 		}
 	}
 	// parse to the new body
 	parseBody := dataaccess.CreateRentalRequestParams{
 		SenderID:        userid,
-		Code:            "",
 		RoomID:          body.RoomID,
 		SuggestedPrice:  body.SuggestedPrice,
 		NumOfPerson:     body.NumOfPerson,
@@ -133,11 +131,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		AdditionRequest: body.AdditionRequest,
 		Status:          1,
 	}
-	// add things
-	parseBody.Status = 1
-	parseBody.SenderID = userid
-	mytime := int(time.Now().UnixNano() / int64(time.Microsecond))
-	parseBody.Code = common.GenerateCode("RR", int(userid), int(body.RoomID), mytime)
+	parseBody.Code = common.GenerateCode("YC")
 
 	// push to database
 	res, err := rentalService.repo.CreateRentalRequest(context.Background(), parseBody)
