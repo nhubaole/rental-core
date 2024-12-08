@@ -98,3 +98,14 @@ func (controller RentalRequestController) UpdateRentalRequestStatus(ctx *gin.Con
 	}
 	responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request parameter", nil)
 }
+
+func (controller RentalRequestController) GetRentalRequestByRoomId(ctx *gin.Context) {
+	roomID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+
+	result := controller.rentalService.GetRentalRequestByRoomID(roomID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}

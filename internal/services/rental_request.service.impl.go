@@ -15,10 +15,70 @@ type RentalRequestServiceImpl struct {
 	repo *dataaccess.Queries
 }
 
+
+
 func NewRentalRequestServiceImpl() RentalRequestService {
 	return &RentalRequestServiceImpl{repo: dataaccess.New(global.Db)}
 }
 
+// GetRentalRequestByRoomID implements RentalRequestService.
+func (rentalService *RentalRequestServiceImpl) GetRentalRequestByRoomID(roomID int) *responses.ResponseData {
+	requests, err := rentalService.repo.GetRequestByRoomID(context.Background(), int32(roomID))
+
+	if len(requests) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusResourceNotFound,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	var detailedRequests []responses.GetRequestByRoomIDRes
+	for _, request := range requests {
+        // Lấy thông tin chi tiết của người gửi dựa trên sender_id
+        sender, err := rentalService.repo.GetUserByID(context.Background(), request.SenderID)
+        if err != nil {
+            return &responses.ResponseData{
+                StatusCode: http.StatusInternalServerError,
+                Message:    err.Error(),
+                Data:       nil,
+            }
+        }
+		var user responses.UserResponse
+		common.MapStruct(sender, &user)
+
+        // Xây dựng đối tượng chi tiết
+        detailedRequest := responses.GetRequestByRoomIDRes{
+            ID:              int(request.ID),
+            Code:            request.Code,
+            Sender:          user,
+            RoomID:          request.RoomID,
+            SuggestedPrice:  request.SuggestedPrice,
+            NumOfPerson:     request.NumOfPerson,
+            BeginDate:       request.BeginDate,
+            EndDate:         request.EndDate,
+            AdditionRequest: request.AdditionRequest,
+            Status:          request.Status,
+            CreatedAt:       request.CreatedAt,
+            UpdatedAt:       request.UpdatedAt,
+        }
+
+        // Thêm đối tượng vào danh sách kết quả
+        detailedRequests = append(detailedRequests, detailedRequest)
+    }
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       detailedRequests,
+	}
+}
 func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *requests.CreateRentalRequest, userid int32) *responses.ResponseData {
 	// check if the room reqId existed
 	rs, checkEr := rentalService.repo.GetRoomByID(context.Background(), body.RoomID)
