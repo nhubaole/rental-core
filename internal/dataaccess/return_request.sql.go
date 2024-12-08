@@ -100,3 +100,57 @@ func (q *Queries) GetReturnRequestByID(ctx context.Context, id int32) (GetReturn
 	)
 	return i, err
 }
+
+const getReturnRequestByLandlordID = `-- name: GetReturnRequestByLandlordID :many
+SELECT rr.id, rr.contract_id, r.id as room_id, rr.reason, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at
+FROM public.return_requests rr LEFT JOIN public.contracts c
+ON rr.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE r.owner = $1
+`
+
+type GetReturnRequestByLandlordIDRow struct {
+	ID                 int32            `json:"id"`
+	ContractID         *int32           `json:"contract_id"`
+	RoomID             *int32           `json:"room_id"`
+	Reason             *string          `json:"reason"`
+	ReturnDate         pgtype.Timestamp `json:"return_date"`
+	Status             *int32           `json:"status"`
+	DeductAmount       *float64         `json:"deduct_amount"`
+	TotalReturnDeposit *float64         `json:"total_return_deposit"`
+	CreatedUser        *int32           `json:"created_user"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) GetReturnRequestByLandlordID(ctx context.Context, owner int32) ([]GetReturnRequestByLandlordIDRow, error) {
+	rows, err := q.db.Query(ctx, getReturnRequestByLandlordID, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetReturnRequestByLandlordIDRow
+	for rows.Next() {
+		var i GetReturnRequestByLandlordIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ContractID,
+			&i.RoomID,
+			&i.Reason,
+			&i.ReturnDate,
+			&i.Status,
+			&i.DeductAmount,
+			&i.TotalReturnDeposit,
+			&i.CreatedUser,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -83,6 +83,7 @@ func NewRouter(
 	returnRequestRouter := baseRouter.Group("/return-requests")
 	returnRequestRouter.POST("", middlewares.AuthenMiddleware, returnRequestController.Create)
 	returnRequestRouter.GET("/:id", middlewares.AuthenMiddleware, returnRequestController.GetReturnRequestByID)
+	returnRequestRouter.GET("/landlord/:id", middlewares.AuthenMiddleware, returnRequestController.GetReturnRequestByLandlordID)
 	returnRequestRouter.GET("/confirm/:id", middlewares.AuthenMiddleware, returnRequestController.ApproveReturnRequest)
 
 	ratingRouter := baseRouter.Group("/ratings")
