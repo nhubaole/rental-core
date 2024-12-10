@@ -21,6 +21,7 @@ func NewRouter(
 	ms *controllers.MessageController,
 	conversation *controllers.ConversationController,
 	payment *controllers.PaymentController,
+	notification *controllers.NotificationController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -108,5 +109,8 @@ func NewRouter(
 	paymentRouter.GET("", middlewares.AuthenMiddleware, payment.GetAll)
 	paymentRouter.PUT("/:id", middlewares.AuthenMiddleware, payment.Confirm)
 	paymentRouter.GET("/detail-info", middlewares.AuthenMiddleware, payment.GetPaymentInfo)
+
+	notificationRouter := baseRouter.Group("/notifications")
+	notificationRouter.GET("", middlewares.AuthenMiddleware, notification.GetAll)
 	return r
 }
