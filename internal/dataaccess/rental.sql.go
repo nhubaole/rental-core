@@ -154,11 +154,11 @@ func (q *Queries) GetRentalRequestSuccessByRoomId(ctx context.Context, roomID in
 const getRequestByID = `-- name: GetRequestByID :one
 SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
 FROM PUBLIC.RENTAL_REQUESTS 
-WHERE room_id = $1 and deleted_at is null
+WHERE id = $1 and deleted_at is null
 `
 
-func (q *Queries) GetRequestByID(ctx context.Context, roomID int32) (RentalRequest, error) {
-	row := q.db.QueryRow(ctx, getRequestByID, roomID)
+func (q *Queries) GetRequestByID(ctx context.Context, id int32) (RentalRequest, error) {
+	row := q.db.QueryRow(ctx, getRequestByID, id)
 	var i RentalRequest
 	err := row.Scan(
 		&i.ID,

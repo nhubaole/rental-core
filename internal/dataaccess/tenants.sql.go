@@ -58,3 +58,70 @@ func (q *Queries) DeleteTenantByRoomID(ctx context.Context, roomID int32) error 
 	_, err := q.db.Exec(ctx, deleteTenantByRoomID, roomID)
 	return err
 }
+
+const getRoomByTenantID = `-- name: GetRoomByTenantID :many
+SELECT 
+    t.id, 
+    r.id AS room_id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    t.tenant_id, 
+    t.begin_date, 
+    t.end_date, 
+    t.created_at, 
+    t.updated_at
+FROM 
+    public.tenants t
+LEFT JOIN 
+    public.rooms r 
+ON 
+    t.room_id = r.id
+WHERE 
+    t.tenant_id = $1 
+    AND t.deleted_at IS NULL
+`
+
+type GetRoomByTenantIDRow struct {
+	ID         int32              `json:"id"`
+	RoomID     *int32             `json:"room_id"`
+	Title      *string            `json:"title"`
+	Address    []string           `json:"address"`
+	RoomNumber *int32             `json:"room_number"`
+	TenantID   int32              `json:"tenant_id"`
+	BeginDate  pgtype.Timestamptz `json:"begin_date"`
+	EndDate    pgtype.Timestamptz `json:"end_date"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetRoomByTenantID(ctx context.Context, tenantID int32) ([]GetRoomByTenantIDRow, error) {
+	rows, err := q.db.Query(ctx, getRoomByTenantID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRoomByTenantIDRow
+	for rows.Next() {
+		var i GetRoomByTenantIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RoomID,
+			&i.Title,
+			&i.Address,
+			&i.RoomNumber,
+			&i.TenantID,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

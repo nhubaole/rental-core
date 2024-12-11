@@ -251,6 +251,7 @@ type User struct {
 	Otp           *int32             `json:"otp"`
 	WalletAddress *string            `json:"wallet_address"`
 	PrivateKeyHex *string            `json:"private_key_hex"`
+	AvatarUrl     *string            `json:"avatar_url"`
 }
 
 type UserBank struct {

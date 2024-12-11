@@ -136,6 +136,52 @@ func (q *Queries) CreateTenantRating(ctx context.Context, arg CreateTenantRating
 	return err
 }
 
+const getLandlordRatingByID = `-- name: GetLandlordRatingByID :many
+SELECT id,
+ landlord_id, 
+ rated_by, 
+ friendliness_rating, 
+ professionalism_rating, 
+ support_rating, 
+ transparency_rating, 
+ overall_rating, 
+ comments, 
+ created_at
+FROM public.landlord_ratings
+WHERE landlord_id = $1
+`
+
+func (q *Queries) GetLandlordRatingByID(ctx context.Context, landlordID *int32) ([]LandlordRating, error) {
+	rows, err := q.db.Query(ctx, getLandlordRatingByID, landlordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LandlordRating
+	for rows.Next() {
+		var i LandlordRating
+		if err := rows.Scan(
+			&i.ID,
+			&i.LandlordID,
+			&i.RatedBy,
+			&i.FriendlinessRating,
+			&i.ProfessionalismRating,
+			&i.SupportRating,
+			&i.TransparencyRating,
+			&i.OverallRating,
+			&i.Comments,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoomRatingByRoomID = `-- name: GetRoomRatingByRoomID :many
 SELECT id,
  room_id, 
@@ -169,6 +215,54 @@ func (q *Queries) GetRoomRatingByRoomID(ctx context.Context, roomID *int32) ([]R
 			&i.LocationRating,
 			&i.CleanlinessRating,
 			&i.PriceRating,
+			&i.OverallRating,
+			&i.Comments,
+			&i.Images,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTenantRatingByID = `-- name: GetTenantRatingByID :many
+SELECT id,
+ tenant_id, 
+ rated_by, 
+ payment_rating, 
+ property_care_rating, 
+ neighborhood_disturbance_rating, 
+ contract_compliance_rating, 
+ overall_rating, 
+ comments, 
+ images, 
+ created_at
+FROM public.tenant_ratings
+WHERE tenant_id = $1
+`
+
+func (q *Queries) GetTenantRatingByID(ctx context.Context, tenantID *int32) ([]TenantRating, error) {
+	rows, err := q.db.Query(ctx, getTenantRatingByID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TenantRating
+	for rows.Next() {
+		var i TenantRating
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.RatedBy,
+			&i.PaymentRating,
+			&i.PropertyCareRating,
+			&i.NeighborhoodDisturbanceRating,
+			&i.ContractComplianceRating,
 			&i.OverallRating,
 			&i.Comments,
 			&i.Images,

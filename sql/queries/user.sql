@@ -1,5 +1,5 @@
 -- name: GetUsers :many
-SELECT id, phone_number, full_name, address, created_at 
+SELECT id, phone_number,avatar_url,role, full_name, address, created_at 
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL;
 
@@ -22,15 +22,27 @@ INSERT INTO PUBLIC.USERS
 );
 
 -- name: GetUserByPhone :one
-SELECT id, phone_number, role, full_name, password, address, wallet_address, private_key_hex, otp, created_at
+SELECT id, phone_number, avatar_url, role, full_name, password, address, wallet_address, private_key_hex, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
 
 -- name: GetUserByID :one
-SELECT id, phone_number, role, full_name, address, wallet_address,private_key_hex, created_at
-FROM PUBLIC.USERS
-WHERE id = $1 AND deleted_at IS NULL;
+SELECT 
+    u.id,
+    u.phone_number,
+    u.avatar_url,
+    u.role,
+    u.full_name,
+    u.address,
+    u.wallet_address,
+    u.private_key_hex,
+    u.created_at
+FROM PUBLIC.USERS u
+WHERE 
+    u.id = $1
+    AND u.deleted_at IS NULL;
+
 
 -- name: UpdateUser :one
 UPDATE users
@@ -42,3 +54,5 @@ SET
     otp = $6
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, phone_number, full_name, address, role::text, created_at;
+
+--

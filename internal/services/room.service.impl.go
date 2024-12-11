@@ -19,15 +19,15 @@ import (
 )
 
 type RoomServiceImpl struct {
-	repo           *dataaccess.Queries
-	storageService StorageSerivce
+	repo              *dataaccess.Queries
+	storageService    StorageSerivce
 	blockchainService BlockchainService
 }
 
 func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
-		repo:           dataaccess.New(global.Db),
-		storageService: storage,
+		repo:              dataaccess.New(global.Db),
+		storageService:    storage,
 		blockchainService: blockchain,
 	}
 }
@@ -73,15 +73,15 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 	// 		Data:       false,
 	// 	}
 	// }
-	paramsOnChain := &requests.CreateRoomOnChainReq {
-		RoomID: int64(id),
+	paramsOnChain := &requests.CreateRoomOnChainReq{
+		RoomID:     int64(id),
 		TotalPrice: int(*req.TotalPrice),
-		Deposit: int64(req.Deposit),
-		Status: int64(req.Status),
-		IsRent: req.IsRent,
+		Deposit:    int64(req.Deposit),
+		Status:     int64(req.Status),
+		IsRent:     req.IsRent,
 	}
 
-	if _,err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
+	if _, err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
@@ -152,7 +152,10 @@ func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       rooms,
+		Data: map[string]interface{}{
+			"count": len(rooms),
+			"rooms": rooms,
+		},
 	}
 }
 
@@ -161,7 +164,7 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	// Fetch from database
 	roomData, err := r.repo.GetRoomByID(context.Background(), int32(id))
 	if err != nil {
-		if (roomData.ID == 0) {
+		if roomData.ID == 0 {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNoContent,
 				Message:    "Phòng không tồn tại",
@@ -178,7 +181,7 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	//Fetch room details from the blockchain
 	roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
 	if err != nil {
-		if (roomData.ID == 0) {
+		if roomData.ID == 0 {
 			return &responses.ResponseData{
 				StatusCode: http.StatusInternalServerError,
 				Message:    err.Error(),
@@ -186,7 +189,6 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 			}
 		}
 	}
-
 
 	// Override attribute on chain to response
 	roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
@@ -196,17 +198,53 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
 	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
 
+	owner, err := r.repo.GetUserByID(context.Background(), roomData.Owner)
+	if err != nil {
+		if roomData.ID == 0 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+	}
+	var result = responses.GetRoomByIDRes{
+		ID:              roomData.ID,
+		Title:           roomData.Title,
+		Address:         roomData.Address,
+		RoomNumber:      roomData.RoomNumber,
+		RoomImages:      roomData.RoomImages,
+		Utilities:       roomData.Utilities,
+		Description:     roomData.Description,
+		RoomType:        roomData.RoomType,
+		Owner:           owner,
+		Capacity:        roomData.Capacity,
+		Gender:          roomData.Gender,
+		Area:            roomData.Area,
+		TotalPrice:      roomData.TotalPrice,
+		Deposit:         roomData.Deposit,
+		ElectricityCost: roomData.ElectricityCost,
+		WaterCost:       roomData.WaterCost,
+		InternetCost:    roomData.InternetCost,
+		IsParking:       roomData.IsParking,
+		ParkingFee:      roomData.ParkingFee,
+		Status:          roomData.Status,
+		IsRent:          roomData.IsRent,
+		CreatedAt:       roomData.CreatedAt,
+		UpdatedAt:       roomData.UpdatedAt,
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       roomData,
+		Data:       result,
 	}
 }
 
 // SearchRoomByAddress implements RoomService.
 func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.ResponseData {
 	rooms, err := r.repo.SearchRoomByAddress(context.Background(), &address)
-	
+
 	if len(rooms) == 0 {
 		return &responses.ResponseData{
 			StatusCode: http.StatusOK,
@@ -224,20 +262,23 @@ func (r *RoomServiceImpl) SearchRoomByAddress(address string) *responses.Respons
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       rooms,
+		Data: map[string]interface{}{
+			"count": len(rooms),
+			"rooms": rooms,
+		},
 	}
 }
 
 type BankAPI struct {
-	ID               int    `json:"id"`
-	Name             string `json:"name"`
-	Code             string `json:"code"`
-	Bin              string `json:"bin"`
-	ShortName        string `json:"shortName"`
-	Logo             string `json:"logo"`
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	Code              string `json:"code"`
+	Bin               string `json:"bin"`
+	ShortName         string `json:"shortName"`
+	Logo              string `json:"logo"`
 	TransferSupported int    `json:"transferSupported"`
 	LookupSupported   int    `json:"lookupSupported"`
-	SwiftCode        string `json:"swift_code"`
+	SwiftCode         string `json:"swift_code"`
 }
 
 // LikeRoom implements RoomService.
