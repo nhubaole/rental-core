@@ -32,7 +32,7 @@ WHERE id = $1 ;
 -- name: GetRequestByID :one
 SELECT *
 FROM PUBLIC.RENTAL_REQUESTS 
-WHERE room_id = $1 and deleted_at is null;
+WHERE id = $1 and deleted_at is null;
 
 
 -- name: GetRequestBySenderID :many

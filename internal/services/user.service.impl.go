@@ -7,13 +7,13 @@ import (
 	"smart-rental/internal/dataaccess"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type UserServiceImpl struct {
 	repo *dataaccess.Queries
 }
-
-
 
 func NewUserServiceImpl() UserService {
 	return &UserServiceImpl{
@@ -24,7 +24,6 @@ func NewUserServiceImpl() UserService {
 // CreateBankInfo implements UserService.
 func (u *UserServiceImpl) CreateBankInfo(req *dataaccess.CreateUserBankParams) *responses.ResponseData {
 
-	
 	err := u.repo.CreateUserBank(context.Background(), *req)
 	if err != nil {
 		println(string(err.Error()))
@@ -43,8 +42,8 @@ func (u *UserServiceImpl) CreateBankInfo(req *dataaccess.CreateUserBankParams) *
 
 // UpdateBankInfo implements UserService.
 func (u *UserServiceImpl) UpdateBankInfo(req *dataaccess.UpdateUserBankParams) *responses.ResponseData {
-	
-	updatedUserBank, err := u.repo.UpdateUserBank(context.Background(),*req)
+
+	updatedUserBank, err := u.repo.UpdateUserBank(context.Background(), *req)
 	if err != nil {
 		println(string(err.Error()))
 		return &responses.ResponseData{
@@ -86,6 +85,9 @@ func (u *UserServiceImpl) GetAll() *responses.ResponseData {
 
 func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 	user, err := userRepo.repo.GetUserByID(context.Background(), int32(id))
+	var userDetail responses.GetUserByIDRes
+
+	common.MapStruct(user, &userDetail)
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -94,20 +96,102 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 			Data:       nil,
 		}
 	}
-	// balance, errGetWallet := blockchain.GetWalletBalance(*user.WalletAddress)
-	// if errGetWallet != nil {
-	// 	return &responses.ResponseData{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Message:    errGetWallet.Error(),
-	// 		Data:       nil,
-	// 	}
-	// }
-	// balanceStr := string(balance.String())
-	// user.WalletAddress = &balanceStr
+
+	if user.Role == 1 {
+		ratings, err := userRepo.repo.GetLandlordRatingByID(context.Background(), &user.ID)
+
+		totalRating := 0
+
+		if len(ratings) == 0 {
+			userDetail.RatingInfo = nil
+		}
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		for _, v := range ratings {
+			user, err := userRepo.repo.GetUserByID(context.Background(), *v.RatedBy)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+			var rating responses.RatingInfo
+			rating.Comment = *v.Comments
+			rating.CreatedAt = pgtype.Timestamptz(v.CreatedAt)
+			rating.RaterName = user.FullName
+			rating.Rate = int(*v.OverallRating)
+			userDetail.RatingInfo = append(userDetail.RatingInfo, rating)
+			totalRating = totalRating + int(*v.OverallRating)
+		}
+		rooms, err := userRepo.repo.GetRoomsByOwner(context.Background(), user.ID)
+
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		userDetail.TotalRoom = len(rooms)
+		userDetail.TotalRating = len(ratings)
+		userDetail.AvgRating = float64(totalRating / len(ratings))
+	} else if user.Role == 2 {
+		totalRating := 0
+		ratings, err := userRepo.repo.GetTenantRatingByID(context.Background(), &user.ID)
+		if len(ratings) == 0 {
+			userDetail.RatingInfo = nil
+		}
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		for _, v := range ratings {
+			user, err := userRepo.repo.GetUserByID(context.Background(), *v.RatedBy)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+			var rating responses.RatingInfo
+			rating.Comment = *v.Comments
+			rating.CreatedAt = pgtype.Timestamptz(v.CreatedAt)
+			rating.RaterName = user.FullName
+			rating.Rate = int(*v.OverallRating)
+			userDetail.RatingInfo = append(userDetail.RatingInfo, rating)
+			totalRating = totalRating + int(*v.OverallRating)
+		}
+
+		rooms, err := userRepo.repo.GetRoomByTenantID(context.Background(), user.ID)
+
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		userDetail.TotalRoom = len(rooms)
+		userDetail.TotalRating = len(ratings)
+		userDetail.AvgRating = float64(totalRating / len(ratings))
+	}
+
 	return &responses.ResponseData{
-		StatusCode: http.StatusOK, 	 	
+		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       user,
+		Data:       userDetail,
 	}
 }
 

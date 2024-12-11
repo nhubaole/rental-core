@@ -32,33 +32,40 @@ RETURNING id;
 
 -- name: GetRooms :many
 SELECT 
-    id, 
-    title, 
-    address, 
-    room_number, 
-    room_images, 
-    utilities, 
-    description, 
-    room_type, 
-    owner, 
-    capacity, 
-    gender, 
-    area, 
-    total_price, 
-    deposit, 
-    electricity_cost, 
-    water_cost, 
-    internet_cost, 
-    is_parking, 
-    parking_fee, 
-    status, 
-    is_rent, 
-    created_at, 
-    updated_at
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.owner, 
+    r.area, 
+    r.total_price, 
+    r.status, 
+    COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
+    COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
 FROM 
-    PUBLIC.rooms
+    public.rooms r
+LEFT JOIN 
+    public.room_ratings rt ON r.id = rt.room_id
 WHERE 
-    deleted_at IS NULL;
+    r.deleted_at IS NULL
+GROUP BY 
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.owner, 
+    r.area, 
+    r.total_price, 
+    r.status;
+
 
 -- name: GetRoomByID :one
 SELECT 
@@ -93,34 +100,40 @@ WHERE
 
 -- name: SearchRoomByAddress :many
 SELECT 
-    id, 
-    title, 
-    address, 
-    room_number, 
-    room_images, 
-    utilities, 
-    description, 
-    room_type, 
-    owner, 
-    capacity, 
-    gender, 
-    area, 
-    total_price, 
-    deposit, 
-    electricity_cost, 
-    water_cost, 
-    internet_cost, 
-    is_parking, 
-    parking_fee, 
-    status, 
-    is_rent, 
-    created_at, 
-    updated_at
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.owner, 
+    r.area, 
+    r.total_price, 
+    r.status, 
+    COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
+    COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
 FROM 
-    PUBLIC.rooms
+    public.rooms r
+LEFT JOIN 
+    public.room_ratings rt ON r.id = rt.room_id
 WHERE 
-    deleted_at IS NULL
-    AND array_to_string(address, ', ') ILIKE '%' || $1 || '%';  
+    r.deleted_at IS NULL
+    AND array_to_string(r.address, ', ') ILIKE '%' || $1 || '%'
+GROUP BY 
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.owner, 
+    r.area, 
+    r.total_price, 
+    r.status;;  
 
 
 -- name: LikeRoom :exec

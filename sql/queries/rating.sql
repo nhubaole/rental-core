@@ -57,3 +57,32 @@ SELECT id,
  created_at
 FROM public.room_ratings
 WHERE room_id = $1;
+
+-- name: GetTenantRatingByID :many
+SELECT id,
+ tenant_id, 
+ rated_by, 
+ payment_rating, 
+ property_care_rating, 
+ neighborhood_disturbance_rating, 
+ contract_compliance_rating, 
+ overall_rating, 
+ comments, 
+ images, 
+ created_at
+FROM public.tenant_ratings
+WHERE tenant_id = $1;
+
+-- name: GetLandlordRatingByID :many
+SELECT id,
+ landlord_id, 
+ rated_by, 
+ friendliness_rating, 
+ professionalism_rating, 
+ support_rating, 
+ transparency_rating, 
+ overall_rating, 
+ comments, 
+ created_at
+FROM public.landlord_ratings
+WHERE landlord_id = $1;
