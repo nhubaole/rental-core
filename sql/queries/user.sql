@@ -22,13 +22,13 @@ INSERT INTO PUBLIC.USERS
 );
 
 -- name: GetUserByPhone :one
-SELECT id, phone_number, password, role, full_name, address, wallet_address, private_key_hex, otp, created_at
+SELECT id, phone_number, role, full_name, password, address, wallet_address, private_key_hex, otp, created_at
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL 
     AND phone_number = $1;
 
 -- name: GetUserByID :one
-SELECT id, phone_number, full_name, address, wallet_address,private_key_hex, created_at
+SELECT id, phone_number, role, full_name, address, wallet_address,private_key_hex, created_at
 FROM PUBLIC.USERS
 WHERE id = $1 AND deleted_at IS NULL;
 

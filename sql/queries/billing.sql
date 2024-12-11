@@ -23,31 +23,47 @@ INSERT INTO PUBLIC.BILLING
 
 
 -- name: GetBillByMonth :many
-SELECT b.code,
+SELECT  b.id,
+        b.code,
         b.contract_id,
         b.addition_fee,
         b.addition_note,
         b.total_amount,
         b.month,
         b.year,
+        b.old_water_index, 
+        b.old_electricity_index, 
+        b.new_water_index, 
+        b.new_electricity_index, 
+        b.total_water_cost, 
+        b.total_electricity_cost,
+        b.status,
         b.created_at,
         b.updated_at
 FROM PUBLIC.BILLING as b
 WHERE b.year = $1 
     AND b.month=$2;
 
+
 -- name: GetBillByID :one
-SELECT  code,
-        contract_id,
-        addition_fee,
-        addition_note,
-        total_amount,
-        month,
-        year,
-        status,
-        created_at,
-        updated_at
-FROM PUBLIC.BILLING
+SELECT  b.id,
+        b.code,
+        b.contract_id,
+        b.addition_fee,
+        b.addition_note,
+        b.total_amount,
+        b.month,
+        b.year,
+        b.old_water_index, 
+        b.old_electricity_index, 
+        b.new_water_index, 
+        b.new_electricity_index, 
+        b.total_water_cost, 
+        b.total_electricity_cost,
+        b.status,
+        b.created_at,
+        b.updated_at
+FROM PUBLIC.BILLING b
 WHERE deleted_at IS NULL 
       AND id = $1;
 
@@ -73,17 +89,24 @@ AND idx.month = $2
 AND idx.year = $3;
 
 -- name: GetBillByStatus :many
-SELECT  code,
-        contract_id,
-        addition_fee,
-        addition_note,
-        total_amount,
-        month,
-        year,
-        status,
-        created_at,
-        updated_at
-FROM PUBLIC.BILLING
+SELECT  b.id,
+        b.code,
+        b.contract_id,
+        b.addition_fee,
+        b.addition_note,
+        b.total_amount,
+        b.month,
+        b.year,
+        b.old_water_index, 
+        b.old_electricity_index, 
+        b.new_water_index, 
+        b.new_electricity_index, 
+        b.total_water_cost, 
+        b.total_electricity_cost,
+        b.status,
+        b.created_at,
+        b.updated_at
+FROM PUBLIC.BILLING b
 WHERE deleted_at IS NULL 
       AND status = $1;
 
