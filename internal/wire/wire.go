@@ -125,3 +125,11 @@ func InitConversationRouterHandler() *controllers.ConversationController {
 	)
 	return &controllers.ConversationController{}
 }
+
+func InitNotificationRouterHandler() *controllers.NotificationController {
+	wire.Build(
+		services.NewNotificationServiceImpl,
+		controllers.NewNotificationController,
+	)
+	return &controllers.NotificationController{}
+}

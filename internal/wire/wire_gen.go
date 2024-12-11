@@ -99,3 +99,9 @@ func InitConversationRouterHandler() *controllers.ConversationController {
 	conversationController := controllers.NewConversationController(conversationService)
 	return conversationController
 }
+
+func InitNotificationRouterHandler() *controllers.NotificationController {
+	notificationService := services.NewNotificationServiceImpl()
+	notificationController := controllers.NewNotificationController(notificationService)
+	return notificationController
+}

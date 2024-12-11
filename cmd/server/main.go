@@ -23,9 +23,10 @@ func main() {
 	ms := wire.InitMessageRouterHandler()
 	conversationRoute := wire.InitConversationRouterHandler()
 	payment := wire.InitPaymentRouterHandler()
+	notification := wire.InitNotificationRouterHandler()
 	
 	cc := wire.InitContractRouterHandler()
-	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc, returnRequestRoute, ratingRoute, ms, conversationRoute, payment)
+	r := routers.NewRouter(ac, uc, rc, rrc, pc, ic, bc, cc, returnRequestRoute, ratingRoute, ms, conversationRoute, payment, notification)
 
 	r.Run()
 }
