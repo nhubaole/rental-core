@@ -33,7 +33,13 @@ func (controller IndexController) GetIndexFromOwner(ctx *gin.Context) {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	result := controller.indexService.GetAllIndex(currentUser.ID, int32(month), int32(year))
+
+	mType := ctx.Param("type")
+	if err != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
+		return
+	}
+	result := controller.indexService.GetAllIndex(currentUser.ID, int32(month), int32(year), mType)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 

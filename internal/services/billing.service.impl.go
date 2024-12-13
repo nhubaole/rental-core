@@ -7,6 +7,7 @@ import (
 	"smart-rental/internal/dataaccess"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
+	"strings"
 )
 
 type BillingServiceImpl struct {
@@ -117,13 +118,6 @@ func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, yea
 func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData {
 	bill, err := service.query.GetBillByID(context.Background(), id)
 	if err != nil {
-		if (bill == dataaccess.GetBillByIDRow{}) {
-			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
-				Message:    "No bill found",
-				Data:       false,
-			}
-		}
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
@@ -131,10 +125,72 @@ func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData
 		}
 	}
 
+	contract, err := service.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Error retrieving contract for bill",
+			Data:       false,
+		}
+	}
+
+	roomInfo, err := service.query.GetRoomByID(context.Background(), int32(contract.RoomID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to fetch room details",
+			Data:       false,
+		}
+	}
+
+	tenantInfo, err := service.query.GetUserByID(context.Background(), int32(contract.Tenant))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to fetch tenant info",
+			Data:       false,
+		}
+	}
+
+	totalAmount := contract.ActualPrice +
+		(int64(*bill.NewWaterIndex)-int64(*bill.OldWaterIndex))*contract.WaterCost +
+		(int64(*bill.NewElectricityIndex)-int64(*bill.OldElectricityIndex))*contract.ElectricityCost +
+		contract.InternetCost +
+		contract.ParkingFee +
+		int64(*bill.AdditionFee)
+
+	responseData := map[string]interface{}{
+		"id":                  bill.ID,
+		"code":                bill.Code,
+		"created_at":          bill.CreatedAt,
+		"paid_at":             nil,
+		"status":              bill.Status,
+		"room_price":          contract.ActualPrice,
+		"old_water_index":     bill.OldWaterIndex,
+		"old_electricity_index": bill.OldElectricityIndex,
+		"new_water_index":     bill.NewWaterIndex,
+		"new_electricity_index": bill.NewElectricityIndex,
+		"water_cost":          contract.WaterCost,
+		"electricity_cost":    contract.ElectricityCost,
+		"internet_cost":       contract.InternetCost,
+		"parking_fee":         contract.ParkingFee,
+		"addition_fee":        bill.AdditionFee,
+		"addition_note":       bill.AdditionNote,
+		"total_amount":        totalAmount,
+		"info": map[string]interface{}{
+			"tenant_name": tenantInfo.FullName,
+			"phone_number": tenantInfo.PhoneNumber,
+			"room_number":  roomInfo.RoomNumber,
+			"address":      strings.Join(roomInfo.Address, ", "),
+			"month":        bill.Month,
+			"year":         bill.Year,
+		},
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       bill,
+		Data:       responseData,
 	}
 }
 
@@ -175,28 +231,57 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 		}
 	}
 
-	combinedResponse := responses.GetAllMetric4BillByRoomID{
-		RoomID:          metric.RoomID,
-		PrevMonth:       metric.PrevMonth,
-		CurrMonth:       metric.CurrMonth,
-		PrevWater:       metric.PrevWater,
-		CurrWater:       metric.CurrWater,
-		PrevElectricity: metric.PrevElectricity,
-		CurrElectricity: metric.CurrElectricity,
-		Year:            metric.Year,
-		ContractID:      int32(matchedContract.ID),
-		ActualPrice:     matchedContract.ActualPrice,
-		WaterCost:       matchedContract.WaterCost,
-		ElectricityCost: matchedContract.ElectricityCost,
-		InternetCost:    matchedContract.InternetCost,
-		ParkingFee:      matchedContract.ParkingFee,
+	roomInfo, err := service.query.GetRoomByID(context.Background(), req.RoomID)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
 	}
 
-	// Return the combined response
+	waterUsage := metric.CurrWater - metric.PrevWater.(float64)
+	electricityUsage := metric.CurrElectricity - metric.PrevElectricity.(float64)
+	totalAmount := float64(matchedContract.ActualPrice) +
+		waterUsage*float64(matchedContract.WaterCost) +
+		electricityUsage*float64(matchedContract.ElectricityCost) +
+		float64(matchedContract.InternetCost) +
+		float64(matchedContract.ParkingFee)
+	
+	tenant, err := service.query.GetUserByID(context.Background(), int32(matchedContract.Tenant))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	responseData := map[string]interface{}{
+		"actual_price":         matchedContract.ActualPrice,
+		"old_water_index":      metric.PrevWater,
+		"old_electricity_index": metric.PrevElectricity,
+		"new_water_index":      metric.CurrWater,
+		"new_electricity_index": metric.CurrElectricity,
+		"water_cost":           matchedContract.WaterCost,
+		"electricity_cost":     matchedContract.ElectricityCost,
+		"internet_cost":        matchedContract.InternetCost,
+		"parking_fee":          matchedContract.ParkingFee,
+		"total_amount":         totalAmount,
+		"info": map[string]interface{}{
+			"tenant_name": tenant.FullName,
+			"phone_number": tenant.PhoneNumber,
+			"room_number":  roomInfo.RoomNumber,
+			"address":      strings.Join(roomInfo.Address, ", "),
+			"month":        metric.CurrMonth,
+			"year":         metric.Year,
+		},
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       combinedResponse,
+		Data:       responseData,
 	}
 }
 

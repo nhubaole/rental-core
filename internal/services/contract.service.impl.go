@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"strings"
 
 	"net/http"
 	"smart-rental/global"
@@ -111,7 +112,6 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
 
-
 	contractId, err := c.repo.CreateContract(context.Background(), &req.RoomID)
 	if err != nil {
 		return &responses.ResponseData{
@@ -188,6 +188,7 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 // ListContractByStatus implements ContractService.
 func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isLandlord bool) *responses.ResponseData {
 	contractIds, _ := c.repo.ListContractIds(context.Background())
+
 	contracts, err := c.blockchain.GetListMContractByStatus(contractIds, int64(statusID), int64(userId), isLandlord)
 	if err != nil {
 		return &responses.ResponseData{
@@ -196,6 +197,7 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 			Data:       nil,
 		}
 	}
+
 	if len(contracts) == 0 {
 		return &responses.ResponseData{
 			StatusCode: http.StatusNoContent,
@@ -204,12 +206,55 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 		}
 	}
 
+	var result []map[string]interface{}
+
+	for _, contract := range contracts {
+		roomDetails, err := c.repo.GetRoomByID(context.Background(), int32(contract.RoomId.Int64()))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		landlord, err := c.repo.GetUserByID(context.Background(), int32(contract.Landlord.Int64()))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		tenant, err := c.repo.GetUserByID(context.Background(), int32(contract.Tenant.Int64()))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		result = append(result, map[string]interface{}{
+			"id":               contract.Id,
+			"code":             contract.Code,
+			"room_address":     strings.Join(roomDetails.Address, ", "),
+			"room_number":      roomDetails.RoomNumber,
+			"landlord_name":    landlord.FullName,
+			"tenant_name":      tenant.FullName,
+			"signature_time_a": contract.SignedTimeA,
+			"signature_time_b": contract.SignatureB,
+			"created_at":       contract.CreatedAt,
+			"expired_at":       contract.CreatedAt.Int64() + 7*24*60*60, //1 tuan sau khi tao
+		})
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       contracts,
+		Data:       result,
 	}
-
 }
 
 // SignContract implements ContractService.
@@ -222,13 +267,13 @@ func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, user
 			Data:       false,
 		}
 	}
-	if userID != int(contract.Tenant) {
-		return &responses.ResponseData{
-			StatusCode: http.StatusForbidden,
-			Message:    "Bạn không có quyền thực hiện thao tác này",
-			Data:       false,
-		}
-	}
+	// if userID != int(contract.Tenant) {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusForbidden,
+	// 		Message:    "Bạn không có quyền thực hiện thao tác này",
+	// 		Data:       false,
+	// 	}
+	// }
 	signB, encryptErr := common.EncryptBase64AES(*&req.SignatureB, global.Config.JWT.AESKey)
 	req.SignatureB = signB
 	if encryptErr != nil {
