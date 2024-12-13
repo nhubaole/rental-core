@@ -114,7 +114,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int32, 
 }
 
 const getLikedRooms = `-- name: GetLikedRooms :many
-SELECT r.id, r.title, r.address, r.room_number, r.room_images, r.utilities, r.description, r.room_type, r.owner, r.capacity, r.gender, r.area, r.total_price, r.deposit, r.electricity_cost, r.water_cost, r.internet_cost, r.is_parking, r.parking_fee, r.status, r.is_rent, r.created_at, r.updated_at, r.deleted_at
+SELECT r.id, r.title, r.address, r.room_number, r.room_images, r.utilities, r.description, r.room_type, r.owner, r.capacity, r.gender, r.area, r.total_price, r.deposit, r.electricity_cost, r.water_cost, r.internet_cost, r.is_parking, r.parking_fee, r.status, r.is_rent, r.created_at, r.updated_at, r.deleted_at, r.available_from
 FROM PUBLIC."like" l
 JOIN PUBLIC.rooms r ON l.room_id = r.id
 WHERE l.user_id = $1 AND l.deleted_at IS NULL
@@ -154,6 +154,7 @@ func (q *Queries) GetLikedRooms(ctx context.Context, userID int32) ([]Room, erro
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.AvailableFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -199,34 +200,38 @@ func (q *Queries) GetRoomByContractID(ctx context.Context, id int32) (GetRoomByC
 
 const getRoomByID = `-- name: GetRoomByID :one
 SELECT 
-    id, 
-    title, 
-    address, 
-    room_number, 
-    room_images, 
-    utilities, 
-    description, 
-    room_type, 
-    owner, 
-    capacity, 
-    gender, 
-    area, 
-    total_price, 
-    deposit, 
-    electricity_cost, 
-    water_cost, 
-    internet_cost, 
-    is_parking, 
-    parking_fee, 
-    status, 
-    is_rent, 
-    created_at, 
-    updated_at
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.available_from,
+    (SELECT jsonb_object_agg(room_number, id)::text
+    FROM PUBLIC.rooms 
+    WHERE deleted_at IS NULL AND address = r.address) AS list_room_numbers,
+    r.owner, 
+    r.capacity, 
+    r.gender, 
+    r.area, 
+    r.total_price, 
+    r.deposit, 
+    r.electricity_cost, 
+    r.water_cost, 
+    r.internet_cost, 
+    r.is_parking, 
+    r.parking_fee, 
+    r.status, 
+    r.is_rent, 
+    r.created_at, 
+    r.updated_at
 FROM 
-    PUBLIC.rooms
+    PUBLIC.rooms r
 WHERE 
     deleted_at IS NULL 
-    AND id = $1
+    AND r.id = $1
 `
 
 type GetRoomByIDRow struct {
@@ -238,6 +243,8 @@ type GetRoomByIDRow struct {
 	Utilities       []string           `json:"utilities"`
 	Description     string             `json:"description"`
 	RoomType        *string            `json:"room_type"`
+	AvailableFrom   pgtype.Timestamptz `json:"available_from"`
+	ListRoomNumbers string             `json:"list_room_numbers"`
 	Owner           int32              `json:"owner"`
 	Capacity        int32              `json:"capacity"`
 	Gender          *int32             `json:"gender"`
@@ -267,6 +274,8 @@ func (q *Queries) GetRoomByID(ctx context.Context, id int32) (GetRoomByIDRow, er
 		&i.Utilities,
 		&i.Description,
 		&i.RoomType,
+		&i.AvailableFrom,
+		&i.ListRoomNumbers,
 		&i.Owner,
 		&i.Capacity,
 		&i.Gender,
@@ -301,7 +310,12 @@ SELECT
     r.total_price, 
     r.status, 
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
-    COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
+    COALESCE(COUNT(rt.id), 0) AS total_rating,  -- Đếm tổng số lượng rating
+     EXISTS (
+        SELECT 1 
+        FROM PUBLIC."like" l
+        WHERE l.room_id = r.id AND l.user_id = $1 AND l.deleted_at IS NULL
+    ) AS is_liked 
 FROM 
     public.rooms r
 LEFT JOIN 
@@ -338,10 +352,11 @@ type GetRoomsRow struct {
 	Status      int32       `json:"status"`
 	AvgRating   interface{} `json:"avg_rating"`
 	TotalRating interface{} `json:"total_rating"`
+	IsLiked     bool        `json:"is_liked"`
 }
 
-func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
-	rows, err := q.db.Query(ctx, getRooms)
+func (q *Queries) GetRooms(ctx context.Context, userID int32) ([]GetRoomsRow, error) {
+	rows, err := q.db.Query(ctx, getRooms, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -364,6 +379,7 @@ func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
 			&i.Status,
 			&i.AvgRating,
 			&i.TotalRating,
+			&i.IsLiked,
 		); err != nil {
 			return nil, err
 		}
@@ -376,7 +392,7 @@ func (q *Queries) GetRooms(ctx context.Context) ([]GetRoomsRow, error) {
 }
 
 const getRoomsByOwner = `-- name: GetRoomsByOwner :many
-SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at
+SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from
 FROM PUBLIC.rooms
 where owner = $1
 `
@@ -415,6 +431,7 @@ func (q *Queries) GetRoomsByOwner(ctx context.Context, owner int32) ([]Room, err
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.AvailableFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -427,7 +444,7 @@ func (q *Queries) GetRoomsByOwner(ctx context.Context, owner int32) ([]Room, err
 }
 
 const getRoomsByStatus = `-- name: GetRoomsByStatus :many
-SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at
+SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from
 FROM PUBLIC.rooms
 WHERE status = $1
 `
@@ -466,6 +483,7 @@ func (q *Queries) GetRoomsByStatus(ctx context.Context, status int32) ([]Room, e
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.AvailableFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -510,6 +528,7 @@ SELECT
     r.utilities, 
     r.description, 
     r.room_type, 
+    r.available_from,
     r.owner, 
     r.area, 
     r.total_price, 
@@ -539,20 +558,21 @@ GROUP BY
 `
 
 type SearchRoomByAddressRow struct {
-	ID          int32       `json:"id"`
-	Title       string      `json:"title"`
-	Address     []string    `json:"address"`
-	RoomNumber  int32       `json:"room_number"`
-	RoomImages  []string    `json:"room_images"`
-	Utilities   []string    `json:"utilities"`
-	Description string      `json:"description"`
-	RoomType    *string     `json:"room_type"`
-	Owner       int32       `json:"owner"`
-	Area        float64     `json:"area"`
-	TotalPrice  *float64    `json:"total_price"`
-	Status      int32       `json:"status"`
-	AvgRating   interface{} `json:"avg_rating"`
-	TotalRating interface{} `json:"total_rating"`
+	ID            int32              `json:"id"`
+	Title         string             `json:"title"`
+	Address       []string           `json:"address"`
+	RoomNumber    int32              `json:"room_number"`
+	RoomImages    []string           `json:"room_images"`
+	Utilities     []string           `json:"utilities"`
+	Description   string             `json:"description"`
+	RoomType      *string            `json:"room_type"`
+	AvailableFrom pgtype.Timestamptz `json:"available_from"`
+	Owner         int32              `json:"owner"`
+	Area          float64            `json:"area"`
+	TotalPrice    *float64           `json:"total_price"`
+	Status        int32              `json:"status"`
+	AvgRating     interface{}        `json:"avg_rating"`
+	TotalRating   interface{}        `json:"total_rating"`
 }
 
 func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]SearchRoomByAddressRow, error) {
@@ -573,6 +593,7 @@ func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]
 			&i.Utilities,
 			&i.Description,
 			&i.RoomType,
+			&i.AvailableFrom,
 			&i.Owner,
 			&i.Area,
 			&i.TotalPrice,

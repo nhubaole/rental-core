@@ -91,6 +91,8 @@ AND idx.year = $3;
 -- name: GetBillByStatus :many
 SELECT  b.id,
         b.code,
+        r.address,
+        r.room_number,
         b.contract_id,
         b.addition_fee,
         b.addition_note,
@@ -105,10 +107,13 @@ SELECT  b.id,
         b.total_electricity_cost,
         b.status,
         b.created_at,
-        b.updated_at
+        b.updated_at,
+        (b.updated_at + interval '10 days')::timestamp AS deadline
 FROM PUBLIC.BILLING b
-WHERE deleted_at IS NULL 
-      AND status = $1;
+LEFT JOIN public.contracts c ON b.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE b.deleted_at IS NULL 
+      AND b.status = $1;
 
 -- name: GetBillOfRentedRoomByOwnerID :many
 

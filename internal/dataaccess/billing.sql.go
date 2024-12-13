@@ -282,6 +282,8 @@ func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) 
 const getBillByStatus = `-- name: GetBillByStatus :many
 SELECT  b.id,
         b.code,
+        r.address,
+        r.room_number,
         b.contract_id,
         b.addition_fee,
         b.addition_note,
@@ -296,15 +298,20 @@ SELECT  b.id,
         b.total_electricity_cost,
         b.status,
         b.created_at,
-        b.updated_at
+        b.updated_at,
+        (b.updated_at + interval '10 days')::timestamp AS deadline
 FROM PUBLIC.BILLING b
-WHERE deleted_at IS NULL 
-      AND status = $1
+LEFT JOIN public.contracts c ON b.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE b.deleted_at IS NULL 
+      AND b.status = $1
 `
 
 type GetBillByStatusRow struct {
 	ID                   int32              `json:"id"`
 	Code                 string             `json:"code"`
+	Address              []string           `json:"address"`
+	RoomNumber           *int32             `json:"room_number"`
 	ContractID           int32              `json:"contract_id"`
 	AdditionFee          *int32             `json:"addition_fee"`
 	AdditionNote         *string            `json:"addition_note"`
@@ -320,6 +327,7 @@ type GetBillByStatusRow struct {
 	Status               *int32             `json:"status"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	Deadline             pgtype.Timestamp   `json:"deadline"`
 }
 
 func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBillByStatusRow, error) {
@@ -334,6 +342,8 @@ func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBill
 		if err := rows.Scan(
 			&i.ID,
 			&i.Code,
+			&i.Address,
+			&i.RoomNumber,
 			&i.ContractID,
 			&i.AdditionFee,
 			&i.AdditionNote,
@@ -349,6 +359,7 @@ func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBill
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Deadline,
 		); err != nil {
 			return nil, err
 		}

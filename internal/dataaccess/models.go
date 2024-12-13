@@ -188,6 +188,7 @@ type Room struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	AvailableFrom   pgtype.Timestamptz `json:"available_from"`
 }
 
 type RoomRating struct {

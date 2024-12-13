@@ -42,7 +42,13 @@ func (rc RoomController) Create(ctx *gin.Context) {
 }
 
 func (rc RoomController) GetAll(ctx *gin.Context) {
-	result := rc.roomService.GetRooms()
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	result := rc.roomService.GetRooms(int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
@@ -113,4 +119,3 @@ func (rc RoomController) UpdateRoom(ctx *gin.Context) {
 	result := rc.roomService.UpdateRoom(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
-
