@@ -68,13 +68,13 @@ func (controller RentalRequestController) GetRentalRequestById(ctx *gin.Context)
 }
 
 func (controller RentalRequestController) GetAllRentalRequest(ctx *gin.Context) {
-	myuser, errr := common.GetCurrentUser(ctx)
+	user, errr := common.GetCurrentUser(ctx)
 	if errr != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
-	result := controller.rentalService.GetAllRentalRequest(myuser.PhoneNumber)
+	result := controller.rentalService.GetAllRentalRequest(int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 

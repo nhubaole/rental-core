@@ -64,16 +64,19 @@ func (q *Queries) CreateReturnRequest(ctx context.Context, arg CreateReturnReque
 }
 
 const getReturnRequestByID = `-- name: GetReturnRequestByID :one
-SELECT id, contract_id, reason, return_date, status, deduct_amount, total_return_deposit, created_user, created_at, updated_at
-FROM public.return_requests
+SELECT rr.id, rr.reason,c.id as contract_id, c.room_id, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at
+FROM public.return_requests rr 
+LEFT JOIN public.contracts c
+ON rr.contract_id = c.id
 WHERE deleted_at IS NULL
-    AND id = $1
+    AND rr.id = $1
 `
 
 type GetReturnRequestByIDRow struct {
 	ID                 int32            `json:"id"`
-	ContractID         *int32           `json:"contract_id"`
 	Reason             *string          `json:"reason"`
+	ContractID         *int32           `json:"contract_id"`
+	RoomID             *int32           `json:"room_id"`
 	ReturnDate         pgtype.Timestamp `json:"return_date"`
 	Status             *int32           `json:"status"`
 	DeductAmount       *float64         `json:"deduct_amount"`
@@ -88,8 +91,9 @@ func (q *Queries) GetReturnRequestByID(ctx context.Context, id int32) (GetReturn
 	var i GetReturnRequestByIDRow
 	err := row.Scan(
 		&i.ID,
-		&i.ContractID,
 		&i.Reason,
+		&i.ContractID,
+		&i.RoomID,
 		&i.ReturnDate,
 		&i.Status,
 		&i.DeductAmount,

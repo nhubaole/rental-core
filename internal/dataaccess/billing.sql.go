@@ -194,55 +194,53 @@ func (q *Queries) GetBillByID(ctx context.Context, id int32) (GetBillByIDRow, er
 }
 
 const getBillByMonth = `-- name: GetBillByMonth :many
-SELECT  b.id,
-        b.code,
-        b.contract_id,
-        b.addition_fee,
-        b.addition_note,
-        b.total_amount,
-        b.month,
-        b.year,
-        b.old_water_index, 
-        b.old_electricity_index, 
-        b.new_water_index, 
-        b.new_electricity_index, 
-        b.total_water_cost, 
-        b.total_electricity_cost,
-        b.status,
-        b.created_at,
-        b.updated_at
-FROM PUBLIC.BILLING as b
-WHERE b.year = $1 
-    AND b.month=$2
+SELECT 
+    r.address,
+    jsonb_agg(
+        jsonb_build_object(
+            'id', b.id,
+            'avatar', u.avatar_url, 
+            'status', b.status,
+            'room_number', r.room_number,
+            'tenant_name', u.full_name,
+            'payment_id', p.id, 
+            'total_amount', b.total_amount,
+            'created_at', b.created_at
+        )
+    )::text AS list_bill
+FROM 
+    public.billing AS b
+LEFT JOIN 
+    public.contracts c ON c.id = b.contract_id
+LEFT JOIN 
+    public.rooms r ON r.id = c.room_id
+LEFT JOIN 
+    public.tenants t ON t.room_id = r.id
+LEFT JOIN 
+    public.users u ON t.tenant_id = u.id
+LEFT JOIN 
+    public.payments p ON p.bill_id = b.id
+WHERE 
+    b.year = $1 
+    AND b.month = $2
+    AND r.owner = $3
+GROUP BY 
+    r.address
 `
 
 type GetBillByMonthParams struct {
 	Year  int32 `json:"year"`
 	Month int32 `json:"month"`
+	Owner int32 `json:"owner"`
 }
 
 type GetBillByMonthRow struct {
-	ID                   int32              `json:"id"`
-	Code                 string             `json:"code"`
-	ContractID           int32              `json:"contract_id"`
-	AdditionFee          *int32             `json:"addition_fee"`
-	AdditionNote         *string            `json:"addition_note"`
-	TotalAmount          float64            `json:"total_amount"`
-	Month                int32              `json:"month"`
-	Year                 int32              `json:"year"`
-	OldWaterIndex        *int32             `json:"old_water_index"`
-	OldElectricityIndex  *int32             `json:"old_electricity_index"`
-	NewWaterIndex        *int32             `json:"new_water_index"`
-	NewElectricityIndex  *int32             `json:"new_electricity_index"`
-	TotalWaterCost       *float64           `json:"total_water_cost"`
-	TotalElectricityCost *float64           `json:"total_electricity_cost"`
-	Status               *int32             `json:"status"`
-	CreatedAt            pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	Address  []string `json:"address"`
+	ListBill string   `json:"list_bill"`
 }
 
 func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) ([]GetBillByMonthRow, error) {
-	rows, err := q.db.Query(ctx, getBillByMonth, arg.Year, arg.Month)
+	rows, err := q.db.Query(ctx, getBillByMonth, arg.Year, arg.Month, arg.Owner)
 	if err != nil {
 		return nil, err
 	}
@@ -250,25 +248,7 @@ func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) 
 	var items []GetBillByMonthRow
 	for rows.Next() {
 		var i GetBillByMonthRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.ContractID,
-			&i.AdditionFee,
-			&i.AdditionNote,
-			&i.TotalAmount,
-			&i.Month,
-			&i.Year,
-			&i.OldWaterIndex,
-			&i.OldElectricityIndex,
-			&i.NewWaterIndex,
-			&i.NewElectricityIndex,
-			&i.TotalWaterCost,
-			&i.TotalElectricityCost,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		if err := rows.Scan(&i.Address, &i.ListBill); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -282,6 +262,8 @@ func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) 
 const getBillByStatus = `-- name: GetBillByStatus :many
 SELECT  b.id,
         b.code,
+        r.address,
+        r.room_number,
         b.contract_id,
         b.addition_fee,
         b.addition_note,
@@ -296,15 +278,20 @@ SELECT  b.id,
         b.total_electricity_cost,
         b.status,
         b.created_at,
-        b.updated_at
+        b.updated_at,
+        (b.updated_at + interval '10 days')::timestamp AS deadline
 FROM PUBLIC.BILLING b
-WHERE deleted_at IS NULL 
-      AND status = $1
+LEFT JOIN public.contracts c ON b.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE b.deleted_at IS NULL 
+      AND b.status = $1
 `
 
 type GetBillByStatusRow struct {
 	ID                   int32              `json:"id"`
 	Code                 string             `json:"code"`
+	Address              []string           `json:"address"`
+	RoomNumber           *int32             `json:"room_number"`
 	ContractID           int32              `json:"contract_id"`
 	AdditionFee          *int32             `json:"addition_fee"`
 	AdditionNote         *string            `json:"addition_note"`
@@ -320,6 +307,7 @@ type GetBillByStatusRow struct {
 	Status               *int32             `json:"status"`
 	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	Deadline             pgtype.Timestamp   `json:"deadline"`
 }
 
 func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBillByStatusRow, error) {
@@ -334,6 +322,8 @@ func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBill
 		if err := rows.Scan(
 			&i.ID,
 			&i.Code,
+			&i.Address,
+			&i.RoomNumber,
 			&i.ContractID,
 			&i.AdditionFee,
 			&i.AdditionNote,
@@ -349,6 +339,7 @@ func (q *Queries) GetBillByStatus(ctx context.Context, status *int32) ([]GetBill
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Deadline,
 		); err != nil {
 			return nil, err
 		}

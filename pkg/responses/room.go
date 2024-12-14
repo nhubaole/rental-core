@@ -25,6 +25,8 @@ type GetRoomByIDRes struct {
 	Utilities       []string                  `json:"utilities"`
 	Description     string                    `json:"description"`
 	RoomType        *string                   `json:"room_type"`
+	AvailableFrom   pgtype.Timestamptz        `json:"available_from"`
+	ListRoomNumbers map[int]interface{}    `json:"list_room_numbers"`
 	Owner           dataaccess.GetUserByIDRow `json:"owner"`
 	Capacity        int32                     `json:"capacity"`
 	Gender          *int32                    `json:"gender"`
@@ -89,4 +91,22 @@ type GetAllMetric4BillByRoomID struct {
 	ElectricityCost int64       `json:"electricity_cost"` // Electricity cost
 	InternetCost    int64       `json:"internet_cost"`    // Internet cost
 	ParkingFee      int64       `json:"parking_fee"`      // Parking fee
+}
+
+type GetRoomsRes struct {
+	ID          int32       `json:"id"`
+	Title       string      `json:"title"`
+	Address     []string    `json:"address"`
+	RoomNumber  int32       `json:"room_number"`
+	RoomImages  []string    `json:"room_images"`
+	Utilities   []string    `json:"utilities"`
+	Description string      `json:"description"`
+	RoomType    *string     `json:"room_type"`
+	Owner       int32       `json:"owner"`
+	Area        float64     `json:"area"`
+	TotalPrice  *float64    `json:"total_price"`
+	Status      int32       `json:"status"`
+	AvgRating   interface{} `json:"avg_rating"`
+	TotalRating interface{} `json:"total_rating"`
+	IsLiked     bool        `json:"is_liked"`
 }

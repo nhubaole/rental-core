@@ -43,20 +43,49 @@ INSERT INTO public.landlord_ratings(
 VALUES
 ($1, $2, $3, $4, $5, $6,$7, $8, now());
 
--- name: GetRoomRatingByRoomID :many
-SELECT id,
- room_id, 
- rated_by, 
- amenities_rating, 
- location_rating, 
- cleanliness_rating, 
- price_rating, 
- overall_rating, 
- comments, 
- images, 
- created_at
-FROM public.room_ratings
-WHERE room_id = $1;
+-- name: GetRoomRatingByRoomID :one
+SELECT 
+    COUNT(*) AS total_rating,  -- Tổng số lượng rating
+    COALESCE(
+        jsonb_object_agg(
+            subquery.overall_rating, 
+            subquery.rating_count
+        ), 
+        '{}'::jsonb
+    ) AS detail_count, -- Đếm số lượng rating theo từng mức
+    COALESCE(AVG(rr.overall_rating), 0) AS avg_rating, -- Trung bình rating
+    jsonb_agg(
+        jsonb_build_object(
+            'rater_name', u.full_name,
+            'created_at', rr.created_at,
+            'rate', rr.overall_rating,
+            'comment', rr.comments,
+            'images', rr.images
+        )
+    )::text AS rating_info 
+FROM 
+    public.room_ratings rr
+LEFT JOIN 
+    public.users u ON rr.rated_by = u.id
+LEFT JOIN (
+    SELECT 
+        r.room_id, 
+        r.overall_rating, 
+        COUNT(*) AS rating_count
+    FROM 
+        public.room_ratings r
+    WHERE 
+        r.room_id = $1
+    GROUP BY 
+        r.room_id, r.overall_rating
+) AS subquery ON subquery.room_id = rr.room_id AND subquery.overall_rating = rr.overall_rating
+WHERE 
+    rr.room_id = $1
+GROUP BY
+    rr.room_id;
+
+
+
 
 -- name: GetTenantRatingByID :many
 SELECT id,

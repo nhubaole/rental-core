@@ -57,7 +57,7 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 		detailedRequest := responses.GetReturnRequestByLandlordIDRes{
 			ID:                 request.ID,
 			ContractID:         request.ContractID,
-			RoomID: *request.RoomID,
+			RoomID:             *request.RoomID,
 			Reason:             request.Reason,
 			ReturnDate:         request.ReturnDate,
 			Status:             request.Status,
@@ -137,10 +137,40 @@ func (r *ReturnRequestServiceImpl) GetByID(id int) *responses.ResponseData {
 		}
 	}
 
+	room, err := r.repo.GetRoomByID(context.Background(), *returnRequest.RoomID)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	sender, err := r.repo.GetUserByID(context.Background(), *returnRequest.CreatedUser)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       "nothing",
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       returnRequest,
+		Data: responses.GetReturnRequestByIDRes{
+			ID:                 returnRequest.ID,
+			Reason:             returnRequest.Reason,
+			Room:               room,
+			ContractID:         returnRequest.ContractID,
+			CreatedUser:        sender,
+			ReturnDate:         returnRequest.ReturnDate,
+			Status:             returnRequest.Status,
+			DeductAmount:       returnRequest.DeductAmount,
+			TotalReturnDeposit: returnRequest.TotalReturnDeposit,
+			CreatedAt:          returnRequest.CreatedAt,
+			UpdatedAt:          returnRequest.UpdatedAt,
+		},
 	}
 }
 

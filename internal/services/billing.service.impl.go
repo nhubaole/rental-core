@@ -2,11 +2,12 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
-	"smart-rental/pkg/common"
 	"smart-rental/pkg/responses"
+	"strings"
 )
 
 type BillingServiceImpl struct {
@@ -68,48 +69,37 @@ func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, yea
 	param := dataaccess.GetBillByMonthParams{
 		Year:  year,
 		Month: month,
+		Owner: userID,
 	}
 
 	bills, err := service.query.GetBillByMonth(context.Background(), param)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusBadRequest,
-			Message:    "Can't find your bill",
+			Message:    err.Error(),
 			Data:       false,
 		}
 	}
 
-	var filteredBills []responses.GetBillByMonthRes
+	var result []responses.GetBillByMonthRes
 
-	for _, bill := range bills {
-		contract, err := service.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    "Error retrieving contract for bill",
-				Data:       false,
-			}
-		}
-		var detailBill responses.GetBillByMonthRes
+	for _, v := range bills {
+		var bill responses.GetBillByMonthRes
+		var listBillJson []map[string]interface{}
 
-		common.MapStruct(bill, &detailBill)
-		detailBill.TenantID = contract.Tenant
-		detailBill.LandlordID = contract.Landlord
-		detailBill.InternetCost = float64(contract.InternetCost)
-		detailBill.ParkingFee = float64(contract.ParkingFee)
-		detailBill.RoomID = int32(contract.RoomID)
-		detailBill.CreatedAt = bill.CreatedAt
-		detailBill.UpdatedAt = bill.UpdatedAt
+		json.Unmarshal([]byte(v.ListBill), &listBillJson)
+		bill.Address = strings.Join(v.Address, ", ")
+		bill.ListBill = listBillJson
 
-		if int32(contract.Landlord) == userID || int32(contract.Tenant) == userID {
-			filteredBills = append(filteredBills, detailBill)
-		}
+		result = append(result, bill)
+
 	}
+
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       filteredBills,
+		Data:       result,
 	}
 }
 

@@ -45,7 +45,12 @@ SELECT
     r.total_price, 
     r.status, 
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
-    COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
+    COALESCE(COUNT(rt.id), 0) AS total_rating,  -- Đếm tổng số lượng rating
+     EXISTS (
+        SELECT 1 
+        FROM PUBLIC."like" l
+        WHERE l.room_id = r.id AND l.user_id = $1 AND l.deleted_at IS NULL
+    ) AS is_liked 
 FROM 
     public.rooms r
 LEFT JOIN 
@@ -69,34 +74,38 @@ GROUP BY
 
 -- name: GetRoomByID :one
 SELECT 
-    id, 
-    title, 
-    address, 
-    room_number, 
-    room_images, 
-    utilities, 
-    description, 
-    room_type, 
-    owner, 
-    capacity, 
-    gender, 
-    area, 
-    total_price, 
-    deposit, 
-    electricity_cost, 
-    water_cost, 
-    internet_cost, 
-    is_parking, 
-    parking_fee, 
-    status, 
-    is_rent, 
-    created_at, 
-    updated_at
+    r.id, 
+    r.title, 
+    r.address, 
+    r.room_number, 
+    r.room_images, 
+    r.utilities, 
+    r.description, 
+    r.room_type, 
+    r.available_from,
+    (SELECT jsonb_object_agg(room_number, id)::text
+    FROM PUBLIC.rooms 
+    WHERE deleted_at IS NULL AND address = r.address) AS list_room_numbers,
+    r.owner, 
+    r.capacity, 
+    r.gender, 
+    r.area, 
+    r.total_price, 
+    r.deposit, 
+    r.electricity_cost, 
+    r.water_cost, 
+    r.internet_cost, 
+    r.is_parking, 
+    r.parking_fee, 
+    r.status, 
+    r.is_rent, 
+    r.created_at, 
+    r.updated_at
 FROM 
-    PUBLIC.rooms
+    PUBLIC.rooms r
 WHERE 
     deleted_at IS NULL 
-    AND id = $1;
+    AND r.id = $1;
 
 -- name: SearchRoomByAddress :many
 SELECT 
@@ -108,6 +117,7 @@ SELECT
     r.utilities, 
     r.description, 
     r.room_type, 
+    r.available_from,
     r.owner, 
     r.area, 
     r.total_price, 

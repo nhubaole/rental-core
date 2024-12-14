@@ -23,26 +23,39 @@ INSERT INTO PUBLIC.BILLING
 
 
 -- name: GetBillByMonth :many
-SELECT  b.id,
-        b.code,
-        b.contract_id,
-        b.addition_fee,
-        b.addition_note,
-        b.total_amount,
-        b.month,
-        b.year,
-        b.old_water_index, 
-        b.old_electricity_index, 
-        b.new_water_index, 
-        b.new_electricity_index, 
-        b.total_water_cost, 
-        b.total_electricity_cost,
-        b.status,
-        b.created_at,
-        b.updated_at
-FROM PUBLIC.BILLING as b
-WHERE b.year = $1 
-    AND b.month=$2;
+SELECT 
+    r.address,
+    jsonb_agg(
+        jsonb_build_object(
+            'id', b.id,
+            'avatar', u.avatar_url, 
+            'status', b.status,
+            'room_number', r.room_number,
+            'tenant_name', u.full_name,
+            'payment_id', p.id, 
+            'total_amount', b.total_amount,
+            'created_at', b.created_at
+        )
+    )::text AS list_bill
+FROM 
+    public.billing AS b
+LEFT JOIN 
+    public.contracts c ON c.id = b.contract_id
+LEFT JOIN 
+    public.rooms r ON r.id = c.room_id
+LEFT JOIN 
+    public.tenants t ON t.room_id = r.id
+LEFT JOIN 
+    public.users u ON t.tenant_id = u.id
+LEFT JOIN 
+    public.payments p ON p.bill_id = b.id
+WHERE 
+    b.year = $1 
+    AND b.month = $2
+    AND r.owner = $3
+GROUP BY 
+    r.address;
+
 
 
 -- name: GetBillByID :one
@@ -91,6 +104,8 @@ AND idx.year = $3;
 -- name: GetBillByStatus :many
 SELECT  b.id,
         b.code,
+        r.address,
+        r.room_number,
         b.contract_id,
         b.addition_fee,
         b.addition_note,
@@ -105,10 +120,13 @@ SELECT  b.id,
         b.total_electricity_cost,
         b.status,
         b.created_at,
-        b.updated_at
+        b.updated_at,
+        (b.updated_at + interval '10 days')::timestamp AS deadline
 FROM PUBLIC.BILLING b
-WHERE deleted_at IS NULL 
-      AND status = $1;
+LEFT JOIN public.contracts c ON b.contract_id = c.id
+LEFT JOIN public.rooms r ON c.room_id = r.id
+WHERE b.deleted_at IS NULL 
+      AND b.status = $1;
 
 -- name: GetBillOfRentedRoomByOwnerID :many
 

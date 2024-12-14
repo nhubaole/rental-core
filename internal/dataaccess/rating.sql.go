@@ -182,52 +182,65 @@ func (q *Queries) GetLandlordRatingByID(ctx context.Context, landlordID *int32) 
 	return items, nil
 }
 
-const getRoomRatingByRoomID = `-- name: GetRoomRatingByRoomID :many
-SELECT id,
- room_id, 
- rated_by, 
- amenities_rating, 
- location_rating, 
- cleanliness_rating, 
- price_rating, 
- overall_rating, 
- comments, 
- images, 
- created_at
-FROM public.room_ratings
-WHERE room_id = $1
+const getRoomRatingByRoomID = `-- name: GetRoomRatingByRoomID :one
+SELECT 
+    COUNT(*) AS total_rating,  -- Tổng số lượng rating
+    COALESCE(
+        jsonb_object_agg(
+            subquery.overall_rating, 
+            subquery.rating_count
+        ), 
+        '{}'::jsonb
+    ) AS detail_count, -- Đếm số lượng rating theo từng mức
+    COALESCE(AVG(rr.overall_rating), 0) AS avg_rating, -- Trung bình rating
+    jsonb_agg(
+        jsonb_build_object(
+            'rater_name', u.full_name,
+            'created_at', rr.created_at,
+            'rate', rr.overall_rating,
+            'comment', rr.comments,
+            'images', rr.images
+        )
+    )::text AS rating_info 
+FROM 
+    public.room_ratings rr
+LEFT JOIN 
+    public.users u ON rr.rated_by = u.id
+LEFT JOIN (
+    SELECT 
+        r.room_id, 
+        r.overall_rating, 
+        COUNT(*) AS rating_count
+    FROM 
+        public.room_ratings r
+    WHERE 
+        r.room_id = $1
+    GROUP BY 
+        r.room_id, r.overall_rating
+) AS subquery ON subquery.room_id = rr.room_id AND subquery.overall_rating = rr.overall_rating
+WHERE 
+    rr.room_id = $1
+GROUP BY
+    rr.room_id
 `
 
-func (q *Queries) GetRoomRatingByRoomID(ctx context.Context, roomID *int32) ([]RoomRating, error) {
-	rows, err := q.db.Query(ctx, getRoomRatingByRoomID, roomID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []RoomRating
-	for rows.Next() {
-		var i RoomRating
-		if err := rows.Scan(
-			&i.ID,
-			&i.RoomID,
-			&i.RatedBy,
-			&i.AmenitiesRating,
-			&i.LocationRating,
-			&i.CleanlinessRating,
-			&i.PriceRating,
-			&i.OverallRating,
-			&i.Comments,
-			&i.Images,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type GetRoomRatingByRoomIDRow struct {
+	TotalRating int64       `json:"total_rating"`
+	DetailCount interface{} `json:"detail_count"`
+	AvgRating   interface{} `json:"avg_rating"`
+	RatingInfo  string      `json:"rating_info"`
+}
+
+func (q *Queries) GetRoomRatingByRoomID(ctx context.Context, roomID *int32) (GetRoomRatingByRoomIDRow, error) {
+	row := q.db.QueryRow(ctx, getRoomRatingByRoomID, roomID)
+	var i GetRoomRatingByRoomIDRow
+	err := row.Scan(
+		&i.TotalRating,
+		&i.DetailCount,
+		&i.AvgRating,
+		&i.RatingInfo,
+	)
+	return i, err
 }
 
 const getTenantRatingByID = `-- name: GetTenantRatingByID :many

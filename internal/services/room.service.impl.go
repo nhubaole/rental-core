@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"mime"
 	"net/http"
@@ -131,8 +132,8 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 }
 
 // GetRooms implements RoomService.
-func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
-	rooms, err := r.repo.GetRooms(context.Background())
+func (r *RoomServiceImpl) GetRooms(userID int) *responses.ResponseData {
+	rooms, err := r.repo.GetRooms(context.Background(), int32(userID))
 
 	if len(rooms) == 0 {
 		return &responses.ResponseData{
@@ -149,6 +150,7 @@ func (r *RoomServiceImpl) GetRooms() *responses.ResponseData {
 			Data:       nil,
 		}
 	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
@@ -208,6 +210,8 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 			}
 		}
 	}
+	var listRoomNumberJson map[int]interface{}
+	json.Unmarshal([]byte(roomData.ListRoomNumbers), &listRoomNumberJson)
 	var result = responses.GetRoomByIDRes{
 		ID:              roomData.ID,
 		Title:           roomData.Title,
@@ -217,6 +221,8 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 		Utilities:       roomData.Utilities,
 		Description:     roomData.Description,
 		RoomType:        roomData.RoomType,
+		AvailableFrom:   roomData.AvailableFrom,
+		ListRoomNumbers: listRoomNumberJson,
 		Owner:           owner,
 		Capacity:        roomData.Capacity,
 		Gender:          roomData.Gender,
