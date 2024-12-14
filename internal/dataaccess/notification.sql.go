@@ -9,6 +9,43 @@ import (
 	"context"
 )
 
+const createNotification = `-- name: CreateNotification :exec
+INSERT INTO public.notifications (
+    user_id,
+    reference_id,
+    reference_type,
+    title,
+    is_read,
+    created_at,
+    updated_at
+) VALUES (
+    $1, -- user_id
+    $2, -- reference_id
+    $3, -- reference_type
+    $4, -- title
+    false, -- is_read (mặc định chưa đọc)
+    now(), -- created_at
+    now()  -- updated_at
+)
+`
+
+type CreateNotificationParams struct {
+	UserID        int32   `json:"user_id"`
+	ReferenceID   *int32  `json:"reference_id"`
+	ReferenceType *string `json:"reference_type"`
+	Title         string  `json:"title"`
+}
+
+func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotificationParams) error {
+	_, err := q.db.Exec(ctx, createNotification,
+		arg.UserID,
+		arg.ReferenceID,
+		arg.ReferenceType,
+		arg.Title,
+	)
+	return err
+}
+
 const getNotificationsByUserID = `-- name: GetNotificationsByUserID :many
 SELECT id, user_id, reference_id, reference_type, title, is_read, created_at, updated_at
 FROM public.notifications

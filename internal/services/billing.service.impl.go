@@ -11,14 +11,16 @@ import (
 )
 
 type BillingServiceImpl struct {
-	query      *dataaccess.Queries
-	blockchain BlockchainService
+	query               *dataaccess.Queries
+	blockchain          BlockchainService
+	notificationService NotificationService
 }
 
-func NewBillingServiceImpl(blockchain BlockchainService) BillingService {
+func NewBillingServiceImpl(blockchain BlockchainService, notification NotificationService) BillingService {
 	return &BillingServiceImpl{
-		query:      dataaccess.New(global.Db),
-		blockchain: blockchain,
+		query:               dataaccess.New(global.Db),
+		blockchain:          blockchain,
+		notificationService: notification,
 	}
 }
 
@@ -39,7 +41,7 @@ func (service *BillingServiceImpl) CreateBill(userID int32, body dataaccess.Crea
 		}
 	}
 
-	err = service.query.CreateBill(context.Background(), body)
+	billId, err := service.query.CreateBill(context.Background(), body)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -57,6 +59,9 @@ func (service *BillingServiceImpl) CreateBill(userID int32, body dataaccess.Crea
 			Data:       false,
 		}
 	}
+
+	id := int(billId)
+	service.notificationService.SendNotification(int(contract.Tenant), "Bạn có hoá đơn thu tiền mới. Vui lòng kiểm tra và thanh toán đúng hạn", &id, "bill")
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
@@ -94,7 +99,6 @@ func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, yea
 		result = append(result, bill)
 
 	}
-
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
@@ -149,25 +153,25 @@ func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData
 		int64(*bill.AdditionFee)
 
 	responseData := map[string]interface{}{
-		"id":                  bill.ID,
-		"code":                bill.Code,
-		"created_at":          bill.CreatedAt,
-		"paid_at":             nil,
-		"status":              bill.Status,
-		"room_price":          contract.ActualPrice,
-		"old_water_index":     bill.OldWaterIndex,
+		"id":                    bill.ID,
+		"code":                  bill.Code,
+		"created_at":            bill.CreatedAt,
+		"paid_at":               nil,
+		"status":                bill.Status,
+		"room_price":            contract.ActualPrice,
+		"old_water_index":       bill.OldWaterIndex,
 		"old_electricity_index": bill.OldElectricityIndex,
-		"new_water_index":     bill.NewWaterIndex,
+		"new_water_index":       bill.NewWaterIndex,
 		"new_electricity_index": bill.NewElectricityIndex,
-		"water_cost":          contract.WaterCost,
-		"electricity_cost":    contract.ElectricityCost,
-		"internet_cost":       contract.InternetCost,
-		"parking_fee":         contract.ParkingFee,
-		"addition_fee":        bill.AdditionFee,
-		"addition_note":       bill.AdditionNote,
-		"total_amount":        totalAmount,
+		"water_cost":            contract.WaterCost,
+		"electricity_cost":      contract.ElectricityCost,
+		"internet_cost":         contract.InternetCost,
+		"parking_fee":           contract.ParkingFee,
+		"addition_fee":          bill.AdditionFee,
+		"addition_note":         bill.AdditionNote,
+		"total_amount":          totalAmount,
 		"info": map[string]interface{}{
-			"tenant_name": tenantInfo.FullName,
+			"tenant_name":  tenantInfo.FullName,
 			"phone_number": tenantInfo.PhoneNumber,
 			"room_number":  roomInfo.RoomNumber,
 			"address":      strings.Join(roomInfo.Address, ", "),
@@ -236,7 +240,7 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 		electricityUsage*float64(matchedContract.ElectricityCost) +
 		float64(matchedContract.InternetCost) +
 		float64(matchedContract.ParkingFee)
-	
+
 	tenant, err := service.query.GetUserByID(context.Background(), int32(matchedContract.Tenant))
 	if err != nil {
 		return &responses.ResponseData{
@@ -247,18 +251,18 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 	}
 
 	responseData := map[string]interface{}{
-		"actual_price":         matchedContract.ActualPrice,
-		"old_water_index":      metric.PrevWater,
+		"actual_price":          matchedContract.ActualPrice,
+		"old_water_index":       metric.PrevWater,
 		"old_electricity_index": metric.PrevElectricity,
-		"new_water_index":      metric.CurrWater,
+		"new_water_index":       metric.CurrWater,
 		"new_electricity_index": metric.CurrElectricity,
-		"water_cost":           matchedContract.WaterCost,
-		"electricity_cost":     matchedContract.ElectricityCost,
-		"internet_cost":        matchedContract.InternetCost,
-		"parking_fee":          matchedContract.ParkingFee,
-		"total_amount":         totalAmount,
+		"water_cost":            matchedContract.WaterCost,
+		"electricity_cost":      matchedContract.ElectricityCost,
+		"internet_cost":         matchedContract.InternetCost,
+		"parking_fee":           matchedContract.ParkingFee,
+		"total_amount":          totalAmount,
 		"info": map[string]interface{}{
-			"tenant_name": tenant.FullName,
+			"tenant_name":  tenant.FullName,
 			"phone_number": tenant.PhoneNumber,
 			"room_number":  roomInfo.RoomNumber,
 			"address":      strings.Join(roomInfo.Address, ", "),

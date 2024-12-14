@@ -13,14 +13,16 @@ import (
 )
 
 type ContractServiceImpl struct {
-	repo       *dataaccess.Queries
-	blockchain BlockchainService
+	repo                *dataaccess.Queries
+	blockchain          BlockchainService
+	notificationService NotificationService
 }
 
-func NewContractServiceImpl(blockchain BlockchainService) ContractService {
+func NewContractServiceImpl(blockchain BlockchainService, notification NotificationService) ContractService {
 	return &ContractServiceImpl{
-		repo:       dataaccess.New(global.Db),
-		blockchain: blockchain,
+		repo:                dataaccess.New(global.Db),
+		blockchain:          blockchain,
+		notificationService: notification,
 	}
 }
 
@@ -157,6 +159,9 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 		}
 	}
 
+	id := int(contractId)
+	c.notificationService.SendNotification(int(req.PartyB), "Hợp đồng thuê trọ của bạn đã được chủ nhà tạo", &id, "contract")
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -211,11 +216,11 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 	for _, contract := range contracts {
 		roomDetails, err := c.repo.GetRoomByID(context.Background(), int32(contract.RoomId.Int64()))
 		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       nil,
-			}
+			// return &responses.ResponseData{
+			// 	StatusCode: http.StatusInternalServerError,
+			// 	Message:    err.Error(),
+			// 	Data:       nil,
+			// }
 		}
 
 		landlord, err := c.repo.GetUserByID(context.Background(), int32(contract.Landlord.Int64()))

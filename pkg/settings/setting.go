@@ -13,6 +13,7 @@ type Config struct {
 	Kafka         Kafka         `mapstructure:"kafka"`
 	ElasticSearch ElasticSearch `mapstructure:"elasticsearch"`
 	SmartContract SmartContract `mapstructure:"smart_contract"`
+	FCM           FCM           `mapstructure:"fcm"`
 }
 
 type Database struct {
@@ -62,4 +63,8 @@ type SmartContract struct {
 	LeaseAgreementProducerContract string `mapstructure:"lease_agreement_producer_contract"`
 	LeaseContractManagement        string `mapstructure:"lease_contract_management"`
 	ContractManagement             string `mapstructure:"contract_management"`
+}
+type FCM struct {
+	ProjectID          string `mapstructure:"project_id"`
+	ServiceAccountPath string `mapstructure:"service_account_path"`
 }
