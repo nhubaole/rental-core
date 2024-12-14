@@ -21,6 +21,7 @@ func NewRouter(
 	ms *controllers.MessageController,
 	conversation *controllers.ConversationController,
 	payment *controllers.PaymentController,
+	notification *controllers.NotificationController,
 
 ) *gin.Engine {
 	r := gin.Default()
@@ -62,7 +63,7 @@ func NewRouter(
 
 	// billingRouter := baseRouter.Group("/billings")
 	billingRouter := baseRouter.Group("/billings", middlewares.CORSMiddleware())
-	billingRouter.GET("/index/:year/:month", middlewares.AuthenMiddleware, ic.GetIndexFromOwner)
+	billingRouter.GET("/index/:year/:month/:type", middlewares.AuthenMiddleware, ic.GetIndexFromOwner)
 	billingRouter.POST("/index", middlewares.AuthenMiddleware, ic.CreateIndex)
 	billingRouter.POST("/", middlewares.AuthenMiddleware, bc.CreateBill)
 	billingRouter.GET("/get-by-month/:year/:month", middlewares.AuthenMiddleware, bc.GetBillByMonth)
@@ -109,5 +110,8 @@ func NewRouter(
 	paymentRouter.GET("", middlewares.AuthenMiddleware, payment.GetAll)
 	paymentRouter.PUT("/:id", middlewares.AuthenMiddleware, payment.Confirm)
 	paymentRouter.GET("/detail-info", middlewares.AuthenMiddleware, payment.GetPaymentInfo)
+
+	notificationRouter := baseRouter.Group("/notifications")
+	notificationRouter.GET("", middlewares.AuthenMiddleware, notification.GetAll)
 	return r
 }

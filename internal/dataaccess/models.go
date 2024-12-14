@@ -111,6 +111,17 @@ type Message struct {
 	RentAutoContent []byte           `json:"rent_auto_content"`
 }
 
+type Notification struct {
+	ID            int32            `json:"id"`
+	UserID        int32            `json:"user_id"`
+	ReferenceID   int32            `json:"reference_id"`
+	ReferenceType string           `json:"reference_type"`
+	Title         string           `json:"title"`
+	IsRead        *bool            `json:"is_read"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
 type Payment struct {
 	ID              int32              `json:"id"`
 	Code            string             `json:"code"`
