@@ -15,13 +15,11 @@ type SocketIOServiceImpl struct {
 	repo *dataaccess.Queries
 }
 
-
 func NewSocketIOServiceImpl() SocketIOService {
 	return &SocketIOServiceImpl{
 		repo: dataaccess.New(global.Db),
 	}
 }
-
 
 // GetMessageByConversationID implements SocketIOService.
 func (s *SocketIOServiceImpl) GetMessageByConversationID(conversationID int) *responses.ResponseData {
