@@ -1,4 +1,4 @@
--- name: CreateBill :exec
+-- name: CreateBill :one
 INSERT INTO PUBLIC.BILLING
 (
     code,
@@ -19,7 +19,7 @@ INSERT INTO PUBLIC.BILLING
 ) VALUES
 (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  now(), now()
-);
+) RETURNING id;
 
 
 -- name: GetBillByMonth :many
