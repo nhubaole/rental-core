@@ -13,6 +13,15 @@ import (
 
 // Injectors from wire.go:
 
+func InitPaymentRouterHandler() *controllers.PaymentController {
+	storageSerivce := services.NewStorageServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	paymentService := services.NewPaymentServiceImpl(storageSerivce, blockchainService, notificationService)
+	paymentController := controllers.NewPaymentController(paymentService)
+	return paymentController
+}
+
 func InitAuthenRouterHandler() *controllers.AuthenController {
 	authenService := services.NewAuthenSerivceImpl()
 	authenController := controllers.NewAuthController(authenService)
@@ -27,19 +36,23 @@ func InitUserRouterHandler() *controllers.UserController {
 
 func InitRoomRouterHandler() *controllers.RoomController {
 	storageSerivce := services.NewStorageServiceImpl()
-	roomService := services.NewRoomServiceImpl(storageSerivce)
+	blockchainService := services.NewBlockchainServiceImpl()
+	roomService := services.NewRoomServiceImpl(storageSerivce, blockchainService)
 	roomController := controllers.NewRoomController(roomService)
 	return roomController
 }
 
 func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
-	rentalRequestService := services.NewRentalRequestServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	rentalRequestService := services.NewRentalRequestServiceImpl(notificationService)
 	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
 	return rentalRequestController
 }
 
 func InitContractRouterHandler() *controllers.ContractController {
-	contractService := services.NewContractServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	contractService := services.NewContractServiceImpl(blockchainService, notificationService)
 	contractController := controllers.NewContractController(contractService)
 	return contractController
 }
@@ -51,19 +64,24 @@ func InitProcessTrackingRouterHandler() *controllers.ProcessTrackingController {
 }
 
 func InitIndexRouterHandler() *controllers.IndexController {
-	indexService := services.NewIndexServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	indexService := services.NewIndexServiceImpl(blockchainService)
 	indexController := controllers.NewIndexController(indexService)
 	return indexController
 }
 
 func InitBillingRouterHandler() *controllers.BillingController {
-	billingService := services.NewBillingServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	billingService := services.NewBillingServiceImpl(blockchainService, notificationService)
 	billingController := controllers.NewBillingController(billingService)
 	return billingController
 }
 
 func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
-	returnRequestService := services.NewReturnRequestServiceImpl()
+	blockchainService := services.NewBlockchainServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	returnRequestService := services.NewReturnRequestServiceImpl(blockchainService, notificationService)
 	returnRequestController := controllers.NewReturnRequestController(returnRequestService)
 	return returnRequestController
 }
@@ -85,4 +103,10 @@ func InitConversationRouterHandler() *controllers.ConversationController {
 	conversationService := services.NewConversationServiceImpl()
 	conversationController := controllers.NewConversationController(conversationService)
 	return conversationController
+}
+
+func InitNotificationRouterHandler() *controllers.NotificationController {
+	notificationService := services.NewNotificationServiceImpl()
+	notificationController := controllers.NewNotificationController(notificationService)
+	return notificationController
 }

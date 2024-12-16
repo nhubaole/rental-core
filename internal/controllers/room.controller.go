@@ -24,20 +24,31 @@ func NewRoomController(service services.RoomService) *RoomController {
 func (rc RoomController) Create(ctx *gin.Context) {
 	var formData requests.CreateRoomForm
 	if err := ctx.ShouldBind(&formData); err != nil {
-		responses.APIResponse(ctx, 400, "Bad request", nil)
+		responses.APIResponse(ctx, 400, err.Error(), nil)
 		return
 	}
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
 
+	}
 	// var params dataaccess.CreateRoomParams
 	// common.MapStruct(formData, &params)
 
-	result := rc.roomService.CreateRoom(formData)
+	result := rc.roomService.CreateRoom(formData, int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 
 }
 
 func (rc RoomController) GetAll(ctx *gin.Context) {
-	result := rc.roomService.GetRooms()
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	result := rc.roomService.GetRooms(int(user.ID))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 

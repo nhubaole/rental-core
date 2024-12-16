@@ -6,6 +6,7 @@ import (
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
 
+	"smart-rental/pkg/blockchain"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
@@ -22,6 +23,7 @@ func NewAuthenSerivceImpl() AuthenService {
 		repo: dataaccess.New(global.Db),
 	}
 }
+
 
 func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *responses.ResponseData {
 	user, _ := as.repo.GetUserByPhone(context.Background(), req.PhoneNumber)
@@ -42,8 +44,22 @@ func (as *AuthenServiceImpl) Register(req *dataaccess.CreateUserParams) *respons
 	}
 
 	req.Password = string(passwordHash)
+	req.Password = string(passwordHash)
 	opt := int32(common.GenerateDigitOTP())
 	req.Otp = &opt
+	// Generate Ethereum Wallet during registration
+	privateKeyHex, walletAddress, errWallet := blockchain.CreateWallet(user.PhoneNumber)
+	if errWallet != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to create wallet",
+			Data:       false,
+		}
+	}
+
+	// Set wallet address in user params
+	req.WalletAddress = &walletAddress
+	req.PrivateKeyHex = &privateKeyHex
 	err := as.repo.CreateUser(context.Background(), *req)
 
 	if err != nil {

@@ -31,7 +31,7 @@ func (process *ProcessServiceImpl) CreateProcessTracking(body *dataaccess.Create
 func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, rentalId int32) *responses.ResponseData {
 
 	fmt.Println(userid)
-	rs, er := process.repo.GetRequestByUserID(context.Background(), userid)
+	rs, er := process.repo.GetRequestByOwnerID(context.Background(), userid)
 	if er != nil {
 		fmt.Println(er.Error() + "11111")
 		return &responses.ResponseData{

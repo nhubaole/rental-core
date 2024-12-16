@@ -31,19 +31,21 @@ loadConfig()
       }
       
       socket.on('sendMessage', async (message) => {
-        const { sender_id, receiver_id,conversation_id, content, type } = message;
+        const { sender_id, receiver_id,conversation_id, content, type,rent_auto_content } = message;
 
         try {
           const result = await query(
-            'INSERT INTO messages (sender_id,conversation_id, content, type) VALUES ($1, $2, $3, $4) RETURNING *',
-            [sender_id, conversation_id,content, type]
+            'INSERT INTO messages (sender_id,conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [sender_id, conversation_id,content, type, rent_auto_content]
           );
           const savedMessage = result.rows[0]; 
           console.log(savedMessage)
           io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
           io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
-          console.log(connectedClients[sender_id])
-
+          await query(
+            'UPDATE conversations SET last_message_id = $1 WHERE id = $2',
+            [savedMessage.id, savedMessage.conversation_id]
+          )
         } catch (error) {
           console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
         }

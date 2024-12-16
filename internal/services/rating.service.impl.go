@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"mime"
 	"net/http"
@@ -141,23 +142,24 @@ func (r *RatingServiceImpl) CreateTenantRating(req requests.CreateTenantRatingRe
 func (r *RatingServiceImpl) GetRoomRatingByRoomID(roomID int32) *responses.ResponseData {
 	roomRatings, err := r.repo.GetRoomRatingByRoomID(context.Background(), &roomID)
 	if err != nil {
-		if len(roomRatings) == 0 {
-			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
-				Message:    responses.StatusNoData,
-				Data:       nil,
-			}
-		}
+		
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
 			Data:       nil,
 		}
 	}
+	var result responses.GetRoomRatingByRoomIDRes
+	var ratingInfoJson []map[string]interface{}
+	json.Unmarshal([]byte(roomRatings.RatingInfo), &ratingInfoJson)
+	result.AvgRating = roomRatings.AvgRating
+	result.DetailCount = roomRatings.DetailCount
+	result.TotalRating = roomRatings.TotalRating
+	result.RatingInfo = ratingInfoJson
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       roomRatings,
+		Data:       result,
 	}
 }

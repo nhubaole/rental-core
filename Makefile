@@ -62,8 +62,14 @@ watch:
 up:
 	@set GOOSE_DRIVER=$(GOOSE_DRIVER)&& set GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) up
 
+up-macos:
+	@export GOOSE_DRIVER=$(GOOSE_DRIVER) && export GOOSE_DBSTRING=$(GOOSE_DBSTRING) && goose -dir=$(GOOSE_MIGRATION_DIR) up
+
 down:
 	@set GOOSE_DRIVER=$(GOOSE_DRIVER)&& set GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) down
+
+down-macos:
+	@export GOOSE_DRIVER=$(GOOSE_DRIVER)&& export GOOSE_DBSTRING=$(GOOSE_DBSTRING)&& goose -dir=$(GOOSE_MIGRATION_DIR) down
 
 create-migration: 
 	cd $(GOOSE_MIGRATION_DIR) && goose create $(name) sql

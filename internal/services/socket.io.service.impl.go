@@ -15,13 +15,11 @@ type SocketIOServiceImpl struct {
 	repo *dataaccess.Queries
 }
 
-
 func NewSocketIOServiceImpl() SocketIOService {
 	return &SocketIOServiceImpl{
 		repo: dataaccess.New(global.Db),
 	}
 }
-
 
 // GetMessageByConversationID implements SocketIOService.
 func (s *SocketIOServiceImpl) GetMessageByConversationID(conversationID int) *responses.ResponseData {
@@ -50,7 +48,7 @@ func (s *SocketIOServiceImpl) GetMessageByConversationID(conversationID int) *re
 // GetMessageByID implements SocketIOService.
 func (s *SocketIOServiceImpl) GetMessageByID(id int) *responses.ResponseData {
 	message, err := s.repo.GetMessageByID(context.Background(), int32(id))
-	if (message == dataaccess.Message{}) {
+	if (message == dataaccess.GetMessageByIDRow{}) {
 		return &responses.ResponseData{
 			StatusCode: http.StatusNoContent,
 			Message:    responses.StatusNoData,

@@ -35,12 +35,12 @@ func (controller BillingController) CreateBill(ctx *gin.Context) {
 
 func (controller BillingController) GetBillByMonth(ctx *gin.Context) {
 	myuser, _ := common.GetCurrentUser(ctx)
-	year, err := strconv.Atoi(ctx.Query("year"))
+	year, err := strconv.Atoi(ctx.Param("year"))
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	month, err := strconv.Atoi(ctx.Query("month"))
+	month, err := strconv.Atoi(ctx.Param("month"))
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return

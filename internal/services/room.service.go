@@ -6,8 +6,8 @@ import (
 )
 
 type RoomService interface {
-	CreateRoom(req requests.CreateRoomForm) *responses.ResponseData
-	GetRooms() *responses.ResponseData
+	CreateRoom(req requests.CreateRoomForm, userID int) *responses.ResponseData
+	GetRooms(userID int) *responses.ResponseData
 	GetRoomByID(id int) *responses.ResponseData
 	SearchRoomByAddress(address string) *responses.ResponseData
 	LikeRoom(roomID int, userID int) *responses.ResponseData

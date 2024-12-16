@@ -9,6 +9,20 @@ import (
 	"io"
 )
 
+func Float64PtrToInt64Ptr(f *float64) *int64 {
+	if f == nil {
+		return nil
+	}
+	i := int64(*f)
+	return &i
+}
+
+func IntToFloat64Ptr(i int) *float64 {
+
+	f := float64(i)
+	return &f
+}
+
 func IfNullStr(requestVal, templateVal *string) string {
 	if requestVal != nil && *requestVal != "" {
 		return *requestVal
@@ -20,6 +34,16 @@ func IfNullStr(requestVal, templateVal *string) string {
 }
 
 func IfNullFloat64(requestVal, templateVal *float64) float64 {
+	if requestVal != nil {
+		return *requestVal
+	}
+	if templateVal != nil {
+		return *templateVal
+	}
+	return 0
+}
+
+func IfNullInt64(requestVal, templateVal *int64) int64 {
 	if requestVal != nil {
 		return *requestVal
 	}
@@ -77,4 +101,13 @@ func DecryptBase64AES(encryptedBase64, key string) (string, error) {
 	stream.XORKeyStream(ciphertext, ciphertext)
 
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func ConvertIntToPointerInt32(input *int) *int32 {
+	if input == nil {
+		return nil
+	}
+
+	value := int32(*input)
+	return &value
 }

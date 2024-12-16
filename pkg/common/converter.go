@@ -3,7 +3,8 @@ package common
 import (
 	"mime/multipart"
 	"reflect"
-
+	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func MapStruct(src interface{}, dst interface{}) error {
@@ -33,7 +34,20 @@ func MapStruct(src interface{}, dst interface{}) error {
 
 			case reflect.Ptr:
 				if !srcField.IsNil() {
-					dstField.Set(srcField)
+					if srcField.Type().Elem().Name() == "FileHeader" {
+						fileHeader := srcField.Interface().(*multipart.FileHeader)
+						if fileHeader != nil {
+							fileName := fileHeader.Filename            // Extract filename
+							fileNamePtr := &fileName                   // Create a *string
+							dstField.Set(reflect.ValueOf(fileNamePtr)) // Set as *string
+						} else {
+							// Handle nil case
+							dstField.Set(reflect.Zero(dstField.Type()))
+						}
+					} else {
+						dstField.Set(srcField)
+
+					}
 				}
 
 			case reflect.Slice:
@@ -53,8 +67,27 @@ func MapStruct(src interface{}, dst interface{}) error {
 					// Set the filenames to the destination field
 					dstField.Set(reflect.ValueOf(fileNames))
 				}
+
 			}
+
 		}
 	}
 	return nil
 }
+
+func Int64ToPgTimestamptz(unixTimestamp int64, isMilliseconds bool) pgtype.Timestamptz {
+    var ts pgtype.Timestamptz
+    var t time.Time
+
+    if isMilliseconds {
+        t = time.Unix(0, unixTimestamp*int64(time.Millisecond))
+    } else {
+        t = time.Unix(unixTimestamp, 0)
+    }
+
+    ts.Time = t          // Set the time value
+    ts.Valid = true      // Set the status to valid
+    return ts
+}
+
+
