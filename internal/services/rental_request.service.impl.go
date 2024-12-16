@@ -12,11 +12,15 @@ import (
 )
 
 type RentalRequestServiceImpl struct {
-	repo *dataaccess.Queries
+	repo                *dataaccess.Queries
+	notificationService NotificationService
 }
 
-func NewRentalRequestServiceImpl() RentalRequestService {
-	return &RentalRequestServiceImpl{repo: dataaccess.New(global.Db)}
+func NewRentalRequestServiceImpl(notification NotificationService) RentalRequestService {
+	return &RentalRequestServiceImpl{
+		repo:                dataaccess.New(global.Db),
+		notificationService: notification,
+	}
 }
 
 // GetRentalRequestByRoomID implements RentalRequestService.
@@ -160,6 +164,10 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 			Data:       nil,
 		}
 	}
+
+	id := int(res.ID)
+	rentalService.notificationService.SendNotification(int(rs.Owner), "Bạn có một yêu cầu thuê phòng mới", &id, "rental_request")
+	
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,

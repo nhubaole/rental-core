@@ -20,16 +20,16 @@ import (
 )
 
 type RoomServiceImpl struct {
-	repo              *dataaccess.Queries
-	storageService    StorageSerivce
-	blockchainService BlockchainService
+	repo                *dataaccess.Queries
+	storageService      StorageSerivce
+	blockchainService   BlockchainService
 }
 
 func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
-		repo:              dataaccess.New(global.Db),
-		storageService:    storage,
-		blockchainService: blockchain,
+		repo:                dataaccess.New(global.Db),
+		storageService:      storage,
+		blockchainService:   blockchain,
 	}
 }
 

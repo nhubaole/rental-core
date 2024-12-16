@@ -16,7 +16,8 @@ import (
 func InitPaymentRouterHandler() *controllers.PaymentController {
 	storageSerivce := services.NewStorageServiceImpl()
 	blockchainService := services.NewBlockchainServiceImpl()
-	paymentService := services.NewPaymentServiceImpl(storageSerivce, blockchainService)
+	notificationService := services.NewNotificationServiceImpl()
+	paymentService := services.NewPaymentServiceImpl(storageSerivce, blockchainService, notificationService)
 	paymentController := controllers.NewPaymentController(paymentService)
 	return paymentController
 }
@@ -42,14 +43,16 @@ func InitRoomRouterHandler() *controllers.RoomController {
 }
 
 func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
-	rentalRequestService := services.NewRentalRequestServiceImpl()
+	notificationService := services.NewNotificationServiceImpl()
+	rentalRequestService := services.NewRentalRequestServiceImpl(notificationService)
 	rentalRequestController := controllers.NewRentalRequestController(rentalRequestService)
 	return rentalRequestController
 }
 
 func InitContractRouterHandler() *controllers.ContractController {
 	blockchainService := services.NewBlockchainServiceImpl()
-	contractService := services.NewContractServiceImpl(blockchainService)
+	notificationService := services.NewNotificationServiceImpl()
+	contractService := services.NewContractServiceImpl(blockchainService, notificationService)
 	contractController := controllers.NewContractController(contractService)
 	return contractController
 }
@@ -69,14 +72,16 @@ func InitIndexRouterHandler() *controllers.IndexController {
 
 func InitBillingRouterHandler() *controllers.BillingController {
 	blockchainService := services.NewBlockchainServiceImpl()
-	billingService := services.NewBillingServiceImpl(blockchainService)
+	notificationService := services.NewNotificationServiceImpl()
+	billingService := services.NewBillingServiceImpl(blockchainService, notificationService)
 	billingController := controllers.NewBillingController(billingService)
 	return billingController
 }
 
 func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
 	blockchainService := services.NewBlockchainServiceImpl()
-	returnRequestService := services.NewReturnRequestServiceImpl(blockchainService)
+	notificationService := services.NewNotificationServiceImpl()
+	returnRequestService := services.NewReturnRequestServiceImpl(blockchainService, notificationService)
 	returnRequestController := controllers.NewReturnRequestController(returnRequestService)
 	return returnRequestController
 }

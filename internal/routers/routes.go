@@ -40,10 +40,11 @@ func NewRouter(
 	userRouter.PUT("/", middlewares.AuthenMiddleware, uc.Update)
 	userRouter.POST("/bank-info", middlewares.AuthenMiddleware, uc.CreateUserBank)
 	userRouter.PUT("/bank-info", middlewares.AuthenMiddleware, uc.UpdateUserBank)
+	userRouter.PUT("/device-token", middlewares.AuthenMiddleware, uc.UpdateDeviceToken)
 
 	roomRouter := baseRouter.Group("/rooms")
 	roomRouter.POST("", middlewares.AuthenMiddleware, rc.Create)
-	roomRouter.GET("",middlewares.AuthenMiddleware, rc.GetAll)
+	roomRouter.GET("", middlewares.AuthenMiddleware, rc.GetAll)
 	roomRouter.GET("/:id", middlewares.AuthenMiddleware, rc.GetByID)
 	roomRouter.GET("/search-by-address", rc.SearchByAddress)
 	roomRouter.GET("/like/:id", middlewares.AuthenMiddleware, rc.Like)
@@ -73,10 +74,10 @@ func NewRouter(
 	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
 
 	contractRouter := baseRouter.Group("/contracts")
-	contractRouter.POST("/template",middlewares.AuthenMiddleware, cc.CreateTemplate)
-	contractRouter.POST("/template/get-by-address",middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
-	contractRouter.POST("",middlewares.AuthenMiddleware, cc.Create)
-	contractRouter.GET("/:id",middlewares.AuthenMiddleware, cc.GetByID)
+	contractRouter.POST("/template", middlewares.AuthenMiddleware, cc.CreateTemplate)
+	contractRouter.POST("/template/get-by-address", middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
+	contractRouter.POST("", middlewares.AuthenMiddleware, cc.Create)
+	contractRouter.GET("/:id", middlewares.AuthenMiddleware, cc.GetByID)
 	contractRouter.GET("/status/:statusID", middlewares.AuthenMiddleware, cc.GetByStatus)
 	contractRouter.PUT("/sign", middlewares.AuthenMiddleware, cc.SignContract)
 	contractRouter.PUT("/decline/:id", middlewares.AuthenMiddleware, cc.DeclineContract)
@@ -96,10 +97,10 @@ func NewRouter(
 
 	messageRouter := baseRouter.Group("/messages")
 	messageRouter.POST("", ms.SendMessage)
-	messageRouter.GET("/conversation/:conversationID",middlewares.AuthenMiddleware, ms.GetMessagesByConversationID)
+	messageRouter.GET("/conversation/:conversationID", middlewares.AuthenMiddleware, ms.GetMessagesByConversationID)
 
 	conversationRouter := baseRouter.Group("/conversations")
-	conversationRouter.POST("",middlewares.AuthenMiddleware, conversation.CreateConversation)
+	conversationRouter.POST("", middlewares.AuthenMiddleware, conversation.CreateConversation)
 	conversationRouter.GET("/get-by-current-user", middlewares.AuthenMiddleware, conversation.GetConversationByCurrentUser)
 	conversationRouter.GET("/user/:id", middlewares.AuthenMiddleware, conversation.GetConversationByUserID)
 

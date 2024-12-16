@@ -211,3 +211,35 @@ func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParams) *resp
 		Data:       user.ID,
 	}
 }
+
+// GetDeviceTokenByUserID implements UserService.
+func (u *UserServiceImpl) GetDeviceTokenByUserID(id int) (string, error) {
+	deviceToken, err := u.repo.GetDeviceTokenByUserID(context.Background(), int32(id))
+	if err != nil {
+		println(string(err.Error()))
+		return err.Error(), err
+	}
+	return *deviceToken, err
+}
+
+// UpdateDeviceToken implements UserService.
+func (u *UserServiceImpl) UpdateDeviceToken(userId int, deviceToken string) *responses.ResponseData {
+	req := dataaccess.UpdateDeviceTokenParams {
+		ID: int32(userId),
+		DeviceToken: &deviceToken,
+	}
+	err := u.repo.UpdateDeviceToken(context.Background(), req)
+	if err != nil {
+		println(string(err.Error()))
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to finish your request",
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusNoContent,
+		Message:    responses.StatusSuccess,
+		Data:       nil,
+	}
+}

@@ -10,14 +10,16 @@ import (
 )
 
 type ReturnRequestServiceImpl struct {
-	repo       *dataaccess.Queries
-	blockchain BlockchainService
+	repo                *dataaccess.Queries
+	blockchain          BlockchainService
+	notificationService NotificationService
 }
 
-func NewReturnRequestServiceImpl(blockchain BlockchainService) ReturnRequestService {
+func NewReturnRequestServiceImpl(blockchain BlockchainService, notification NotificationService) ReturnRequestService {
 	return &ReturnRequestServiceImpl{
-		repo:       dataaccess.New(global.Db),
-		blockchain: blockchain,
+		repo:                dataaccess.New(global.Db),
+		blockchain:          blockchain,
+		notificationService: notification,
 	}
 }
 
@@ -110,7 +112,7 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 		}
 	}
 
-	err = r.repo.CreateReturnRequest(context.Background(), req)
+	returnRequestId, err := r.repo.CreateReturnRequest(context.Background(), req)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -118,6 +120,9 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 			Data:       false,
 		}
 	}
+
+	reqId := int(returnRequestId)
+	r.notificationService.SendNotification(int(contract.Landlord), "Bạn có một yêu cầu trả phòng mới", &reqId, "return_request")
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,

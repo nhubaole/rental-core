@@ -1,4 +1,4 @@
--- name: CreateReturnRequest :exec
+-- name: CreateReturnRequest :one
 INSERT INTO public.return_requests
     (contract_id, --1
      reason, --2
@@ -11,7 +11,7 @@ INSERT INTO public.return_requests
      updated_at)
 VALUES(
     $1, $2, $3, $4, $5, $6, $7, now(), now()
-    );
+    ) RETURNING id;
 
 -- name: GetReturnRequestByID :one
 SELECT rr.id, rr.reason,c.id as contract_id, c.room_id, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at

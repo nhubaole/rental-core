@@ -17,6 +17,7 @@ func InitPaymentRouterHandler() *controllers.PaymentController {
 		services.NewStorageServiceImpl,
 		services.NewBlockchainServiceImpl,
 		controllers.NewPaymentController,
+		services.NewNotificationServiceImpl,
 	)
 
 	return &controllers.PaymentController{}
@@ -53,6 +54,7 @@ func InitRentalRequestRouterHandler() *controllers.RentalRequestController {
 	wire.Build(
 		services.NewRentalRequestServiceImpl,
 		controllers.NewRentalRequestController,
+		services.NewNotificationServiceImpl,
 	)
 	return &controllers.RentalRequestController{}
 }
@@ -62,6 +64,7 @@ func InitContractRouterHandler() *controllers.ContractController {
 		services.NewContractServiceImpl,
 		services.NewBlockchainServiceImpl,
 		controllers.NewContractController,
+		services.NewNotificationServiceImpl,
 	)
 	return &controllers.ContractController{}
 }
@@ -88,6 +91,7 @@ func InitBillingRouterHandler() *controllers.BillingController {
 		services.NewBillingServiceImpl,
 		services.NewBlockchainServiceImpl,
 		controllers.NewBillingController,
+		services.NewNotificationServiceImpl,
 	)
 	return &controllers.BillingController{}
 }
@@ -97,6 +101,7 @@ func InitReturnRequestRouterHandler() *controllers.ReturnRequestController {
 		services.NewReturnRequestServiceImpl,
 		services.NewBlockchainServiceImpl,
 		controllers.NewReturnRequestController,
+		services.NewNotificationServiceImpl,
 	)
 	return &controllers.ReturnRequestController{}
 }
