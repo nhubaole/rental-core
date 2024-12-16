@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
+	"smart-rental/pkg/blockchain/gen"
 	"smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
@@ -193,8 +194,24 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 // ListContractByStatus implements ContractService.
 func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isLandlord bool) *responses.ResponseData {
 	contractIds, _ := c.repo.ListContractIds(context.Background())
+	var contracts []gen.ContractManagementMContract
+	var err error
 
-	contracts, err := c.blockchain.GetListMContractByStatus(contractIds, int64(statusID), int64(userId), isLandlord)
+	switch statusID {
+		case 0:
+			contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 0, int64(userId), isLandlord)
+		case 1:
+			contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 2, int64(userId), isLandlord)
+		case 2:
+			contracts = []gen.ContractManagementMContract{}
+		default:
+			return &responses.ResponseData{
+				StatusCode: http.StatusBadRequest,
+				Message:    "Invalid statusID",
+				Data:       nil,
+			}
+	}
+
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
