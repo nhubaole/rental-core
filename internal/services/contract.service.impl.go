@@ -266,7 +266,7 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 			"landlord_name":    landlord.FullName,
 			"tenant_name":      tenant.FullName,
 			"signature_time_a": contract.SignedTimeA,
-			"signature_b": contract.SignatureB,
+			"signature_time_b": contract.SignedTimeB,
 			"created_at":       contract.CreatedAt,
 			"expired_at":       contract.CreatedAt.Int64() + 7*24*60*60, //1 tuan sau khi tao
 		})
