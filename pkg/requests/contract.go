@@ -4,7 +4,6 @@ import "github.com/jackc/pgx/v5/pgtype"
 
 type CreateContractRequest struct {
 	Address               []string           `json:"address"`
-	Code                  string             `json:"code"`
 	PartyA                int32              `json:"party_a"`
 	PartyB                int32              `json:"party_b"`
 	RequestID             int32              `json:"request_id"`

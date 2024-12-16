@@ -123,7 +123,7 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 
 	contract := &requests.CreateMContractOnChainReq{
 		ContractId:            int64(contractId),                                                                                  // ID duy nhất của hợp đồng
-		ContractCode:          req.Code,                                                                                           // Mã hợp đồng
+		ContractCode:          common.GenerateCode("HD"),                                                                                           // Mã hợp đồng
 		LandlordId:            int64(req.PartyA),                                                                                  // ID của chủ nhà
 		TenantId:              int64(req.PartyB),                                                                                  // ID của người thuê
 		RoomId:                int64(req.RoomID),                                                                                  // ID của phòng
@@ -210,13 +210,13 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 
 	for _, contract := range contracts {
 		roomDetails, err := c.repo.GetRoomByID(context.Background(), int32(contract.RoomId.Int64()))
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       nil,
-			}
-		}
+		// if err != nil {
+		// 	return &responses.ResponseData{
+		// 		StatusCode: http.StatusInternalServerError,
+		// 		Message:    err.Error(),
+		// 		Data:       nil,
+		// 	}
+		// }
 
 		landlord, err := c.repo.GetUserByID(context.Background(), int32(contract.Landlord.Int64()))
 		if err != nil {
@@ -244,7 +244,7 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 			"landlord_name":    landlord.FullName,
 			"tenant_name":      tenant.FullName,
 			"signature_time_a": contract.SignedTimeA,
-			"signature_time_b": contract.SignatureB,
+			"signature_b": contract.SignatureB,
 			"created_at":       contract.CreatedAt,
 			"expired_at":       contract.CreatedAt.Int64() + 7*24*60*60, //1 tuan sau khi tao
 		})
