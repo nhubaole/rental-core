@@ -28,6 +28,6 @@ tmp/
 # Project build
 main
 *templ.go
-configs/
+configs/local.yaml
 keystore
 node_modules
