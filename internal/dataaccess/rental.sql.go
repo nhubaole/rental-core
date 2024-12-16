@@ -178,6 +178,74 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (RentalRequest, 
 	return i, err
 }
 
+const getRequestByOwnerID = `-- name: GetRequestByOwnerID :many
+SELECT     
+    RR.id,
+    RR.code,
+    RR.sender_id,
+    RR.room_id,
+    RR.suggested_price,
+    RR.num_of_person,
+    RR.begin_date,
+    RR.end_date,
+    RR.addition_request,
+    RR.status,
+    RR.created_at,
+    RR.updated_at
+FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS r
+	on RR.room_id = r.id
+WHERE r.owner = $1 
+	and RR.deleted_at is NULL
+`
+
+type GetRequestByOwnerIDRow struct {
+	ID              int32              `json:"id"`
+	Code            string             `json:"code"`
+	SenderID        int32              `json:"sender_id"`
+	RoomID          int32              `json:"room_id"`
+	SuggestedPrice  *float64           `json:"suggested_price"`
+	NumOfPerson     *int32             `json:"num_of_person"`
+	BeginDate       pgtype.Timestamptz `json:"begin_date"`
+	EndDate         pgtype.Timestamptz `json:"end_date"`
+	AdditionRequest *string            `json:"addition_request"`
+	Status          int32              `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) ([]GetRequestByOwnerIDRow, error) {
+	rows, err := q.db.Query(ctx, getRequestByOwnerID, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRequestByOwnerIDRow
+	for rows.Next() {
+		var i GetRequestByOwnerIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.SenderID,
+			&i.RoomID,
+			&i.SuggestedPrice,
+			&i.NumOfPerson,
+			&i.BeginDate,
+			&i.EndDate,
+			&i.AdditionRequest,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRequestByRoomID = `-- name: GetRequestByRoomID :many
 SELECT     
     RR.id,
@@ -246,47 +314,7 @@ func (q *Queries) GetRequestByRoomID(ctx context.Context, roomID int32) ([]GetRe
 }
 
 const getRequestBySenderID = `-- name: GetRequestBySenderID :many
-SELECT id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, status, created_at, updated_at, deleted_at
-FROM PUBLIC.RENTAL_REQUESTS 
-WHERE sender_id = $1
-`
-
-func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) ([]RentalRequest, error) {
-	rows, err := q.db.Query(ctx, getRequestBySenderID, senderID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []RentalRequest
-	for rows.Next() {
-		var i RentalRequest
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.SenderID,
-			&i.RoomID,
-			&i.SuggestedPrice,
-			&i.NumOfPerson,
-			&i.BeginDate,
-			&i.EndDate,
-			&i.AdditionRequest,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getRequestByUserID = `-- name: GetRequestByUserID :many
-SELECT     
+SELECT 
     RR.id,
     RR.code,
     RR.sender_id,
@@ -299,13 +327,12 @@ SELECT
     RR.status,
     RR.created_at,
     RR.updated_at
-FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS
-	on RR.room_id = ROOMS.id
-WHERE (owner = $1   or sender_id = $1) 
-	and RR.deleted_at is NULL
+FROM PUBLIC.RENTAL_REQUESTS  RR
+WHERE sender_id = $1
+    AND RR.deleted_at is NULL
 `
 
-type GetRequestByUserIDRow struct {
+type GetRequestBySenderIDRow struct {
 	ID              int32              `json:"id"`
 	Code            string             `json:"code"`
 	SenderID        int32              `json:"sender_id"`
@@ -320,15 +347,15 @@ type GetRequestByUserIDRow struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) GetRequestByUserID(ctx context.Context, owner int32) ([]GetRequestByUserIDRow, error) {
-	rows, err := q.db.Query(ctx, getRequestByUserID, owner)
+func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) ([]GetRequestBySenderIDRow, error) {
+	rows, err := q.db.Query(ctx, getRequestBySenderID, senderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRequestByUserIDRow
+	var items []GetRequestBySenderIDRow
 	for rows.Next() {
-		var i GetRequestByUserIDRow
+		var i GetRequestBySenderIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Code,
