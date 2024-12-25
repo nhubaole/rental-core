@@ -26,7 +26,7 @@ type GetRoomByIDRes struct {
 	Description     string                    `json:"description"`
 	RoomType        *string                   `json:"room_type"`
 	AvailableFrom   pgtype.Timestamptz        `json:"available_from"`
-	ListRoomNumbers map[int]interface{}    `json:"list_room_numbers"`
+	ListRoomNumbers map[int]interface{}       `json:"list_room_numbers"`
 	Owner           dataaccess.GetUserByIDRow `json:"owner"`
 	Capacity        int32                     `json:"capacity"`
 	Gender          *int32                    `json:"gender"`

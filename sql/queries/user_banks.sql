@@ -35,14 +35,17 @@ RETURNING
 -- name: GetBankInfoByUserID :one
 SELECT 
     user_id, 
-    bank_id, 
+    bank_id,
+    b.bank_name,
+    b.short_name, 
     account_number, 
     account_name, 
     card_number, 
     currency, 
-    created_at, 
-    updated_at
+    ub.created_at, 
+    ub.updated_at
 FROM 
-    user_banks
+    user_banks ub
+LEFT JOIN banks b ON ub.bank_id = b.id
 WHERE 
     user_id = $1;

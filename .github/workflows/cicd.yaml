@@ -22,6 +22,9 @@ jobs:
           touch configs/local.yaml
           echo '${{ secrets.CONFIG }}' > configs/local.yaml
 
+          touch configs/local.yaml
+          echo '${{ secrets.CONFIG }}' > configs/local.yaml
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

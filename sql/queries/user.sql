@@ -1,5 +1,5 @@
 -- name: GetUsers :many
-SELECT id, phone_number,avatar_url,role, full_name, address, created_at 
+SELECT id, phone_number,avatar_url,role, gender, dob, full_name, address, created_at 
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL;
 
@@ -35,6 +35,8 @@ SELECT
     u.role,
     u.full_name,
     u.address,
+    u.gender,
+    u.dob,
     u.wallet_address,
     u.private_key_hex,
     u.created_at
@@ -51,7 +53,10 @@ SET
     full_name = COALESCE($3, full_name),
     address = COALESCE($4, address),
     role = COALESCE($5, role),
-    otp = $6
+    otp = $6,
+    gender = COALESCE($7, gender),
+    dob = COALESCE($8, dob),
+    avatar_url = COALESCE($9, avatar_url)
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, phone_number, full_name, address, role::text, created_at;
 

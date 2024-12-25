@@ -30,11 +30,13 @@ type GetUserByIDRes struct {
 	AvatarUrl     *string            `json:"avatar_url"`
 	Role          int32              `json:"role"`
 	FullName      string             `json:"full_name"`
+	Gender        *int32             `json:"gender"`
+	Dob           pgtype.Date        `json:"dob"`
 	TotalRoom     int                `json:"total_room"`
 	TotalRating   int                `json:"total_rating"`
-	AvgRating     float64                `json:"avg_rating"`
+	AvgRating     float64            `json:"avg_rating"`
 	Address       *string            `json:"address"`
-	RatingInfo    []RatingInfo         `json:"rating_info"`
+	RatingInfo    []RatingInfo       `json:"rating_info"`
 	WalletAddress *string            `json:"wallet_address"`
 	PrivateKeyHex *string            `json:"private_key_hex"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`

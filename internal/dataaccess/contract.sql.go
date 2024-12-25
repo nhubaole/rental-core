@@ -12,15 +12,21 @@ import (
 const createContract = `-- name: CreateContract :one
 INSERT INTO PUBLIC.contracts
 (
-    room_id
+    room_id,
+    signature_a
 ) VALUES
 (
-    $1
+    $1, $2
 ) RETURNING id
 `
 
-func (q *Queries) CreateContract(ctx context.Context, roomID *int32) (int32, error) {
-	row := q.db.QueryRow(ctx, createContract, roomID)
+type CreateContractParams struct {
+	RoomID     *int32  `json:"room_id"`
+	SignatureA *string `json:"signature_a"`
+}
+
+func (q *Queries) CreateContract(ctx context.Context, arg CreateContractParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createContract, arg.RoomID, arg.SignatureA)
 	var id int32
 	err := row.Scan(&id)
 	return id, err

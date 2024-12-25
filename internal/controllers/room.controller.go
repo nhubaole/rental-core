@@ -109,6 +109,17 @@ func (rc RoomController) GetByStatus(ctx *gin.Context) {
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
+func (rc RoomController) GetByOwner(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	result := rc.roomService.GetRoomByOwner(int(user.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
 func (rc RoomController) UpdateRoom(ctx *gin.Context) {
 	var formData requests.UpdateRoomRequest
 	if err := ctx.ShouldBind(&formData); err != nil {

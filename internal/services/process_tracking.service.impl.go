@@ -30,39 +30,31 @@ func (process *ProcessServiceImpl) CreateProcessTracking(body *dataaccess.Create
 
 func (process *ProcessServiceImpl) GetProcessTrackingByRentalId(userid int32, rentalId int32) *responses.ResponseData {
 
-	fmt.Println(userid)
-	rs, er := process.repo.GetRequestByOwnerID(context.Background(), userid)
-	if er != nil {
-		fmt.Println(er.Error() + "11111")
+	var result []responses.GetProcessTracking
+	processes, err := process.repo.GetProcessTrackingByRentalId(context.Background(), rentalId)
+	if err != nil {
 		return &responses.ResponseData{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Can't find this process",
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
 			Data:       false,
 		}
 	}
-	for _, r := range rs {
-		if r.ID == rentalId {
-			result, error := process.repo.GetProcessTrackingByRentalId(context.Background(), rentalId)
-			if error != nil {
-				fmt.Println(error.Error())
-				return &responses.ResponseData{
-					StatusCode: http.StatusBadRequest,
-					Message:    "Can't find this process",
-					Data:       false,
-				}
-			}
-			return &responses.ResponseData{
-				StatusCode: http.StatusOK,
-				Message:    "Success",
-				Data:       result,
-			}
-		}
+	for _, p := range processes {
+		user, _ := process.repo.GetUserByID(context.Background(), p.Actor)
+
+		result = append(result, responses.GetProcessTracking{
+			ID: p.ID,
+			Actor: user, 
+			Action: p.Action,
+			IssuedAt: p.IssuedAt,
+			RequestID: p.RequestID,
+		})
 	}
-	fmt.Println("ERROR GetProcessTrackingByRentalId Service Impl ??")
+
 	return &responses.ResponseData{
-		StatusCode: http.StatusBadRequest,
-		Message:    "Can't find this process",
-		Data:       false,
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       result,
 	}
 }
 

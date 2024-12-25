@@ -63,3 +63,11 @@ type GetReturnRequestByIDRes struct {
 	CreatedAt          pgtype.Timestamp          `json:"created_at"`
 	UpdatedAt          pgtype.Timestamp          `json:"updated_at"`
 }
+
+type GetProcessTracking struct {
+	ID        int32                     `json:"id"`
+	Actor     dataaccess.GetUserByIDRow `json:"actor"`
+	Action    string                    `json:"action"`
+	IssuedAt  pgtype.Timestamptz        `json:"issued_at"`
+	RequestID int32                     `json:"request_id"`
+}

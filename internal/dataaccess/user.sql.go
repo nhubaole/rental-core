@@ -63,6 +63,8 @@ SELECT
     u.role,
     u.full_name,
     u.address,
+    u.gender,
+    u.dob,
     u.wallet_address,
     u.private_key_hex,
     u.created_at
@@ -79,6 +81,8 @@ type GetUserByIDRow struct {
 	Role          int32              `json:"role"`
 	FullName      string             `json:"full_name"`
 	Address       *string            `json:"address"`
+	Gender        *int32             `json:"gender"`
+	Dob           pgtype.Date        `json:"dob"`
 	WalletAddress *string            `json:"wallet_address"`
 	PrivateKeyHex *string            `json:"private_key_hex"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
@@ -94,6 +98,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, er
 		&i.Role,
 		&i.FullName,
 		&i.Address,
+		&i.Gender,
+		&i.Dob,
 		&i.WalletAddress,
 		&i.PrivateKeyHex,
 		&i.CreatedAt,
@@ -142,7 +148,7 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phoneNumber string) (GetUs
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, phone_number,avatar_url,role, full_name, address, created_at 
+SELECT id, phone_number,avatar_url,role, gender, dob, full_name, address, created_at 
 FROM PUBLIC.USERS
 WHERE deleted_at IS NULL
 `
@@ -152,6 +158,8 @@ type GetUsersRow struct {
 	PhoneNumber string             `json:"phone_number"`
 	AvatarUrl   *string            `json:"avatar_url"`
 	Role        int32              `json:"role"`
+	Gender      *int32             `json:"gender"`
+	Dob         pgtype.Date        `json:"dob"`
 	FullName    string             `json:"full_name"`
 	Address     *string            `json:"address"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
@@ -171,6 +179,8 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 			&i.PhoneNumber,
 			&i.AvatarUrl,
 			&i.Role,
+			&i.Gender,
+			&i.Dob,
 			&i.FullName,
 			&i.Address,
 			&i.CreatedAt,
@@ -192,18 +202,24 @@ SET
     full_name = COALESCE($3, full_name),
     address = COALESCE($4, address),
     role = COALESCE($5, role),
-    otp = $6
+    otp = $6,
+    gender = COALESCE($7, gender),
+    dob = COALESCE($8, dob),
+    avatar_url = COALESCE($9, avatar_url)
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, phone_number, full_name, address, role::text, created_at
 `
 
 type UpdateUserParams struct {
-	ID          int32   `json:"id"`
-	PhoneNumber string  `json:"phone_number"`
-	FullName    string  `json:"full_name"`
-	Address     *string `json:"address"`
-	Role        int32   `json:"role"`
-	Otp         *int32  `json:"otp"`
+	ID          int32       `json:"id"`
+	PhoneNumber string      `json:"phone_number"`
+	FullName    string      `json:"full_name"`
+	Address     *string     `json:"address"`
+	Role        int32       `json:"role"`
+	Otp         *int32      `json:"otp"`
+	Gender      *int32      `json:"gender"`
+	Dob         pgtype.Date `json:"dob"`
+	AvatarUrl   *string     `json:"avatar_url"`
 }
 
 type UpdateUserRow struct {
@@ -223,6 +239,9 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.Address,
 		arg.Role,
 		arg.Otp,
+		arg.Gender,
+		arg.Dob,
+		arg.AvatarUrl,
 	)
 	var i UpdateUserRow
 	err := row.Scan(

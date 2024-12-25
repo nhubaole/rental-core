@@ -28,7 +28,8 @@ func InitAuthenRouterHandler() *controllers.AuthenController {
 }
 
 func InitUserRouterHandler() *controllers.UserController {
-	userService := services.NewUserServiceImpl()
+	storageSerivce := services.NewStorageServiceImpl()
+	userService := services.NewUserServiceImpl(storageSerivce)
 	userController := controllers.NewUserController(userService)
 	return userController
 }

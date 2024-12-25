@@ -25,6 +25,8 @@ type RoomServiceImpl struct {
 	blockchainService BlockchainService
 }
 
+
+
 func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
 		repo:              dataaccess.New(global.Db),
@@ -33,6 +35,27 @@ func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) Ro
 	}
 }
 
+// GetRoomByOwner implements RoomService.
+func (r *RoomServiceImpl) GetRoomByOwner(userID int) *responses.ResponseData {
+	rooms, err := r.repo.GetRoomsByOwner(context.Background(), int32(userID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data: map[string]interface{}{
+			"count": len(rooms),
+			"rooms": rooms,
+		},
+	}
+
+}
 // CreateRoom implements RoomService.
 func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *responses.ResponseData {
 	// create new room

@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -39,9 +41,10 @@ func (uc *UserController) GetUserByID(ctx *gin.Context) {
 
 func (uc *UserController) Update(ctx *gin.Context) {
 	// Parse request body
-	var updateUserParam *dataaccess.UpdateUserParams
-	err := ctx.ShouldBindJSON(&updateUserParam)
+	var updateUserParam *requests.UpdateUserReq
+	err := ctx.ShouldBind(&updateUserParam)
 	if err != nil {
+		fmt.Println("Binding Error:", err)
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
@@ -81,6 +84,19 @@ func (uc *UserController) UpdateUserBank(ctx *gin.Context) {
 	result := uc.userService.UpdateBankInfo(&updateUserBankBody)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (uc *UserController) GetUserBank(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	
+	result := uc.userService.GetBankInfo(user.ID)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
 
 func (uc *UserController) CreateUserBank(ctx *gin.Context) {
 	user, err := common.GetCurrentUser(ctx)

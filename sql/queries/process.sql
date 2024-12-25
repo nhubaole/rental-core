@@ -6,7 +6,7 @@ VALUES ($1, $2 , now(), $3)
 RETURNING id, actor, action, issued_at, request_id;
 
 
--- name: GetProcessTrackingByRentalId :one
+-- name: GetProcessTrackingByRentalId :many
 select * from PUBLIC.PROCESS_TRACKING
 where request_id = $1;
 

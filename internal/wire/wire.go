@@ -33,6 +33,7 @@ func InitAuthenRouterHandler() *controllers.AuthenController {
 
 func InitUserRouterHandler() *controllers.UserController {
 	wire.Build(
+		services.NewStorageServiceImpl,
 		services.NewUserServiceImpl,
 		controllers.NewUserController,
 	)

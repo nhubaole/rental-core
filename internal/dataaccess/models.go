@@ -40,8 +40,10 @@ type Billing struct {
 }
 
 type Contract struct {
-	ID     int32  `json:"id"`
-	RoomID *int32 `json:"room_id"`
+	ID         int32   `json:"id"`
+	RoomID     *int32  `json:"room_id"`
+	SignatureA *string `json:"signature_a"`
+	SignatureB *string `json:"signature_b"`
 }
 
 type ContractTemplate struct {
@@ -264,6 +266,8 @@ type User struct {
 	WalletAddress *string            `json:"wallet_address"`
 	PrivateKeyHex *string            `json:"private_key_hex"`
 	AvatarUrl     *string            `json:"avatar_url"`
+	Gender        *int32             `json:"gender"`
+	Dob           pgtype.Date        `json:"dob"`
 }
 
 type UserBank struct {

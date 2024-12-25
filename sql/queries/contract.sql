@@ -35,10 +35,11 @@ RETURNING id;
 -- name: CreateContract :one
 INSERT INTO PUBLIC.contracts
 (
-    room_id
+    room_id,
+    signature_a
 ) VALUES
 (
-    $1
+    $1, $2
 ) RETURNING id;
 
 -- name: GetContractTemplateByAddress :one
