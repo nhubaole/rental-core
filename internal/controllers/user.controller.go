@@ -116,3 +116,21 @@ func (uc *UserController) CreateUserBank(ctx *gin.Context) {
 	result := uc.userService.CreateBankInfo(&createUserBankBody)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (uc *UserController) UpdateDeviceToken(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	var updateUserDeviceToken requests.UpdateDeviceTokenReq
+	errParse := ctx.ShouldBindJSON(&updateUserDeviceToken)
+	if errParse != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+	
+	result := uc.userService.UpdateDeviceToken(int(user.ID), updateUserDeviceToken.DeviceToken)
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}

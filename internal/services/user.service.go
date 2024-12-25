@@ -12,5 +12,7 @@ type UserService interface {
 	Update(user *requests.UpdateUserReq) *responses.ResponseData
 	CreateBankInfo(req *dataaccess.CreateUserBankParams) *responses.ResponseData
 	UpdateBankInfo(req *dataaccess.UpdateUserBankParams) *responses.ResponseData
+	UpdateDeviceToken(userId int, deviceToken string) *responses.ResponseData
+	GetDeviceTokenByUserID(id int) (string, error)
 	GetBankInfo(userID int32) *responses.ResponseData
 }

@@ -21,6 +21,10 @@ type UpdateBankInfoReq struct {
 	Currency      *string `json:"currency"`
 }
 
+type UpdateDeviceTokenReq struct {
+	DeviceToken string `json:"device_token"`
+}
+
 type UpdateUserReq struct {
 	ID          int32                 `form:"id"`
 	PhoneNumber string                `form:"phone_number"`

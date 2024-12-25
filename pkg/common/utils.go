@@ -18,7 +18,7 @@ func Float64PtrToInt64Ptr(f *float64) *int64 {
 }
 
 func IntToFloat64Ptr(i int) *float64 {
-	
+
 	f := float64(i)
 	return &f
 }
@@ -101,4 +101,13 @@ func DecryptBase64AES(encryptedBase64, key string) (string, error) {
 	stream.XORKeyStream(ciphertext, ciphertext)
 
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func ConvertIntToPointerInt32(input *int) *int32 {
+	if input == nil {
+		return nil
+	}
+
+	value := int32(*input)
+	return &value
 }

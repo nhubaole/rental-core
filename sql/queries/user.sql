@@ -60,4 +60,19 @@ SET
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, phone_number, full_name, address, role::text, created_at;
 
---
+-- name: UpdateDeviceToken :exec
+UPDATE PUBLIC.USERS
+SET
+    device_token = $2
+WHERE
+    id = $1
+    AND deleted_at IS NULL;
+
+-- name: GetDeviceTokenByUserID :one
+SELECT
+    device_token
+FROM
+    PUBLIC.USERS
+WHERE
+    id = $1
+    AND deleted_at IS NULL;

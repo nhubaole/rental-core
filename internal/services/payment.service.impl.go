@@ -18,16 +18,18 @@ import (
 )
 
 type PaymentServiceImpl struct {
-	repo           *dataaccess.Queries
-	storageService StorageSerivce
-	blockchain     BlockchainService
+	repo                *dataaccess.Queries
+	storageService      StorageSerivce
+	blockchain          BlockchainService
+	notificationService NotificationService
 }
 
-func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService) PaymentService {
+func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService, notification NotificationService) PaymentService {
 	return &PaymentServiceImpl{
-		repo:           dataaccess.New(global.Db),
-		storageService: storage,
-		blockchain:     blockchain,
+		repo:                dataaccess.New(global.Db),
+		storageService:      storage,
+		blockchain:          blockchain,
+		notificationService: notification,
 	}
 }
 
@@ -153,6 +155,7 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch đặt cọc của bạn đã được xác nhận. Chúc mừng bạn đã hoàn tất thuê phòng!", &id, "payment")
 	} else if payment.BillID != nil {
 		bill, err := p.repo.GetBillByID(context.Background(), *payment.BillID)
 		if err != nil {
@@ -185,6 +188,7 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch thanh toán hoá đơn của bạn đã được xác nhận.", &id, "payment")
 	} else if payment.ReturnRequestID != nil {
 		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *payment.ReturnRequestID)
 		if err != nil {
@@ -217,6 +221,7 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", &id, "payment")
 	}
 
 	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
@@ -291,6 +296,31 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 			Data:       false,
 		}
 	}
+
+	id := int(paymentId)
+	if params.ContractID != nil {
+		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*params.ContractID))
+		if err == nil {
+			p.notificationService.SendNotification(int(contract.Landlord), "Bạn có giao dịch đặt cọc trọ mới. Vui lòng kiểm tra và xác nhận", &id, "payment")
+		}
+	} else if params.BillID != nil {
+		bill, err := p.repo.GetBillByID(context.Background(), *params.BillID)
+		if err == nil {
+			contract, err := p.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
+			if err == nil {
+				p.notificationService.SendNotification(int(contract.Landlord), "Bạn có giao dịch thanh toán hoá đơn. Vui lòng kiểm tra và xác nhận", &id, "payment")
+			}
+		}
+	} else if params.ReturnRequestID != nil {
+		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *params.ReturnRequestID)
+		if err == nil {
+			contract, err := p.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
+			if err == nil {
+				p.notificationService.SendNotification(int(contract.Tenant), "Bạn có giao dịch hoàn tiền đặt cọc. Vui lòng kiểm tra và xác nhận", &id, "payment")
+			}
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
