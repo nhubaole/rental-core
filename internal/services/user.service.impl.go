@@ -299,7 +299,10 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 		}
 		userDetail.TotalRoom = len(rooms)
 		userDetail.TotalRating = len(ratings)
-		userDetail.AvgRating = float64(totalRating / len(ratings))
+		if len(ratings) > 0 {
+			userDetail.AvgRating = float64(totalRating / len(ratings))
+
+		}
 	}
 
 	return &responses.ResponseData{
