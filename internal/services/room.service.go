@@ -13,5 +13,6 @@ type RoomService interface {
 	LikeRoom(roomID int, userID int) *responses.ResponseData
 	GetLikedRooms(userID int) *responses.ResponseData
 	GetRoomByStatus(status int) *responses.ResponseData
+	GetRoomByOwner(userID int) *responses.ResponseData
 	UpdateRoom(req requests.UpdateRoomRequest) *responses.ResponseData
 }

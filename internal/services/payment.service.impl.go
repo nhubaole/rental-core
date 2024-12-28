@@ -104,6 +104,8 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 	prefix := fmt.Sprintf("SR%d", id)
 	response.TranferContent = common.GenerateCode(prefix)
 	response.BankName = bankInfo.BankName
+	response.ShortName = *bankInfo.ShortName
+	response.Logo = *bankInfo.Logo
 	response.AccountName = userBankInfo.AccountName
 	response.AccountNumber = userBankInfo.AccountNumber
 	encodedName := url.QueryEscape(userBankInfo.AccountName)

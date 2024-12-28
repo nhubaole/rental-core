@@ -96,14 +96,14 @@ func (c *ContractServiceImpl) GetTemplateByAddress(address requests.GetTemplateB
 	}
 }
 func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest, userID int) *responses.ResponseData {
-	template, err := c.repo.GetContractTemplateByAddress(context.Background(), req.Address)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Không tìm thấy mẫu hợp đồng cho địa chỉ này",
-			Data:       false,
-		}
-	}
+	template, _ := c.repo.GetContractTemplateByAddress(context.Background(), req.Address)
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "Không tìm thấy mẫu hợp đồng cho địa chỉ này",
+	// 		Data:       false,
+	// 	}
+	// }
 	signOfA, encryptedErrA := common.EncryptBase64AES(req.SignatureA, global.Config.JWT.AESKey)
 	if encryptedErrA != nil {
 		return &responses.ResponseData{
@@ -114,8 +114,13 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	}
 	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
+	
+	var params = &dataaccess.CreateContractParams{
+		RoomID: 			 &req.RoomID,
+		SignatureA: 		&signOfA,
+	}
 
-	contractId, err := c.repo.CreateContract(context.Background(), &req.RoomID)
+	contractId, err := c.repo.CreateContract(context.Background(), *params)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -144,7 +149,7 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),                                  // Trách nhiệm bên A
 		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),                                  // Trách nhiệm bên B
 		GeneralResponsibility: generalResponsibility,                                                                              // Trách nhiệm chung
-		SignatureA:            signOfA,                                                                                            // Chữ ký của bên A
+		SignatureA:            "",                                                                                            // Chữ ký của bên A
 		SignedTimeA:           req.SignedTimeA.Time.Unix(),                                                                        // Thời gian ký của bên A
 		SignatureB:            "",                                                                                                 // Chữ ký của bên B
 		SignedTimeB:           int64(0),                                                                                           // Thời gian ký của bên B
@@ -180,8 +185,17 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 			Data:       false,
 		}
 	}
-	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
-	signB, _ := common.DecryptBase64AES(*&contract.SignatureB, global.Config.JWT.AESKey)
+	contractDB, err := c.repo.GetContractById(context.Background(), int32(id))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	contract.SignatureA, _ = common.DecryptBase64AES(*contractDB.SignatureA, global.Config.JWT.AESKey)
+	signB, _ := common.DecryptBase64AES(*contractDB.SignatureB, global.Config.JWT.AESKey)
 	contract.SignatureB = signB
 
 	return &responses.ResponseData{

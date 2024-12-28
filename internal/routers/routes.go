@@ -37,8 +37,9 @@ func NewRouter(
 	userRouter.GET("", middlewares.AuthenMiddleware, uc.GetAll)
 	userRouter.GET("/:id", middlewares.AuthenMiddleware, uc.GetUserByID)
 	userRouter.GET("/current-user", middlewares.AuthenMiddleware, uc.GetCurrentUser)
-	userRouter.PUT("/", middlewares.AuthenMiddleware, uc.Update)
+	userRouter.PUT("", middlewares.AuthenMiddleware, uc.Update)
 	userRouter.POST("/bank-info", middlewares.AuthenMiddleware, uc.CreateUserBank)
+	userRouter.GET("/bank-info", middlewares.AuthenMiddleware, uc.GetUserBank)
 	userRouter.PUT("/bank-info", middlewares.AuthenMiddleware, uc.UpdateUserBank)
 	userRouter.PUT("/device-token", middlewares.AuthenMiddleware, uc.UpdateDeviceToken)
 
@@ -50,6 +51,7 @@ func NewRouter(
 	roomRouter.GET("/like/:id", middlewares.AuthenMiddleware, rc.Like)
 	roomRouter.GET("/like", middlewares.AuthenMiddleware, rc.GetLikedRooms)
 	roomRouter.GET("/status/:status", middlewares.AuthenMiddleware, rc.GetByStatus)
+	roomRouter.GET("/get-by-owner", middlewares.AuthenMiddleware, rc.GetByOwner)
 	roomRouter.PUT("", middlewares.AuthenMiddleware, rc.UpdateRoom)
 
 	rentalRequestRouter := baseRouter.Group("/requests")

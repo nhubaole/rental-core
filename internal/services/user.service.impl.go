@@ -2,23 +2,57 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"mime"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"smart-rental/global"
+	"smart-rental/internal/constants"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type UserServiceImpl struct {
-	repo *dataaccess.Queries
+	repo           *dataaccess.Queries
+	storageService StorageSerivce
 }
 
-func NewUserServiceImpl() UserService {
+func NewUserServiceImpl(storage StorageSerivce) UserService {
 	return &UserServiceImpl{
-		repo: dataaccess.New(global.Db),
+		repo:           dataaccess.New(global.Db),
+		storageService: storage,
+	}
+}
+
+// GetBankInfo implements UserService.
+func (u *UserServiceImpl) GetBankInfo(userID int32) *responses.ResponseData {
+	bankInfo, err := u.repo.GetBankInfoByUserID(context.Background(), userID)
+	if (bankInfo == dataaccess.GetBankInfoByUserIDRow{}) {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusNoData,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		println(string(err.Error()))
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+	return &responses.ResponseData{
+		StatusCode: http.StatusCreated,
+		Message:    responses.StatusSuccess,
+		Data:       bankInfo,
 	}
 }
 
@@ -89,6 +123,7 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 	var userDetail responses.GetUserByIDRes
 
 	common.MapStruct(user, &userDetail)
+	userDetail.Dob = user.Dob
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -274,8 +309,71 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 	}
 }
 
-func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParams) *responses.ResponseData {
-	user, err := userRepo.repo.UpdateUser(context.Background(), *body)
+func (userRepo *UserServiceImpl) Update(body *requests.UpdateUserReq) *responses.ResponseData {
+	// delete old avatar if exist
+	if body.DeleteFile != nil {
+		parsedURL, err := url.Parse(*body.DeleteFile)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		objKey := parsedURL.Path
+
+		objKey = strings.TrimPrefix(objKey, "/")
+		deleteErr := userRepo.storageService.DeleteObject(constants.BUCKET_NAME, objKey)
+
+		if deleteErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "failed to delete object from s3",
+				Data:       nil,
+			}
+		}
+	}
+
+	// update new avatar
+	var avatarURL *string
+	if body.AvatarUrl != nil {
+		f, _ := body.AvatarUrl.Open()
+		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+		fileExt := filepath.Ext(body.AvatarUrl.Filename)
+		contentType := mime.TypeByExtension(fileExt)
+		userID := fmt.Sprintf("user_%d", body.ID)
+		objKey := fmt.Sprintf("%s/%s/%d%s", constants.USER_OBJ, userID, timestamp, fileExt)
+
+		url, err := userRepo.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		avatarURL = &url
+	}
+
+	var param dataaccess.UpdateUserParams
+	dob, err := common.ConvertStringToPgtypeDate(&body.Dob)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Invalid date format. Expected YYYY-MM-DD",
+			Data:       nil,
+		}
+	}
+	param.ID = body.ID
+	param.FullName = body.FullName
+	param.PhoneNumber = body.PhoneNumber
+	param.Address = body.Address
+	param.Role = body.Role
+	param.Gender = body.Gender
+	param.Otp = body.Otp
+	param.Dob = dob
+	param.AvatarUrl = avatarURL
+	user, err := userRepo.repo.UpdateUser(context.Background(), param)
 	if err != nil {
 		println(string(err.Error()))
 		return &responses.ResponseData{
@@ -285,7 +383,7 @@ func (userRepo *UserServiceImpl) Update(body *dataaccess.UpdateUserParams) *resp
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusNoContent,
+		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
 		Data:       user.ID,
 	}

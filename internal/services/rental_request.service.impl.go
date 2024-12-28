@@ -329,7 +329,7 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 			result = append(result, req)
 
 		}
-	} else if user.Role == 2 {
+	} else if user.Role == 0 {
 		requests, err := rentalService.repo.GetRequestBySenderID(context.Background(), int32(userID))
 		if err != nil {
 			fmt.Println(err.Error())
@@ -390,15 +390,26 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 
 func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string, reqId int32, userid int32) *responses.ResponseData {
 	var status int
+	var trackingParam dataaccess.CreateProcessTrackingParams
 	if result == "approve" {
 		status = 2
+		trackingParam = dataaccess.CreateProcessTrackingParams{
+			Actor:     userid,
+			Action:    "Chủ nhà đã chấp nhận yêu cầu thuê phòng",
+			RequestID: reqId,
+		}
 	} else if result == "decline" {
 		status = 3
+		trackingParam = dataaccess.CreateProcessTrackingParams{
+			Actor:     userid,
+			Action:    "Chủ nhà đã từ chối yêu cầu thuê phòng",
+			RequestID: reqId,
+		}
 	}
 
-    param := dataaccess.UpdateRequestStatusByIdParams{
+	param := dataaccess.UpdateRequestStatusByIdParams{
 		Status: int32(status),
-		ID: reqId,
+		ID:     reqId,
 	}
 
 	err := rentalService.repo.UpdateRequestStatusById(context.Background(), param)
@@ -407,6 +418,20 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+
+	_, er := rentalService.repo.CreateProcessTracking(context.Background(), trackingParam)
+	if er != nil {
+		fmt.Println("ERROR Create process tracking failed!!")
+
+		rentalService.repo.DeleteRequest(context.Background(), reqId)
+
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Unable to finish your request",
 			Data:       nil,
 		}
 	}

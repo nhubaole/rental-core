@@ -75,6 +75,29 @@ func MapStruct(src interface{}, dst interface{}) error {
 	return nil
 }
 
+func ConvertStringToPgtypeDate(dateStr *string) (pgtype.Date, error) {
+	var pgDate pgtype.Date
+
+	if dateStr == nil || *dateStr == "" {
+		// Nếu không có giá trị, đặt trạng thái NULL
+		pgDate.Valid = false
+		return pgDate, nil
+	}
+
+	// Chuyển đổi chuỗi thành time.Time
+	parsedDate, err := time.Parse("2006-01-02", *dateStr)
+	if err != nil {
+		return pgDate, err
+	}
+
+	// Gán giá trị time.Time vào pgtype.Date
+	pgDate = pgtype.Date{
+		Time:  parsedDate,
+		Valid: true,
+	}
+
+	return pgDate, nil
+}
 func Int64ToPgTimestamptz(unixTimestamp int64, isMilliseconds bool) pgtype.Timestamptz {
     var ts pgtype.Timestamptz
     var t time.Time
