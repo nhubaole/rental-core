@@ -17,6 +17,11 @@ func Float64PtrToInt64Ptr(f *float64) *int64 {
 	return &i
 }
 
+func Float64ToInt32Ptr(f float64) *int32 {
+	i := int32(f)
+	return &i
+}
+
 func IntToFloat64Ptr(i int) *float64 {
 
 	f := float64(i)

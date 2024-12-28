@@ -5,6 +5,7 @@ import (
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -23,7 +24,7 @@ func NewBillingController(service services.BillingService) *BillingController {
 
 func (controller BillingController) CreateBill(ctx *gin.Context) {
 	currentUser, _ := common.GetCurrentUser(ctx)
-	var body dataaccess.CreateBillParams
+	var body requests.CreateBill
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
@@ -71,8 +72,8 @@ func (controller BillingController) GetBillMetric(ctx *gin.Context) {
 }
 func (controller BillingController) GetBillByStatusID(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("statusID"))
-	if (id != 1 && id != 2) {
-		responses.APIResponse(ctx, http.StatusBadRequest, "Status must be between 1 and 2", nil)
+	if (id < 0 && id > 2) {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Status must be between 0 and 2", nil)
 		return
 	}
 	if err != nil {
