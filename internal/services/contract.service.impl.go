@@ -114,10 +114,10 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	}
 	parkingFee := common.IfNullInt64(req.ParkingFee, common.Float64PtrToInt64Ptr(&template.ParkingFee))
 	generalResponsibility := common.IfNullStr(req.GeneralResponsibility, &template.GeneralResponsibility)
-	
+
 	var params = &dataaccess.CreateContractParams{
-		RoomID: 			 &req.RoomID,
-		SignatureA: 		&signOfA,
+		RoomID:     &req.RoomID,
+		SignatureA: &signOfA,
 	}
 
 	contractId, err := c.repo.CreateContract(context.Background(), *params)
@@ -131,7 +131,7 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 
 	contract := &requests.CreateMContractOnChainReq{
 		ContractId:            int64(contractId),                                                                                  // ID duy nhất của hợp đồng
-		ContractCode:          common.GenerateCode("HD"),                                                                                           // Mã hợp đồng
+		ContractCode:          common.GenerateCode("HD"),                                                                          // Mã hợp đồng
 		LandlordId:            int64(req.PartyA),                                                                                  // ID của chủ nhà
 		TenantId:              int64(req.PartyB),                                                                                  // ID của người thuê
 		RoomId:                int64(req.RoomID),                                                                                  // ID của phòng
@@ -149,7 +149,7 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 		ResponsibilityA:       common.IfNullStr(&req.ResponsibilityA, &template.ResponsibilityA),                                  // Trách nhiệm bên A
 		ResponsibilityB:       common.IfNullStr(&req.ResponsibilityB, &template.ResponsibilityB),                                  // Trách nhiệm bên B
 		GeneralResponsibility: generalResponsibility,                                                                              // Trách nhiệm chung
-		SignatureA:            "",                                                                                            // Chữ ký của bên A
+		SignatureA:            "",                                                                                                 // Chữ ký của bên A
 		SignedTimeA:           req.SignedTimeA.Time.Unix(),                                                                        // Thời gian ký của bên A
 		SignatureB:            "",                                                                                                 // Chữ ký của bên B
 		SignedTimeB:           int64(0),                                                                                           // Thời gian ký của bên B
@@ -185,6 +185,34 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 			Data:       false,
 		}
 	}
+
+	landlord, err := c.repo.GetUserByID(context.Background(), int32(contract.Landlord))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	tenant, err := c.repo.GetUserByID(context.Background(), int32(contract.Tenant))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	roomDetails, err := c.repo.GetRoomByID(context.Background(), int32(contract.RoomID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
 	contractDB, err := c.repo.GetContractById(context.Background(), int32(id))
 	if err != nil {
 		return &responses.ResponseData{
@@ -194,14 +222,56 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 		}
 	}
 
-	contract.SignatureA, _ = common.DecryptBase64AES(*contractDB.SignatureA, global.Config.JWT.AESKey)
-	signB, _ := common.DecryptBase64AES(*contractDB.SignatureB, global.Config.JWT.AESKey)
-	contract.SignatureB = signB
+	signatureA := ""
+	if contractDB.SignatureA != nil {
+		signatureA, _ = common.DecryptBase64AES(*contractDB.SignatureA, global.Config.JWT.AESKey)
+	}
+
+	signatureB := ""
+	if contractDB.SignatureB != nil {
+		signatureB, _ = common.DecryptBase64AES(*contractDB.SignatureB, global.Config.JWT.AESKey)
+	}
+
+	responseData := map[string]interface{}{
+		"date_created":    contract.CreatedAt,
+		"address_created": "Thành phố Hồ Chí Minh",
+		"party_a": map[string]string{
+			"name":             landlord.FullName,
+			"dob":              landlord.Dob.Time.String(),
+			"registered_place": "97 đường số 11, phường Trường Thọ, quận Thủ Đức, TP HCM",
+			"cccd":             "079304032010",
+			"issue_date":       "06/09/2022",
+			"issue_by":         "Cục cảnh sát quản lý hành chính và trật tự xã hội",
+			"phone":            landlord.PhoneNumber,
+		},
+		"party_b": map[string]string{
+			"name":             tenant.FullName,
+			"dob":              tenant.Dob.Time.String(),
+			"registered_place": "26 ấp Thị, xã Hương Mỹ, huyện Mỏ Cày Nam, tỉnh Bến Tre",
+			"cccd":             "083405012453",
+			"issue_date":       "12/10/2021",
+			"issue_by":         "Cục cảnh sát quản lý hành chính và trật tự xã hội",
+			"phone":            tenant.PhoneNumber,
+		},
+		"room_address":     roomDetails.Address,
+		"room_price":       roomDetails.TotalPrice,
+		"method":           contract.PaymentMethod,
+		"electric_cost":    contract.ElectricityCost,
+		"water_cost":       contract.WaterCost,
+		"deposit":          contract.Deposit,
+		"start_date":       contract.BeginDate,
+		"end_date":         contract.EndDate,
+		"responsibility_a": contract.ResponsibilityA,
+		"responsibility_b": contract.ResponsibilityB,
+		"general":          contract.GeneralResponsibility,
+		"signature_a":      signatureA,
+		"signature_b":      signatureB,
+	}
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       contract,
+		Data:       responseData,
 	}
 }
 
