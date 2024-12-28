@@ -157,6 +157,7 @@ func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData
 		"code":                  bill.Code,
 		"created_at":            bill.CreatedAt,
 		"paid_at":               nil,
+		"payment_id":            bill.PaymentID,
 		"status":                bill.Status,
 		"room_price":            contract.ActualPrice,
 		"old_water_index":       bill.OldWaterIndex,

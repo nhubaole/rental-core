@@ -73,3 +73,7 @@ FROM public.contracts;
 SELECT id
 FROM public.contracts
 WHERE room_id = $1;
+
+-- name: GetContractById :one
+SELECT * from public.contracts
+WHERE id = $1;  

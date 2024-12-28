@@ -32,7 +32,7 @@ SELECT
             'status', b.status,
             'room_number', r.room_number,
             'tenant_name', u.full_name,
-            'payment_id', p.id, 
+            'payment_id', b.payment_id, 
             'total_amount', b.total_amount,
             'created_at', b.created_at
         )
@@ -47,8 +47,7 @@ LEFT JOIN
     public.tenants t ON t.room_id = r.id
 LEFT JOIN 
     public.users u ON t.tenant_id = u.id
-LEFT JOIN 
-    public.payments p ON p.bill_id = b.id
+
 WHERE 
     b.year = $1 
     AND b.month = $2
@@ -65,6 +64,7 @@ SELECT  b.id,
         b.addition_fee,
         b.addition_note,
         b.total_amount,
+        b.payment_id,
         b.month,
         b.year,
         b.old_water_index, 

@@ -184,8 +184,17 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 			Data:       false,
 		}
 	}
-	contract.SignatureA, _ = common.DecryptBase64AES(contract.SignatureA, global.Config.JWT.AESKey)
-	signB, _ := common.DecryptBase64AES(*&contract.SignatureB, global.Config.JWT.AESKey)
+	contractDB, err := c.repo.GetContractById(context.Background(), int32(id))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+
+	contract.SignatureA, _ = common.DecryptBase64AES(*contractDB.SignatureA, global.Config.JWT.AESKey)
+	signB, _ := common.DecryptBase64AES(*contractDB.SignatureB, global.Config.JWT.AESKey)
 	contract.SignatureB = signB
 
 	return &responses.ResponseData{
