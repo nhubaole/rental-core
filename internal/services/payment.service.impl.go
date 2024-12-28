@@ -188,6 +188,13 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+
+		status := int32(2)
+		_ = p.repo.UpdateBillStatus(context.Background(), dataaccess.UpdateBillStatusParams{
+			ID:     bill.ID,
+			Status: &status,
+		})
+
 		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch thanh toán hoá đơn của bạn đã được xác nhận.", &id, "payment")
 	} else if payment.ReturnRequestID != nil {
 		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *payment.ReturnRequestID)
@@ -286,6 +293,7 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 	params.EvidenceImage = &url
 	params.SenderID = userID
 	params.Status = 0
+	params.Code = common.GenerateCode("P")
 
 	paymentId, createErr := p.repo.CreatePayment(context.Background(), params)
 
@@ -311,6 +319,17 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 				p.notificationService.SendNotification(int(contract.Landlord), "Bạn có giao dịch thanh toán hoá đơn. Vui lòng kiểm tra và xác nhận", &id, "payment")
 			}
 		}
+		param := dataaccess.UpdatePaymentIDByBillIDParams{
+			ID:        *params.BillID,
+			PaymentID: &paymentId,
+		}
+		_ = p.repo.UpdatePaymentIDByBillID(context.Background(), param)
+
+		status := int32(1)
+		_ = p.repo.UpdateBillStatus(context.Background(), dataaccess.UpdateBillStatusParams{
+			ID:     bill.ID,
+			Status: &status,
+		})
 	} else if params.ReturnRequestID != nil {
 		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *params.ReturnRequestID)
 		if err == nil {

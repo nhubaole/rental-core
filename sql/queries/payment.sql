@@ -1,7 +1,23 @@
 -- name: GetPaymentByID :one
-SELECT id, code, sender_id, bill_id, contract_id, amount, status,return_request_id, paid_time, transfer_content, evidence_image
-FROM public.payments
-WHERE id = $1;
+SELECT 
+    p.id, 
+    p.code, 
+    p.sender_id, 
+    u.full_name AS sender_name, 
+    p.bill_id, 
+    p.contract_id, 
+    p.amount, 
+    p.status, 
+    p.return_request_id, 
+    p.paid_time, 
+    p.transfer_content, 
+    p.evidence_image
+FROM 
+    public.payments p
+JOIN 
+    public.users u ON p.sender_id = u.id
+WHERE 
+    p.id = $1;
 
 -- name: CreatePayment :one
 INSERT INTO public.payments(

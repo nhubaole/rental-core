@@ -88,3 +88,11 @@ type SignMContractOnChainReq struct {
 	ContractId int64
 	SignatureB string
 }
+
+type CreateBill struct {
+	RoomID       int32   `json:"room_id"`
+	Month        int32   `json:"month"`
+	Year         int32   `json:"year"`
+	AdditionFee  *int32  `json:"addition_fee"`
+	AdditionNote *string `json:"addition_note"`
+}

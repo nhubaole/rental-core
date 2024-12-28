@@ -15,46 +15,32 @@ INSERT INTO PUBLIC.BILLING
     month, --11
     year, --12
     created_at,  --13
-    updated_at --15
+    updated_at, --15
+    status
 ) VALUES
 (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  now(), now()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,  now(), now(), 0
 ) RETURNING id;
 
 
 -- name: GetBillByMonth :many
 SELECT 
     r.address,
-    jsonb_agg(
-        jsonb_build_object(
-            'id', b.id,
-            'avatar', u.avatar_url, 
-            'status', b.status,
-            'room_number', r.room_number,
-            'tenant_name', u.full_name,
-            'payment_id', b.payment_id, 
-            'total_amount', b.total_amount,
-            'created_at', b.created_at
-        )
-    )::text AS list_bill
+    b.id AS bill_id,
+    COALESCE(b.status, 0) AS bill_status,
+    r.room_number,
+    c.id as contract_id,
+    b.payment_id,
+    b.total_amount,
+    b.created_at AS bill_created_at
 FROM 
-    public.billing AS b
+    public.rooms r
 LEFT JOIN 
-    public.contracts c ON c.id = b.contract_id
+    public.contracts c ON c.room_id = r.id
 LEFT JOIN 
-    public.rooms r ON r.id = c.room_id
-LEFT JOIN 
-    public.tenants t ON t.room_id = r.id
-LEFT JOIN 
-    public.users u ON t.tenant_id = u.id
-
+    public.billing b ON c.id = b.contract_id AND b.year = $1 AND b.month = $2
 WHERE 
-    b.year = $1 
-    AND b.month = $2
-    AND r.owner = $3
-GROUP BY 
-    r.address;
-
+    r.owner = $3;
 
 
 -- name: GetBillByID :one
@@ -142,3 +128,17 @@ LEFT JOIN billing b ON c.id = b.contract_id
 RIGHT JOIN users u ON c.party_b = u.id 
 WHERE r."owner" = $1
 	AND r.is_rent = true;
+
+-- name: UpdatePaymentIDByBillID :exec
+UPDATE public.billing
+SET payment_id = $1,
+    updated_at = now()
+WHERE id = $2
+  AND deleted_at IS NULL;
+
+-- name: UpdateBillStatus :exec
+UPDATE public.billing
+SET status = $1,
+    updated_at = now()
+WHERE id = $2
+  AND deleted_at IS NULL;

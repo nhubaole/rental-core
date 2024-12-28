@@ -84,7 +84,7 @@ func (n *NotificationServiceImpl) SendNotification(userId int, message string, r
 	// send noti
 	url := fmt.Sprintf("https://fcm.googleapis.com/v1/projects/%s/messages:send", n.projectID)
 	deviceToken, err := n.repo.GetDeviceTokenByUserID(context.Background(), int32(userId))
-	if err != nil {
+	if err != nil || deviceToken == nil {
 		fmt.Printf("Failed to get device token: %v", err)
 		return err
 	}
