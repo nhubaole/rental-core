@@ -69,7 +69,9 @@ GROUP BY
     r.owner, 
     r.area, 
     r.total_price, 
-    r.status;
+    r.status
+ORDER BY 
+    r.created_at DESC;
 
 
 -- name: GetRoomByID :one

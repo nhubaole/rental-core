@@ -130,3 +130,20 @@ func (rc RoomController) UpdateRoom(ctx *gin.Context) {
 	result := rc.roomService.UpdateRoom(formData)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
+
+func (rc RoomController) CheckUserLikedRoom(ctx *gin.Context) {
+	roomId, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		responses.APIResponse(ctx, 400, "Bad request", nil)
+		return
+	}
+
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+	result := rc.roomService.CheckUserLikedRoom(roomId, int(user.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}

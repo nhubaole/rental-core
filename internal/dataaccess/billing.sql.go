@@ -106,9 +106,9 @@ type GetAllMetric4BillByRoomIDRow struct {
 	PrevMonth       interface{} `json:"prev_month"`
 	CurrMonth       int32       `json:"curr_month"`
 	PrevWater       interface{} `json:"prev_water"`
-	CurrWater       float64     `json:"curr_water"`
+	CurrWater       *float64    `json:"curr_water"`
 	PrevElectricity interface{} `json:"prev_electricity"`
-	CurrElectricity float64     `json:"curr_electricity"`
+	CurrElectricity *float64    `json:"curr_electricity"`
 	Year            int32       `json:"year"`
 }
 
@@ -203,7 +203,7 @@ const getBillByMonth = `-- name: GetBillByMonth :many
 SELECT 
     r.address,
     b.id AS bill_id,
-    COALESCE(b.status, 0) AS bill_status,
+    COALESCE(b.status, -1) AS bill_status,
     r.room_number,
     c.id as contract_id,
     b.payment_id,

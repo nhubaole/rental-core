@@ -96,3 +96,11 @@ type CreateBill struct {
 	AdditionFee  *int32  `json:"addition_fee"`
 	AdditionNote *string `json:"addition_note"`
 }
+
+type UpsertIndexParams struct {
+	WaterIndex       *float64 `json:"water_index"`
+	ElectricityIndex *float64 `json:"electricity_index"`
+	RoomID           int32  `json:"room_id"`
+	Month            int32  `json:"month"`
+	Year             int32  `json:"year"`
+}

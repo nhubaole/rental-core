@@ -8,5 +8,5 @@ import (
 
 type IndexService interface{
 	GetAllIndex(userid int32, month int32, year int32, mType string) *responses.ResponseData
-	CreateIndex(userid int32,body *dataaccess.CreateIndexParams) *responses.ResponseData
+	CreateIndex(userid int32,body *dataaccess.UpsertIndexParams) *responses.ResponseData
 }

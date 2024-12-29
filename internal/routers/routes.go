@@ -53,6 +53,7 @@ func NewRouter(
 	roomRouter.GET("/status/:status", middlewares.AuthenMiddleware, rc.GetByStatus)
 	roomRouter.GET("/get-by-owner", middlewares.AuthenMiddleware, rc.GetByOwner)
 	roomRouter.PUT("", middlewares.AuthenMiddleware, rc.UpdateRoom)
+	roomRouter.GET("is-liked/:id", middlewares.AuthenMiddleware, rc.CheckUserLikedRoom)
 
 	rentalRequestRouter := baseRouter.Group("/requests")
 	rentalRequestRouter.POST("", middlewares.AuthenMiddleware, rrc.Create)

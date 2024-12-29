@@ -9,48 +9,6 @@ import (
 	"context"
 )
 
-const createIndex = `-- name: CreateIndex :one
-INSERT INTO PUBLIC.INDEX(
-  water_index,
-  electricity_index,
-  room_id,
-  month,
-  year
-)
-VALUES(
-    $1, $2, $3, $4, $5
-  )
-  RETURNING id, water_index, electricity_index, room_id, month, year
-`
-
-type CreateIndexParams struct {
-	WaterIndex       float64 `json:"water_index"`
-	ElectricityIndex float64 `json:"electricity_index"`
-	RoomID           int32   `json:"room_id"`
-	Month            int32   `json:"month"`
-	Year             int32   `json:"year"`
-}
-
-func (q *Queries) CreateIndex(ctx context.Context, arg CreateIndexParams) (Index, error) {
-	row := q.db.QueryRow(ctx, createIndex,
-		arg.WaterIndex,
-		arg.ElectricityIndex,
-		arg.RoomID,
-		arg.Month,
-		arg.Year,
-	)
-	var i Index
-	err := row.Scan(
-		&i.ID,
-		&i.WaterIndex,
-		&i.ElectricityIndex,
-		&i.RoomID,
-		&i.Month,
-		&i.Year,
-	)
-	return i, err
-}
-
 const getIndexById = `-- name: GetIndexById :one
 SELECT id, water_index, electricity_index, room_id, month, year 
 FROM PUBLIC.INDEX
@@ -99,9 +57,9 @@ type GetIndexByOwnerIdRow struct {
 	PrevMonth       interface{} `json:"prev_month"`
 	CurrMonth       int32       `json:"curr_month"`
 	PrevWater       interface{} `json:"prev_water"`
-	CurrWater       float64     `json:"curr_water"`
+	CurrWater       *float64    `json:"curr_water"`
 	PrevElectricity interface{} `json:"prev_electricity"`
-	CurrElectricity float64     `json:"curr_electricity"`
+	CurrElectricity *float64    `json:"curr_electricity"`
 	Year            int32       `json:"year"`
 }
 
@@ -143,12 +101,12 @@ WHERE  ro.owner = $1
 `
 
 type GetIndexByOwnerIdShortRow struct {
-	ID               int32   `json:"id"`
-	RoomID           int32   `json:"room_id"`
-	WaterIndex       float64 `json:"water_index"`
-	ElectricityIndex float64 `json:"electricity_index"`
-	Month            int32   `json:"month"`
-	Year             int32   `json:"year"`
+	ID               int32    `json:"id"`
+	RoomID           int32    `json:"room_id"`
+	WaterIndex       *float64 `json:"water_index"`
+	ElectricityIndex *float64 `json:"electricity_index"`
+	Month            int32    `json:"month"`
+	Year             int32    `json:"year"`
 }
 
 func (q *Queries) GetIndexByOwnerIdShort(ctx context.Context, owner int32) ([]GetIndexByOwnerIdShortRow, error) {
@@ -209,4 +167,51 @@ func (q *Queries) GetIndexByRoomId(ctx context.Context, roomID int32) ([]Index, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertIndex = `-- name: UpsertIndex :one
+INSERT INTO PUBLIC.INDEX(
+  water_index,
+  electricity_index,
+  room_id,
+  month,
+  year
+)
+VALUES(
+    $1, $2, $3, $4, $5
+  )
+ON CONFLICT (room_id, month, year)
+DO UPDATE
+SET
+  water_index = COALESCE(EXCLUDED.water_index, PUBLIC.INDEX.water_index),
+  electricity_index = COALESCE(EXCLUDED.electricity_index, PUBLIC.INDEX.electricity_index)
+RETURNING id, water_index, electricity_index, room_id, month, year
+`
+
+type UpsertIndexParams struct {
+	WaterIndex       *float64 `json:"water_index"`
+	ElectricityIndex *float64 `json:"electricity_index"`
+	RoomID           int32    `json:"room_id"`
+	Month            int32    `json:"month"`
+	Year             int32    `json:"year"`
+}
+
+func (q *Queries) UpsertIndex(ctx context.Context, arg UpsertIndexParams) (Index, error) {
+	row := q.db.QueryRow(ctx, upsertIndex,
+		arg.WaterIndex,
+		arg.ElectricityIndex,
+		arg.RoomID,
+		arg.Month,
+		arg.Year,
+	)
+	var i Index
+	err := row.Scan(
+		&i.ID,
+		&i.WaterIndex,
+		&i.ElectricityIndex,
+		&i.RoomID,
+		&i.Month,
+		&i.Year,
+	)
+	return i, err
 }

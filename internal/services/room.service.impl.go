@@ -20,18 +20,17 @@ import (
 )
 
 type RoomServiceImpl struct {
-	repo                *dataaccess.Queries
-	storageService      StorageSerivce
-	blockchainService   BlockchainService
+	repo              *dataaccess.Queries
+	storageService    StorageSerivce
+	blockchainService BlockchainService
 }
-
 
 
 func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
-		repo:                dataaccess.New(global.Db),
-		storageService:      storage,
-		blockchainService:   blockchain,
+		repo:              dataaccess.New(global.Db),
+		storageService:    storage,
+		blockchainService: blockchain,
 	}
 }
 
@@ -56,6 +55,7 @@ func (r *RoomServiceImpl) GetRoomByOwner(userID int) *responses.ResponseData {
 	}
 
 }
+
 // CreateRoom implements RoomService.
 func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *responses.ResponseData {
 	// create new room
@@ -458,5 +458,28 @@ func (r *RoomServiceImpl) UpdateRoom(req requests.UpdateRoomRequest) *responses.
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
 		Data:       true,
+	}
+}
+
+// CheckUserLikedRoom implements RoomService.
+func (r *RoomServiceImpl) CheckUserLikedRoom(roomId int, userId int) *responses.ResponseData {
+	param := dataaccess.CheckUserLikedRoomParams{
+		RoomID: int32(roomId),
+		UserID: int32(userId),
+	}
+	_, err := r.repo.CheckUserLikedRoom(context.Background(), param)
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusSuccess,
+			Data:       false,
+		}
+	} else {
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    responses.StatusSuccess,
+			Data:       true,
+		}
 	}
 }
