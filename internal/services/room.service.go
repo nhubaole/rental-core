@@ -15,4 +15,5 @@ type RoomService interface {
 	GetRoomByStatus(status int) *responses.ResponseData
 	GetRoomByOwner(userID int) *responses.ResponseData
 	UpdateRoom(req requests.UpdateRoomRequest) *responses.ResponseData
+	CheckUserLikedRoom(roomId int, userId int) *responses.ResponseData
 }

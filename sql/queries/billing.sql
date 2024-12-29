@@ -27,7 +27,7 @@ INSERT INTO PUBLIC.BILLING
 SELECT 
     r.address,
     b.id AS bill_id,
-    COALESCE(b.status, 0) AS bill_status,
+    COALESCE(b.status, -1) AS bill_status,
     r.room_number,
     c.id as contract_id,
     b.payment_id,

@@ -67,16 +67,16 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 		}
 	}
 
-	waterUsage := metric.CurrWater - metric.PrevWater.(float64)
-	electricityUsage := metric.CurrElectricity - metric.PrevElectricity.(float64)
+	waterUsage := *metric.CurrWater - metric.PrevWater.(float64)
+	electricityUsage := *metric.CurrElectricity - metric.PrevElectricity.(float64)
 
 	totalWater := waterUsage * float64(matchedContract.WaterCost)
 	totalElectric := electricityUsage * float64(matchedContract.ElectricityCost)
 
 	fmt.Println(float64(matchedContract.ActualPrice))
-	fmt.Println(float64(matchedContract.InternetCost) )
+	fmt.Println(float64(matchedContract.InternetCost))
 	fmt.Println(float64(matchedContract.ParkingFee))
-	
+
 	totalAmount := float64(matchedContract.ActualPrice) +
 		totalWater +
 		totalElectric +
@@ -88,8 +88,8 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 		ContractID:           int32(matchedContract.ID),
 		OldWaterIndex:        common.Float64ToInt32Ptr(metric.PrevWater.(float64)),
 		OldElectricityIndex:  common.Float64ToInt32Ptr(metric.PrevElectricity.(float64)),
-		NewWaterIndex:        common.Float64ToInt32Ptr(metric.CurrWater),
-		NewElectricityIndex:  common.Float64ToInt32Ptr(metric.CurrElectricity),
+		NewWaterIndex:        common.Float64ToInt32Ptr(*metric.CurrWater),
+		NewElectricityIndex:  common.Float64ToInt32Ptr(*metric.CurrElectricity),
 		TotalWaterCost:       &totalWater,
 		TotalElectricityCost: &totalElectric,
 		AdditionFee:          req.AdditionFee,
@@ -324,8 +324,8 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 		}
 	}
 
-	waterUsage := metric.CurrWater - metric.PrevWater.(float64)
-	electricityUsage := metric.CurrElectricity - metric.PrevElectricity.(float64)
+	waterUsage := *metric.CurrWater - metric.PrevWater.(float64)
+	electricityUsage := *metric.CurrElectricity - metric.PrevElectricity.(float64)
 	totalAmount := float64(matchedContract.ActualPrice) +
 		waterUsage*float64(matchedContract.WaterCost) +
 		electricityUsage*float64(matchedContract.ElectricityCost) +

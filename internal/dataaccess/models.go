@@ -74,12 +74,12 @@ type Conversation struct {
 }
 
 type Index struct {
-	ID               int32   `json:"id"`
-	WaterIndex       float64 `json:"water_index"`
-	ElectricityIndex float64 `json:"electricity_index"`
-	RoomID           int32   `json:"room_id"`
-	Month            int32   `json:"month"`
-	Year             int32   `json:"year"`
+	ID               int32    `json:"id"`
+	WaterIndex       *float64 `json:"water_index"`
+	ElectricityIndex *float64 `json:"electricity_index"`
+	RoomID           int32    `json:"room_id"`
+	Month            int32    `json:"month"`
+	Year             int32    `json:"year"`
 }
 
 type LandlordRating struct {

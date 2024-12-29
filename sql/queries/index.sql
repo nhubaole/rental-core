@@ -1,4 +1,4 @@
--- name: CreateIndex :one
+-- name: UpsertIndex :one
 INSERT INTO PUBLIC.INDEX(
   water_index,
   electricity_index,
@@ -9,7 +9,12 @@ INSERT INTO PUBLIC.INDEX(
 VALUES(
     $1, $2, $3, $4, $5
   )
-  RETURNING id, water_index, electricity_index, room_id, month, year;
+ON CONFLICT (room_id, month, year)
+DO UPDATE
+SET
+  water_index = COALESCE(EXCLUDED.water_index, PUBLIC.INDEX.water_index),
+  electricity_index = COALESCE(EXCLUDED.electricity_index, PUBLIC.INDEX.electricity_index)
+RETURNING id, water_index, electricity_index, room_id, month, year;
 
 -- name: GetIndexById :one
 SELECT * 

@@ -22,11 +22,9 @@ func NewIndexServiceImpl(blockchain BlockchainService) IndexService {
 	}
 }
 
-func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.CreateIndexParams) *responses.ResponseData {
-	// Find room if match the owner
+func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.UpsertIndexParams) *responses.ResponseData {
 	rs, er := is.query.GetRoomByID(context.Background(), body.RoomID)
 
-	//TODO: get contract id??
 	if er != nil {
 		fmt.Println(er.Error())
 		return &responses.ResponseData{
@@ -44,7 +42,7 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.CreateInd
 		}
 	}
 
-	result, error := is.query.CreateIndex(context.Background(), *body)
+	result, error := is.query.UpsertIndex(context.Background(), *body)
 	if error != nil {
 		fmt.Println(error.Error())
 		return &responses.ResponseData{
@@ -80,13 +78,13 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.CreateInd
 		}
 	}
 
-	if !(matchedContract.PreRentalStatus == 2 && matchedContract.RentalProcessStatus != 0) {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Trạng thái hợp đồng không hợp lệ",
-			Data:       false,
-		}
-	}
+	// if !(matchedContract.PreRentalStatus == 2 && matchedContract.RentalProcessStatus != 0) {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "Trạng thái hợp đồng không hợp lệ",
+	// 		Data:       false,
+	// 	}
+	// }
 
 	user, _ := is.query.GetUserByID(context.Background(), userid)
 	_, err = is.blockchain.InputMeterReadingOnChain(*user.PrivateKeyHex, matchedContract.ID)
@@ -146,7 +144,7 @@ func (is *IndexServiceImpl) GetAllIndex(userid int32, month int32, year int32, m
 				"room_number": roomDetails.RoomNumber,
 				"old_index":   record.PrevWater.(float64),
 				"new_index":   record.CurrWater,
-				"used":        record.CurrWater - record.PrevWater.(float64),
+				"used":        *record.CurrWater - record.PrevWater.(float64),
 			}
 			roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
 		} else {
@@ -154,7 +152,7 @@ func (is *IndexServiceImpl) GetAllIndex(userid int32, month int32, year int32, m
 				"room_number": roomDetails.RoomNumber,
 				"old_index":   record.PrevElectricity.(float64),
 				"new_index":   record.CurrElectricity,
-				"used":        record.CurrElectricity - record.PrevElectricity.(float64),
+				"used":        *record.CurrElectricity - record.PrevElectricity.(float64),
 			}
 			roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
 		}

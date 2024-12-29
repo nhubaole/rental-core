@@ -5,6 +5,7 @@ import (
 	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -45,12 +46,19 @@ func (controller IndexController) GetIndexFromOwner(ctx *gin.Context) {
 
 func (controller IndexController) CreateIndex(ctx *gin.Context) {
 	myuser, _ := common.GetCurrentUser(ctx)
-	var body *dataaccess.CreateIndexParams
+	var body requests.UpsertIndexParams
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	result := controller.indexService.CreateIndex(myuser.ID, body)
+	params := dataaccess.UpsertIndexParams{
+		WaterIndex:       body.WaterIndex,
+		ElectricityIndex: body.ElectricityIndex,
+		RoomID:           body.RoomID,
+		Month:            body.Month,
+		Year:             body.Year,
+	}
+	result := controller.indexService.CreateIndex(myuser.ID, &params)
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }

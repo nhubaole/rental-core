@@ -335,6 +335,8 @@ GROUP BY
     r.area, 
     r.total_price, 
     r.status
+ORDER BY 
+    r.created_at DESC
 `
 
 type GetRoomsRow struct {

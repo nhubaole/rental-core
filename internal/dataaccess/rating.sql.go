@@ -225,6 +225,7 @@ SELECT
     jsonb_agg(
         jsonb_build_object(
             'rater_name', u.full_name,
+            'rater_avatar', u.avatar_url,
             'created_at', rr.created_at,
             'rate', rr.overall_rating,
             'comment', rr.comments,
