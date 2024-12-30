@@ -29,6 +29,7 @@ SELECT
     b.id AS bill_id,
     COALESCE(b.status, -1) AS bill_status,
     r.room_number,
+    r.id as room_id,
     c.id as contract_id,
     b.payment_id,
     b.total_amount,

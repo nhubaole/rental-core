@@ -205,6 +205,7 @@ SELECT
     b.id AS bill_id,
     COALESCE(b.status, -1) AS bill_status,
     r.room_number,
+    r.id as room_id,
     c.id as contract_id,
     b.payment_id,
     b.total_amount,
@@ -230,6 +231,7 @@ type GetBillByMonthRow struct {
 	BillID        *int32             `json:"bill_id"`
 	BillStatus    int32              `json:"bill_status"`
 	RoomNumber    int32              `json:"room_number"`
+	RoomID        int32              `json:"room_id"`
 	ContractID    *int32             `json:"contract_id"`
 	PaymentID     *int32             `json:"payment_id"`
 	TotalAmount   *float64           `json:"total_amount"`
@@ -250,6 +252,7 @@ func (q *Queries) GetBillByMonth(ctx context.Context, arg GetBillByMonthParams) 
 			&i.BillID,
 			&i.BillStatus,
 			&i.RoomNumber,
+			&i.RoomID,
 			&i.ContractID,
 			&i.PaymentID,
 			&i.TotalAmount,

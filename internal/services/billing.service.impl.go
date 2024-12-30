@@ -181,6 +181,7 @@ func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, yea
 			"avatar":       tenantAvt,
 			"status":       bill.BillStatus,
 			"room_number":  bill.RoomNumber,
+			"room_id":      bill.RoomID,
 			"tenant_name":  tenantName,
 			"payment_id":   bill.PaymentID,
 			"total_amount": bill.TotalAmount,
