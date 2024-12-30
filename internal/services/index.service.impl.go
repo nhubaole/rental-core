@@ -111,6 +111,68 @@ func (is *IndexServiceImpl) GetAllIndex(userid int32, month int32, year int32, m
 	}
 
 	rs, er := is.query.GetIndexByOwnerId(context.Background(), param)
+	if len(rs) == 0 || (rs[len(rs)-1].CurrWater == nil && mType == "water") || (rs[len(rs)-1].CurrElectricity == nil && mType == "electricity") {
+		if month == 1 {
+			month = 12
+			year--
+		} else {
+			month--
+		}
+		param := dataaccess.GetIndexByOwnerIdParams{
+			Owner: userid,
+			Year:  year,
+			Month: month,
+		}
+		rs, er = is.query.GetIndexByOwnerId(context.Background(), param)
+		roomData := make(map[int32]map[string]interface{})
+		for _, record := range rs {
+			roomDetails, err := is.query.GetRoomByID(context.Background(), *record.RoomID)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+
+			if _, exists := roomData[*record.RoomID]; !exists {
+				roomData[*record.RoomID] = map[string]interface{}{
+					"room_id":    record.RoomID,
+					"address":    strings.Join(roomDetails.Address, ", "),
+					"index_info": []map[string]interface{}{},
+				}
+			}
+
+			if mType == "water" {
+				indexInfo := map[string]interface{}{
+					"room_number": roomDetails.RoomNumber,
+					"old_index":   record.CurrWater,
+					"new_index":   nil,
+					"used":        nil,
+				}
+				roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
+			} else {
+				indexInfo := map[string]interface{}{
+					"room_number": roomDetails.RoomNumber,
+					"old_index":   record.CurrElectricity,
+					"new_index":   nil,
+					"used":        nil,
+				}
+				roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
+			}
+		}
+
+		var result []map[string]interface{}
+		for _, data := range roomData {
+			result = append(result, data)
+		}
+
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    "Ok",
+			Data:       result,
+		}
+	}
 	if er != nil {
 		fmt.Println(er.Error())
 		return &responses.ResponseData{
