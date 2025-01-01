@@ -41,4 +41,3 @@ ON
 WHERE 
     t.tenant_id = $1 
     AND t.deleted_at IS NULL;
-
