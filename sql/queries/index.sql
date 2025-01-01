@@ -41,7 +41,6 @@ WHERE  ro.owner = $1
 AND idx.month = $2
 AND idx.year = $3;
 
-
 -- name: GetIndexByOwnerIdShort :many
 SELECT idx.id, idx.room_id, idx.water_index, idx.electricity_index, idx.month, idx.year
 FROM  PUBLIC.INDEX AS idx 
