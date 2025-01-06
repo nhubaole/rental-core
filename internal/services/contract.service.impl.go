@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"net/http"
@@ -254,7 +255,7 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 			"phone":            tenant.PhoneNumber,
 		},
 		"room_address":     roomDetails.Address,
-		"room_price":       roomDetails.TotalPrice,
+		"room_price":       contract.Deposit,
 		"method":           contract.PaymentMethod,
 		"electric_cost":    contract.ElectricityCost,
 		"water_cost":       contract.WaterCost,
@@ -282,19 +283,23 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 	var err error
 
 	switch statusID {
-		case 0:
-			contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 0, int64(userId), isLandlord)
-		case 1:
-			contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 2, int64(userId), isLandlord)
-		case 2:
-			contracts = []gen.ContractManagementMContract{}
-		default:
-			return &responses.ResponseData{
-				StatusCode: http.StatusBadRequest,
-				Message:    "Invalid statusID",
-				Data:       nil,
-			}
+	case 0:
+		contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 0, int64(userId), isLandlord)
+		contracts1, _ := c.blockchain.GetListMContractByStatus(contractIds, 1, int64(userId), isLandlord)
+
+		contracts = append(contracts, contracts1...)
+	case 1:
+		contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 2, int64(userId), isLandlord)
+	case 2:
+		contracts, err = c.blockchain.GetListMContractByStatus(contractIds, 3, int64(userId), isLandlord)
+	default:
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Invalid statusID",
+			Data:       nil,
+		}
 	}
+	
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -373,19 +378,23 @@ func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, user
 			Data:       false,
 		}
 	}
-	// if userID != int(contract.Tenant) {
-	// 	return &responses.ResponseData{
-	// 		StatusCode: http.StatusForbidden,
-	// 		Message:    "Bạn không có quyền thực hiện thao tác này",
-	// 		Data:       false,
-	// 	}
-	// }
-	signB, encryptErr := common.EncryptBase64AES(*&req.SignatureB, global.Config.JWT.AESKey)
+
+	signB, encryptErr := common.EncryptBase64AES(req.SignatureB, global.Config.JWT.AESKey)
 	req.SignatureB = signB
 	if encryptErr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    "Lỗi ký hợp đồng",
+			Data:       false,
+		}
+	}
+
+	err = c.repo.UpdateSignatureB(context.Background(), dataaccess.UpdateSignatureBParams{ID: req.Id, SignatureB: &req.SignatureB})
+
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
 			Data:       false,
 		}
 	}
@@ -400,7 +409,7 @@ func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, user
 
 	params := &requests.SignMContractOnChainReq{
 		ContractId: int64(req.Id),
-		SignatureB: req.SignatureB,
+		SignatureB: "",
 	}
 	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
 	_, err = c.blockchain.SignMContractOnChain(*user.PrivateKeyHex, *params)
@@ -412,23 +421,6 @@ func (c *ContractServiceImpl) SignContract(req requests.SignContractParams, user
 		}
 	}
 
-	// createTenantParam := dataaccess.CreateTenantParams{
-	// 	RoomID:   int32(contract.RoomID),
-	// 	TenantID: int32(contract.Tenant),
-	// 	BeginDate: pgtype.Timestamptz{
-	// 		Time:  time.Unix(contract.BeginDate, 0),
-	// 		Valid: true,
-	// 	},
-	// }
-
-	// errUpdateTenant := c.repo.CreateTenant(context.Background(), createTenantParam)
-	// if errUpdateTenant != nil {
-	// 	return &responses.ResponseData{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Message:    errUpdateTenant.Error(),
-	// 		Data:       false,
-	// 	}
-	// }
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -441,6 +433,8 @@ func (c *ContractServiceImpl) DeclineContract(id int, userID int) *responses.Res
 	user, _ := c.repo.GetUserByID(context.Background(), int32(userID))
 
 	contract, _ := c.blockchain.GetMContractByIDOnChain(int64(id))
+
+	fmt.Print(contract)
 	if userID != int(contract.Tenant) {
 		return &responses.ResponseData{
 			StatusCode: http.StatusForbidden,

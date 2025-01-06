@@ -212,3 +212,19 @@ func (q *Queries) ListContractIds(ctx context.Context) ([]int32, error) {
 	}
 	return items, nil
 }
+
+const updateSignatureB = `-- name: UpdateSignatureB :exec
+UPDATE public.contracts
+SET signature_b = $2
+WHERE id = $1
+`
+
+type UpdateSignatureBParams struct {
+	ID         int32   `json:"id"`
+	SignatureB *string `json:"signature_b"`
+}
+
+func (q *Queries) UpdateSignatureB(ctx context.Context, arg UpdateSignatureBParams) error {
+	_, err := q.db.Exec(ctx, updateSignatureB, arg.ID, arg.SignatureB)
+	return err
+}

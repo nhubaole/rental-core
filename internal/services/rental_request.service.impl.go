@@ -106,7 +106,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 	rentStatus, checkError2 := rentalService.repo.CheckRequestExisted(context.Background(), request)
 	// create retal request
 	if checkError2 == nil {
-		if rentStatus.Status != 3 {
+		if rentStatus.Status != 3 && rentStatus.Status != 4 && !rentStatus.DeletedAt.Valid {
 			return &responses.ResponseData{
 				StatusCode: http.StatusNotAcceptable,
 				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
@@ -114,13 +114,6 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 			}
 		}
 		fmt.Println(rentStatus.DeletedAt)
-		if !rentStatus.DeletedAt.Valid {
-			return &responses.ResponseData{
-				StatusCode: http.StatusNotAcceptable,
-				Message:    "Bạn đã gửi yêu cầu thuê cho phòng này",
-				Data:       false,
-			}
-		}
 	}
 	// parse to the new body
 	parseBody := dataaccess.CreateRentalRequestParams{

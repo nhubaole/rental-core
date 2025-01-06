@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"net/http"
-	"smart-rental/internal/dataaccess"
 	"smart-rental/internal/services"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
 	"strconv"
 
@@ -22,7 +22,7 @@ func NewReturnRequestController(service services.ReturnRequestService) *ReturnRe
 }
 
 func(rrc *ReturnRequestController) Create(ctx *gin.Context) {
-	var body dataaccess.CreateReturnRequestParams
+	var body requests.CreateReturnRequestParams
 	err := ctx.ShouldBindJSON(&body)
 	if err != nil {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)

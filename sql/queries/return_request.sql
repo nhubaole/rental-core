@@ -3,14 +3,14 @@ INSERT INTO public.return_requests
     (contract_id, --1
      reason, --2
      return_date, --3 
-     status, --4
      deduct_amount, --5 
      total_return_deposit, --6 
      created_user, --7
+     status, --4
      created_at,
      updated_at)
 VALUES(
-    $1, $2, $3, $4, $5, $6, $7, now(), now()
+    $1, $2, $3, $4, $5, $6, 0, now(), now()
     ) RETURNING id;
 
 -- name: GetReturnRequestByID :one

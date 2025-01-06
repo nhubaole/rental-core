@@ -61,7 +61,7 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 			}
 		}
 
-		if onChainContract.PreRentalStatus > 0 || onChainContract.PreRentalStatus < 3 {
+		if onChainContract.PreRentalStatus == 2 {
 			matchedContract = *onChainContract
 			break
 		}
@@ -74,10 +74,11 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 	totalElectric := electricityUsage * float64(matchedContract.ElectricityCost)
 
 	fmt.Println(float64(matchedContract.ActualPrice))
+	fmt.Println(float64(matchedContract.Deposit))
 	fmt.Println(float64(matchedContract.InternetCost))
 	fmt.Println(float64(matchedContract.ParkingFee))
 
-	totalAmount := float64(matchedContract.ActualPrice) +
+	totalAmount := float64(matchedContract.Deposit) +
 		totalWater +
 		totalElectric +
 		float64(matchedContract.InternetCost) +
@@ -99,13 +100,13 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 		Year:                 req.Year,
 	}
 
-	if !(matchedContract.RentalProcessStatus == 0 || matchedContract.RentalProcessStatus == 1) {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Trạng thái hợp đồng không hợp lệ",
-			Data:       false,
-		}
-	}
+	// if !(matchedContract.RentalProcessStatus == 0 || matchedContract.RentalProcessStatus == 1) {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "Trạng thái hợp đồng không hợp lệ",
+	// 		Data:       false,
+	// 	}
+	// }
 
 	billId, err := service.query.CreateBill(context.Background(), body)
 	if err != nil {
@@ -116,15 +117,15 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 		}
 	}
 
-	user, _ := service.query.GetUserByID(context.Background(), int32(userID))
-	_, err = service.blockchain.CreateBillOnChain(*user.PrivateKeyHex, int64(body.ContractID))
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+	// user, _ := service.query.GetUserByID(context.Background(), int32(userID))
+	// _, err = service.blockchain.CreateBillOnChain(*user.PrivateKeyHex, int64(body.ContractID))
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 
 	id := int(billId)
 	service.notificationService.SendNotification(int(matchedContract.Tenant), "Bạn có hoá đơn thu tiền mới. Vui lòng kiểm tra và thanh toán đúng hạn", &id, "bill")
@@ -162,6 +163,10 @@ func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, yea
 
 		contract, err := service.blockchain.GetMContractByIDOnChain(int64(*bill.ContractID))
 		if err != nil {
+			continue
+		}
+
+		if contract.PreRentalStatus != 2 {
 			continue
 		}
 
@@ -250,7 +255,7 @@ func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData
 		"paid_at":               nil,
 		"payment_id":            bill.PaymentID,
 		"status":                bill.Status,
-		"room_price":            contract.ActualPrice,
+		"room_price":            contract.Deposit,
 		"old_water_index":       bill.OldWaterIndex,
 		"old_electricity_index": bill.OldElectricityIndex,
 		"new_water_index":       bill.NewWaterIndex,

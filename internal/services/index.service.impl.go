@@ -52,31 +52,32 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.UpsertInd
 		}
 	}
 
-	contracts, err := is.query.ListContractByRoomId(context.Background(), &body.RoomID)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+	// commented
+	// contracts, err := is.query.ListContractByRoomId(context.Background(), &body.RoomID)
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 
-	var matchedContract responses.MContractOnChainRes
-	for _, contract := range contracts {
-		onChainContract, err := is.blockchain.GetMContractByIDOnChain(int64(contract))
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       false,
-			}
-		}
+	// var matchedContract responses.MContractOnChainRes
+	// for _, contract := range contracts {
+	// 	onChainContract, err := is.blockchain.GetMContractByIDOnChain(int64(contract))
+	// 	if err != nil {
+	// 		return &responses.ResponseData{
+	// 			StatusCode: http.StatusInternalServerError,
+	// 			Message:    err.Error(),
+	// 			Data:       false,
+	// 		}
+	// 	}
 
-		if onChainContract.PreRentalStatus == 2 {
-			matchedContract = *onChainContract
-			break
-		}
-	}
+	// 	if onChainContract.PreRentalStatus == 2 {
+	// 		matchedContract = *onChainContract
+	// 		break
+	// 	}
+	// }
 
 	// if !(matchedContract.PreRentalStatus == 2 && matchedContract.RentalProcessStatus != 0) {
 	// 	return &responses.ResponseData{
@@ -86,15 +87,16 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.UpsertInd
 	// 	}
 	// }
 
-	user, _ := is.query.GetUserByID(context.Background(), userid)
-	_, err = is.blockchain.InputMeterReadingOnChain(*user.PrivateKeyHex, matchedContract.ID)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "blockchain error",
-			Data:       false,
-		}
-	}
+	//commented
+	// user, _ := is.query.GetUserByID(context.Background(), userid)
+	// _, err = is.blockchain.InputMeterReadingOnChain(*user.PrivateKeyHex, matchedContract.ID)
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "blockchain error",
+	// 		Data:       false,
+	// 	}
+	// }
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
@@ -125,6 +127,47 @@ func (is *IndexServiceImpl) GetAllIndex(userid int32, month int32, year int32, m
 		}
 		rs, er = is.query.GetIndexByOwnerId(context.Background(), param)
 		roomData := make(map[int32]map[string]interface{})
+
+		if len(rs) == 0 {
+			roomDetails, err := is.query.GetRoomsByOwner(context.Background(), userid)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+		
+			groupedRooms := make(map[string][]map[string]interface{})
+		
+			for _, room := range roomDetails {
+				address := strings.Join(room.Address, ", ")
+		
+				groupedRooms[address] = append(groupedRooms[address], map[string]interface{}{
+					"room_id":     room.ID,
+					"room_number": room.RoomNumber,
+					"old_index":   nil, 
+					"new_index":   nil, 
+					"used":        nil, 
+				})
+			}
+		
+			var result []map[string]interface{}
+			for address, rooms := range groupedRooms {
+				result = append(result, map[string]interface{}{
+					"address":    address,
+					"index_info": rooms,
+				})
+			}
+		
+			return &responses.ResponseData{
+				StatusCode: http.StatusOK,
+				Message:    "Ok",
+				Data:       result,
+			}
+		}
+		
+		
 		for _, record := range rs {
 			roomDetails, err := is.query.GetRoomByID(context.Background(), *record.RoomID)
 			if err != nil {

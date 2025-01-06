@@ -77,3 +77,8 @@ WHERE room_id = $1;
 -- name: GetContractById :one
 SELECT * from public.contracts
 WHERE id = $1;  
+
+-- name: UpdateSignatureB :exec
+UPDATE public.contracts
+SET signature_b = $2
+WHERE id = $1;

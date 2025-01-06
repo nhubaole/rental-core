@@ -6,7 +6,11 @@ import (
 	"smart-rental/global"
 	"smart-rental/internal/dataaccess"
 	"smart-rental/pkg/common"
+	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ReturnRequestServiceImpl struct {
@@ -43,7 +47,6 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 	}
 	var detailedRequests []responses.GetReturnRequestByLandlordIDRes
 	for _, request := range requests {
-		// Lấy thông tin chi tiết của người gửi dựa trên sender_id
 		sender, err := r.repo.GetUserByID(context.Background(), *request.CreatedUser)
 		if err != nil {
 			return &responses.ResponseData{
@@ -55,7 +58,6 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 		var user responses.UserResponse
 		common.MapStruct(sender, &user)
 
-		// Xây dựng đối tượng chi tiết
 		detailedRequest := responses.GetReturnRequestByLandlordIDRes{
 			ID:                 request.ID,
 			ContractID:         request.ContractID,
@@ -70,7 +72,6 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 			UpdatedAt:          request.UpdatedAt,
 		}
 
-		// Thêm đối tượng vào danh sách kết quả
 		detailedRequests = append(detailedRequests, detailedRequest)
 	}
 
@@ -82,9 +83,8 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 }
 
 // Create implements ReturnRequestService.
-func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestParams, userID int) *responses.ResponseData {
+func (r *ReturnRequestServiceImpl) Create(req requests.CreateReturnRequestParams, userID int) *responses.ResponseData {
 	id := int32(userID)
-	req.CreatedUser = &id
 
 	contract, err := r.blockchain.GetMContractByIDOnChain(int64(*req.ContractID))
 	if err != nil {
@@ -94,25 +94,36 @@ func (r *ReturnRequestServiceImpl) Create(req dataaccess.CreateReturnRequestPara
 			Data:       false,
 		}
 	}
-	if contract.PostRentalStatus != 0 {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Trạng thái hợp đồng không hợp lệ",
-			Data:       false,
-		}
+	// if contract.PostRentalStatus != 0 {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    "Trạng thái hợp đồng không hợp lệ",
+	// 		Data:       false,
+	// 	}
+	// }
+
+	// user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
+	// _, err = r.blockchain.CreateReturnRequestOnChain(*user.PrivateKeyHex, int64(*req.ContractID))
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
+	
+	deductAmount := calculateDeductAmount(req.ReturnDate, int(contract.Deposit))
+
+	params := dataaccess.CreateReturnRequestParams {
+		ContractID: req.ContractID,
+		Reason: req.Reason,
+		ReturnDate: req.ReturnDate,
+		TotalReturnDeposit: common.IntToFloat64Ptr(int(contract.Deposit)),
+		DeductAmount: &deductAmount,
+		CreatedUser:  &id,
 	}
 
-	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
-	_, err = r.blockchain.CreateReturnRequestOnChain(*user.PrivateKeyHex, int64(*req.ContractID))
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
-
-	returnRequestId, err := r.repo.CreateReturnRequest(context.Background(), req)
+	returnRequestId, err := r.repo.CreateReturnRequest(context.Background(), params)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -284,4 +295,25 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		Message:    responses.StatusSuccess,
 		Data:       true,
 	}
+}
+
+
+func calculateDeductAmount(returnDate pgtype.Timestamp, deposit int) float64 {
+	// Kiểm tra nếu ReturnDate có giá trị
+	if !returnDate.Valid {
+		return 0 // Nếu không hợp lệ, trả về 0
+	}
+
+	// Lấy giá trị kiểu time.Time từ pgtype.Timestamp
+	returnTime := returnDate.Time
+	currentDate := time.Now()
+
+	// Tính số ngày giữa ReturnDate và ngày hiện tại
+	daysDiff := int(returnTime.Sub(currentDate).Hours() / 24)
+
+	// Nếu cách ngày hiện tại < 30, DeductAmount = deposit, ngược lại bằng 0
+	if daysDiff < 30 {
+		return float64(deposit)
+	}
+	return 0
 }

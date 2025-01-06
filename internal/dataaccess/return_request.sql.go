@@ -29,14 +29,14 @@ INSERT INTO public.return_requests
     (contract_id, --1
      reason, --2
      return_date, --3 
-     status, --4
      deduct_amount, --5 
      total_return_deposit, --6 
      created_user, --7
+     status, --4
      created_at,
      updated_at)
 VALUES(
-    $1, $2, $3, $4, $5, $6, $7, now(), now()
+    $1, $2, $3, $4, $5, $6, 0, now(), now()
     ) RETURNING id
 `
 
@@ -44,7 +44,6 @@ type CreateReturnRequestParams struct {
 	ContractID         *int32           `json:"contract_id"`
 	Reason             *string          `json:"reason"`
 	ReturnDate         pgtype.Timestamp `json:"return_date"`
-	Status             *int32           `json:"status"`
 	DeductAmount       *float64         `json:"deduct_amount"`
 	TotalReturnDeposit *float64         `json:"total_return_deposit"`
 	CreatedUser        *int32           `json:"created_user"`
@@ -55,7 +54,6 @@ func (q *Queries) CreateReturnRequest(ctx context.Context, arg CreateReturnReque
 		arg.ContractID,
 		arg.Reason,
 		arg.ReturnDate,
-		arg.Status,
 		arg.DeductAmount,
 		arg.TotalReturnDeposit,
 		arg.CreatedUser,

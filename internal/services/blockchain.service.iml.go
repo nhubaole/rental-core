@@ -76,6 +76,8 @@ func (b *BlockchainServiceImpl) CreateRoomOnBlockchain(privateKeyHex string, req
 		return "", fmt.Errorf("failed to create room on blockchain: %w", err)
 	}
 
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+
 	return tx.Hash().Hex(), nil
 }
 
@@ -167,6 +169,8 @@ func (b *BlockchainServiceImpl) CreateMContractOnChain(privateKeyHex string, req
 	if err != nil {
 		return "", fmt.Errorf("failed to create room on blockchain: %w", err)
 	}
+
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
 }
@@ -281,6 +285,8 @@ func (b *BlockchainServiceImpl) DeclineMContractOnChain(privateKeyHex string, Co
 		return "", fmt.Errorf("failed to decline contract on blockchain: %w", err)
 	}
 
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+
 	return tx.Hash().Hex(), nil
 }
 
@@ -325,6 +331,8 @@ func (b *BlockchainServiceImpl) SignMContractOnChain(privateKeyHex string, req r
 		return "", fmt.Errorf("failed to sign contract on blockchain: %w", err)
 	}
 
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+
 	return tx.Hash().Hex(), nil
 }
 
@@ -366,6 +374,8 @@ func (b *BlockchainServiceImpl) PayDepositOnChain(privateKeyHex string, Contract
 	if err != nil {
 		return "", fmt.Errorf("failed to pay deposit on blockchain: %w", err)
 	}
+
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
 }
@@ -409,6 +419,8 @@ func (b *BlockchainServiceImpl) InputMeterReadingOnChain(privateKeyHex string, C
 		return "", fmt.Errorf("failed to input meter reading on blockchain: %w", err)
 	}
 
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+
 	return tx.Hash().Hex(), nil
 }
 
@@ -450,6 +462,8 @@ func (b *BlockchainServiceImpl) CreateBillOnChain(privateKeyHex string, Contract
 	if err != nil {
 		return "", fmt.Errorf("failed to create bill on blockchain: %w", err)
 	}
+
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
 }
@@ -493,6 +507,8 @@ func (b *BlockchainServiceImpl) PayBillOnChain(privateKeyHex string, ContractId 
 		return "", fmt.Errorf("failed to pay bill on blockchain: %w", err)
 	}
 
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+
 	return tx.Hash().Hex(), nil
 }
 
@@ -534,6 +550,8 @@ func (b *BlockchainServiceImpl) CreateReturnRequestOnChain(privateKeyHex string,
 	if err != nil {
 		return "", fmt.Errorf("failed to create return request on blockchain: %w", err)
 	}
+
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
 }
@@ -578,6 +596,8 @@ func (b *BlockchainServiceImpl) ApproveReturnRequestOnChain(privateKeyHex string
 	}
 
 	fmt.Print("approve return request on blockchain: %w", tx.Hash().Hex())
+
+	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
 	return tx.Hash().Hex(), nil
 }

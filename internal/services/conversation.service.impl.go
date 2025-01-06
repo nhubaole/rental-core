@@ -47,25 +47,35 @@ func (c *ConversationServiceImpl) GetByUserID(userID int) *responses.ResponseDat
 	var res []responses.ConversationRes
 	conversations, err := c.repo.GetConversationByUserID(context.Background(), int32(userID))
 	for _, conversation := range conversations {
-		
-		lastMessage, messErr := c.repo.GetMessageByID(context.Background(), *conversation.LastMessageID)
-		if messErr != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       false,
+		if conversation.LastMessageID != nil {
+			lastMessage, messErr := c.repo.GetMessageByID(context.Background(), *conversation.LastMessageID)
+			if messErr != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    messErr.Error(),
+					Data:       false,
+				}
 			}
-		}
-		conversationRes := responses.ConversationRes {
-			ID: conversation.ID,
-			UserA: conversation.UserA,
-			UserB: conversation.UserB,
-			LastMessage: lastMessage,
+
+			conversationRes := responses.ConversationRes{
+				ID:          conversation.ID,
+				UserA:       conversation.UserA,
+				UserB:       conversation.UserB,
+				LastMessage: &lastMessage,
+			}
+			res = append(res, conversationRes)
+		} else {
+			conversationRes := responses.ConversationRes{
+				ID:          conversation.ID,
+				UserA:       conversation.UserA,
+				UserB:       conversation.UserB,
+				LastMessage: nil,
+			}
+			res = append(res, conversationRes)
 		}
 
-		res = append(res, conversationRes)
 	}
-	
+
 	if len(conversations) == 0 {
 		return &responses.ResponseData{
 			StatusCode: http.StatusNoContent,

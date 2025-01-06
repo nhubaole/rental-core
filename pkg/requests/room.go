@@ -1,6 +1,10 @@
 package requests
 
-import "mime/multipart"
+import (
+	"mime/multipart"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type CreateRoomForm struct {
 	Title           string                  `form:"title"`
@@ -100,7 +104,13 @@ type CreateBill struct {
 type UpsertIndexParams struct {
 	WaterIndex       *float64 `json:"water_index"`
 	ElectricityIndex *float64 `json:"electricity_index"`
-	RoomID           int32  `json:"room_id"`
-	Month            int32  `json:"month"`
-	Year             int32  `json:"year"`
+	RoomID           int32    `json:"room_id"`
+	Month            int32    `json:"month"`
+	Year             int32    `json:"year"`
+}
+
+type CreateReturnRequestParams struct {
+	ContractID *int32           `json:"contract_id"`
+	Reason     *string          `json:"reason"`
+	ReturnDate pgtype.Timestamp `json:"return_date"`
 }
