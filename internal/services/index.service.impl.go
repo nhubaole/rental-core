@@ -106,166 +106,115 @@ func (is *IndexServiceImpl) CreateIndex(userid int32, body *dataaccess.UpsertInd
 }
 
 func (is *IndexServiceImpl) GetAllIndex(userid int32, month int32, year int32, mType string) *responses.ResponseData {
-	param := dataaccess.GetIndexByOwnerIdParams{
-		Owner: userid,
-		Year:  year,
-		Month: month,
+	roomDetails, err := is.query.GetRoomsByOwner(context.Background(), userid)
+	if err != nil {
+		fmt.Printf("Error fetching rooms by owner: %v\n", err)
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
 	}
 
-	rs, er := is.query.GetIndexByOwnerId(context.Background(), param)
-	if len(rs) == 0 || (rs[len(rs)-1].CurrWater == nil && mType == "water") || (rs[len(rs)-1].CurrElectricity == nil && mType == "electricity") {
-		if month == 1 {
-			month = 12
-			year--
-		} else {
-			month--
-		}
-		param := dataaccess.GetIndexByOwnerIdParams{
-			Owner: userid,
-			Year:  year,
-			Month: month,
-		}
-		rs, er = is.query.GetIndexByOwnerId(context.Background(), param)
-		roomData := make(map[int32]map[string]interface{})
+	groupedResults := make(map[string][]map[string]interface{})
 
-		if len(rs) == 0 {
-			roomDetails, err := is.query.GetRoomsByOwner(context.Background(), userid)
-			if err != nil {
-				return &responses.ResponseData{
-					StatusCode: http.StatusInternalServerError,
-					Message:    err.Error(),
-					Data:       nil,
-				}
+	for _, room := range roomDetails {
+		// Create local variables for month and year for each room
+		roomMonth := month
+		roomYear := year
+		address := strings.Join(room.Address, ", ")
+
+		indexParam := dataaccess.GetAllIndexParams{
+			ID:    room.ID,
+			Year:  roomYear,
+			Month: roomMonth,
+		}
+		rs, er := is.query.GetAllIndex(context.Background(), indexParam)
+
+		fmt.Printf("RoomID: %d, Month: %d, Year: %d, Records Found: %d\n", room.ID, roomMonth, roomYear, len(rs))
+
+		if er != nil || len(rs) == 0 {
+			// Try the previous month if no record is found
+			if roomMonth == 1 {
+				roomMonth = 12
+				roomYear--
+			} else {
+				roomMonth--
 			}
-		
-			groupedRooms := make(map[string][]map[string]interface{})
-		
-			for _, room := range roomDetails {
-				address := strings.Join(room.Address, ", ")
-		
-				groupedRooms[address] = append(groupedRooms[address], map[string]interface{}{
+			indexParam.Year = roomYear
+			indexParam.Month = roomMonth
+			rs, er = is.query.GetAllIndex(context.Background(), indexParam)
+
+			fmt.Printf("RoomID: %d, Month: %d, Year: %d, Records Found: %d (Previous Month)\n", room.ID, roomMonth, roomYear, len(rs))
+
+			if er != nil || len(rs) == 0 {
+				// No records found even for the previous month
+				groupedResults[address] = append(groupedResults[address], map[string]interface{}{
 					"room_id":     room.ID,
 					"room_number": room.RoomNumber,
-					"old_index":   nil, 
-					"new_index":   nil, 
-					"used":        nil, 
-				})
-			}
-		
-			var result []map[string]interface{}
-			for address, rooms := range groupedRooms {
-				result = append(result, map[string]interface{}{
-					"address":    address,
-					"index_info": rooms,
-				})
-			}
-		
-			return &responses.ResponseData{
-				StatusCode: http.StatusOK,
-				Message:    "Ok",
-				Data:       result,
-			}
-		}
-		
-		
-		for _, record := range rs {
-			roomDetails, err := is.query.GetRoomByID(context.Background(), *record.RoomID)
-			if err != nil {
-				return &responses.ResponseData{
-					StatusCode: http.StatusInternalServerError,
-					Message:    err.Error(),
-					Data:       nil,
-				}
-			}
-
-			if _, exists := roomData[*record.RoomID]; !exists {
-				roomData[*record.RoomID] = map[string]interface{}{
-					"room_id":    record.RoomID,
-					"address":    strings.Join(roomDetails.Address, ", "),
-					"index_info": []map[string]interface{}{},
-				}
-			}
-
-			if mType == "water" {
-				indexInfo := map[string]interface{}{
-					"room_number": roomDetails.RoomNumber,
-					"old_index":   record.CurrWater,
+					"old_index":   nil,
 					"new_index":   nil,
 					"used":        nil,
-				}
-				roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
+				})
+				continue
 			} else {
-				indexInfo := map[string]interface{}{
-					"room_number": roomDetails.RoomNumber,
-					"old_index":   record.CurrElectricity,
-					"new_index":   nil,
-					"used":        nil,
+				// Previous month's record found
+				record := rs[len(rs)-1]
+				if mType == "water" {
+					groupedResults[address] = append(groupedResults[address], map[string]interface{}{
+						"room_id":     room.ID,
+						"room_number": room.RoomNumber,
+						"old_index":   record.CurrWater,
+						"new_index":   nil,
+						"used":        nil,
+					})
+				} else {
+					groupedResults[address] = append(groupedResults[address], map[string]interface{}{
+						"room_id":     room.ID,
+						"room_number": room.RoomNumber,
+						"old_index":   record.CurrElectricity,
+						"new_index":   nil,
+						"used":        nil,
+					})
 				}
-				roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
+				continue
 			}
 		}
 
-		var result []map[string]interface{}
-		for _, data := range roomData {
-			result = append(result, data)
-		}
-
-		return &responses.ResponseData{
-			StatusCode: http.StatusOK,
-			Message:    "Ok",
-			Data:       result,
-		}
-	}
-	if er != nil {
-		fmt.Println(er.Error())
-		return &responses.ResponseData{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Unable to find indexes!",
-			Data:       false,
-		}
-	}
-
-	roomData := make(map[int32]map[string]interface{})
-	for _, record := range rs {
-		roomDetails, err := is.query.GetRoomByID(context.Background(), *record.RoomID)
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       nil,
-			}
-		}
-
-		if _, exists := roomData[*record.RoomID]; !exists {
-			roomData[*record.RoomID] = map[string]interface{}{
-				"room_id":    record.RoomID,
-				"address":    strings.Join(roomDetails.Address, ", "),
-				"index_info": []map[string]interface{}{},
-			}
-		}
-
-		if mType == "water" {
+		// Process the found records
+		for _, record := range rs {
 			indexInfo := map[string]interface{}{
-				"room_number": roomDetails.RoomNumber,
-				"old_index":   record.PrevWater.(float64),
-				"new_index":   record.CurrWater,
-				"used":        *record.CurrWater - record.PrevWater.(float64),
+				"room_id":     room.ID,
+				"room_number": room.RoomNumber,
 			}
-			roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
-		} else {
-			indexInfo := map[string]interface{}{
-				"room_number": roomDetails.RoomNumber,
-				"old_index":   record.PrevElectricity.(float64),
-				"new_index":   record.CurrElectricity,
-				"used":        *record.CurrElectricity - record.PrevElectricity.(float64),
+			if mType == "water" {
+				indexInfo["old_index"] = record.PrevWater
+				indexInfo["new_index"] = record.CurrWater
+				if record.CurrWater != nil && record.PrevWater != nil {
+					indexInfo["used"] = *record.CurrWater - record.PrevWater.(float64)
+				} else {
+					indexInfo["used"] = nil
+				}
+			} else {
+				indexInfo["old_index"] = record.PrevElectricity
+				indexInfo["new_index"] = record.CurrElectricity
+				if record.CurrElectricity != nil && record.PrevElectricity != nil {
+					indexInfo["used"] = *record.CurrElectricity - record.PrevElectricity.(float64)
+				} else {
+					indexInfo["used"] = nil
+				}
 			}
-			roomData[*record.RoomID]["index_info"] = append(roomData[*record.RoomID]["index_info"].([]map[string]interface{}), indexInfo)
+			groupedResults[address] = append(groupedResults[address], indexInfo)
 		}
 	}
 
+	// Convert grouped results to the desired format
 	var result []map[string]interface{}
-	for _, data := range roomData {
-		result = append(result, data)
+	for address, indexInfos := range groupedResults {
+		result = append(result, map[string]interface{}{
+			"address":    address,
+			"index_info": indexInfos,
+		})
 	}
 
 	return &responses.ResponseData{

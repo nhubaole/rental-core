@@ -9,49 +9,45 @@ import (
 	"context"
 )
 
-const getIndexById = `-- name: GetIndexById :one
-SELECT id, water_index, electricity_index, room_id, month, year 
-FROM PUBLIC.INDEX
-WHERE id = $1
-`
-
-func (q *Queries) GetIndexById(ctx context.Context, id int32) (Index, error) {
-	row := q.db.QueryRow(ctx, getIndexById, id)
-	var i Index
-	err := row.Scan(
-		&i.ID,
-		&i.WaterIndex,
-		&i.ElectricityIndex,
-		&i.RoomID,
-		&i.Month,
-		&i.Year,
-	)
-	return i, err
-}
-
-const getIndexByOwnerId = `-- name: GetIndexByOwnerId :many
-SELECT ro.id as room_id, t.id, t.prev_month, t.curr_month, t.prev_water, t.curr_water,t.prev_electricity,t.curr_electricity, t.year
+const getAllIndex = `-- name: GetAllIndex :many
+SELECT 
+    ro.id AS room_id, 
+    t.id, 
+    t.prev_month, 
+    t.curr_month, 
+    t.prev_water, 
+    t.curr_water, 
+    t.prev_electricity, 
+    t.curr_electricity, 
+    t.year
 FROM (
-	SELECT id , LAG(i.month) OVER(ORDER BY month) AS prev_month , month as curr_month,
-	LAG(i.water_index) OVER(ORDER BY month) as prev_water , water_index as curr_water, 
-	LAG(i.electricity_index) OVER(ORDER BY month) as prev_electricity , electricity_index as curr_electricity, 
-	room_id, year
-	FROM public.index as i
+    SELECT 
+        id, 
+        LAG(i.month) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_month, 
+        i.month AS curr_month,
+        LAG(i.water_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_water, 
+        i.water_index AS curr_water, 
+        LAG(i.electricity_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_electricity, 
+        i.electricity_index AS curr_electricity, 
+        i.room_id, 
+        i.year
+    FROM public.index AS i
 ) AS t
-LEFT JOIN PUBLIC.ROOMS AS ro ON t.room_id = ro.id
-LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE  ro.owner = $1
-AND idx.month = $2
-AND idx.year = $3
+LEFT JOIN public.rooms AS ro ON t.room_id = ro.id
+LEFT JOIN public.index AS idx ON t.id = idx.id
+WHERE ro.id = $1
+  AND idx.month = $2
+  AND idx.year = $3
+ORDER BY t.year, t.curr_month
 `
 
-type GetIndexByOwnerIdParams struct {
-	Owner int32 `json:"owner"`
+type GetAllIndexParams struct {
+	ID    int32 `json:"id"`
 	Month int32 `json:"month"`
 	Year  int32 `json:"year"`
 }
 
-type GetIndexByOwnerIdRow struct {
+type GetAllIndexRow struct {
 	RoomID          *int32      `json:"room_id"`
 	ID              int32       `json:"id"`
 	PrevMonth       interface{} `json:"prev_month"`
@@ -63,15 +59,15 @@ type GetIndexByOwnerIdRow struct {
 	Year            int32       `json:"year"`
 }
 
-func (q *Queries) GetIndexByOwnerId(ctx context.Context, arg GetIndexByOwnerIdParams) ([]GetIndexByOwnerIdRow, error) {
-	rows, err := q.db.Query(ctx, getIndexByOwnerId, arg.Owner, arg.Month, arg.Year)
+func (q *Queries) GetAllIndex(ctx context.Context, arg GetAllIndexParams) ([]GetAllIndexRow, error) {
+	rows, err := q.db.Query(ctx, getAllIndex, arg.ID, arg.Month, arg.Year)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetIndexByOwnerIdRow
+	var items []GetAllIndexRow
 	for rows.Next() {
-		var i GetIndexByOwnerIdRow
+		var i GetAllIndexRow
 		if err := rows.Scan(
 			&i.RoomID,
 			&i.ID,
@@ -91,6 +87,26 @@ func (q *Queries) GetIndexByOwnerId(ctx context.Context, arg GetIndexByOwnerIdPa
 		return nil, err
 	}
 	return items, nil
+}
+
+const getIndexById = `-- name: GetIndexById :one
+SELECT id, water_index, electricity_index, room_id, month, year 
+FROM PUBLIC.INDEX
+WHERE id = $1
+`
+
+func (q *Queries) GetIndexById(ctx context.Context, id int32) (Index, error) {
+	row := q.db.QueryRow(ctx, getIndexById, id)
+	var i Index
+	err := row.Scan(
+		&i.ID,
+		&i.WaterIndex,
+		&i.ElectricityIndex,
+		&i.RoomID,
+		&i.Month,
+		&i.Year,
+	)
+	return i, err
 }
 
 const getIndexByOwnerIdShort = `-- name: GetIndexByOwnerIdShort :many

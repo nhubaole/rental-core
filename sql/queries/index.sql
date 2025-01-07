@@ -26,20 +26,36 @@ SELECT *
 FROM PUBLIC.INDEX
 WHERE room_id = $1;
 
--- name: GetIndexByOwnerId :many
-SELECT ro.id as room_id, t.id, t.prev_month, t.curr_month, t.prev_water, t.curr_water,t.prev_electricity,t.curr_electricity, t.year
+-- name: GetAllIndex :many
+SELECT 
+    ro.id AS room_id, 
+    t.id, 
+    t.prev_month, 
+    t.curr_month, 
+    t.prev_water, 
+    t.curr_water, 
+    t.prev_electricity, 
+    t.curr_electricity, 
+    t.year
 FROM (
-	SELECT id , LAG(i.month) OVER(ORDER BY month) AS prev_month , month as curr_month,
-	LAG(i.water_index) OVER(ORDER BY month) as prev_water , water_index as curr_water, 
-	LAG(i.electricity_index) OVER(ORDER BY month) as prev_electricity , electricity_index as curr_electricity, 
-	room_id, year
-	FROM public.index as i
+    SELECT 
+        id, 
+        LAG(i.month) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_month, 
+        i.month AS curr_month,
+        LAG(i.water_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_water, 
+        i.water_index AS curr_water, 
+        LAG(i.electricity_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_electricity, 
+        i.electricity_index AS curr_electricity, 
+        i.room_id, 
+        i.year
+    FROM public.index AS i
 ) AS t
-LEFT JOIN PUBLIC.ROOMS AS ro ON t.room_id = ro.id
-LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE  ro.owner = $1
-AND idx.month = $2
-AND idx.year = $3;
+LEFT JOIN public.rooms AS ro ON t.room_id = ro.id
+LEFT JOIN public.index AS idx ON t.id = idx.id
+WHERE ro.id = $1
+  AND idx.month = $2
+  AND idx.year = $3
+ORDER BY t.year, t.curr_month;
 
 -- name: GetIndexByOwnerIdShort :many
 SELECT idx.id, idx.room_id, idx.water_index, idx.electricity_index, idx.month, idx.year
