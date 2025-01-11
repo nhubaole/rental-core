@@ -179,38 +179,32 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (RentalRequest, 
 }
 
 const getRequestByOwnerID = `-- name: GetRequestByOwnerID :many
-SELECT     
-    RR.id,
-    RR.code,
-    RR.sender_id,
-    RR.room_id,
-    RR.suggested_price,
-    RR.num_of_person,
-    RR.begin_date,
-    RR.end_date,
-    RR.addition_request,
-    RR.status,
-    RR.created_at,
-    RR.updated_at
-FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS r
-	on RR.room_id = r.id
-WHERE r.owner = $1 
-	and RR.deleted_at is NULL
+SELECT 
+    r.id AS room_id,
+    COUNT(RR.id) AS request_count,
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id', RR.id,
+            'avatar', u.avatar_url,
+            'name', u.full_name,
+            'status', RR.status,
+            'created_at', RR.created_at
+        )
+    )::text AS request_info
+FROM PUBLIC.RENTAL_REQUESTS RR
+LEFT JOIN PUBLIC.ROOMS r
+    ON RR.room_id = r.id
+LEFT JOIN PUBLIC.USERS u
+    ON RR.sender_id = u.id
+WHERE r.owner = $1
+    AND RR.deleted_at IS NULL
+GROUP BY r.id
 `
 
 type GetRequestByOwnerIDRow struct {
-	ID              int32              `json:"id"`
-	Code            string             `json:"code"`
-	SenderID        int32              `json:"sender_id"`
-	RoomID          int32              `json:"room_id"`
-	SuggestedPrice  *float64           `json:"suggested_price"`
-	NumOfPerson     *int32             `json:"num_of_person"`
-	BeginDate       pgtype.Timestamptz `json:"begin_date"`
-	EndDate         pgtype.Timestamptz `json:"end_date"`
-	AdditionRequest *string            `json:"addition_request"`
-	Status          int32              `json:"status"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	RoomID       *int32 `json:"room_id"`
+	RequestCount int64  `json:"request_count"`
+	RequestInfo  string `json:"request_info"`
 }
 
 func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) ([]GetRequestByOwnerIDRow, error) {
@@ -222,20 +216,7 @@ func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) ([]GetRe
 	var items []GetRequestByOwnerIDRow
 	for rows.Next() {
 		var i GetRequestByOwnerIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.SenderID,
-			&i.RoomID,
-			&i.SuggestedPrice,
-			&i.NumOfPerson,
-			&i.BeginDate,
-			&i.EndDate,
-			&i.AdditionRequest,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		if err := rows.Scan(&i.RoomID, &i.RequestCount, &i.RequestInfo); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -315,36 +296,31 @@ func (q *Queries) GetRequestByRoomID(ctx context.Context, roomID int32) ([]GetRe
 
 const getRequestBySenderID = `-- name: GetRequestBySenderID :many
 SELECT 
-    RR.id,
-    RR.code,
-    RR.sender_id,
-    RR.room_id,
-    RR.suggested_price,
-    RR.num_of_person,
-    RR.begin_date,
-    RR.end_date,
-    RR.addition_request,
-    RR.status,
-    RR.created_at,
-    RR.updated_at
-FROM PUBLIC.RENTAL_REQUESTS  RR
-WHERE sender_id = $1
-    AND RR.deleted_at is NULL
+    r.id AS room_id,
+    COUNT(RR.id) AS request_count,
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id', RR.id,
+            'avatar', u.avatar_url,
+            'name', u.full_name,
+            'status', RR.status,
+            'created_at', RR.created_at
+        )
+    )::text AS request_info
+FROM PUBLIC.RENTAL_REQUESTS RR
+LEFT JOIN PUBLIC.ROOMS r
+    ON RR.room_id = r.id
+LEFT JOIN PUBLIC.USERS u
+    ON RR.sender_id = u.id
+WHERE RR.sender_id = $1
+    AND RR.deleted_at IS NULL
+GROUP BY r.id
 `
 
 type GetRequestBySenderIDRow struct {
-	ID              int32              `json:"id"`
-	Code            string             `json:"code"`
-	SenderID        int32              `json:"sender_id"`
-	RoomID          int32              `json:"room_id"`
-	SuggestedPrice  *float64           `json:"suggested_price"`
-	NumOfPerson     *int32             `json:"num_of_person"`
-	BeginDate       pgtype.Timestamptz `json:"begin_date"`
-	EndDate         pgtype.Timestamptz `json:"end_date"`
-	AdditionRequest *string            `json:"addition_request"`
-	Status          int32              `json:"status"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	RoomID       *int32 `json:"room_id"`
+	RequestCount int64  `json:"request_count"`
+	RequestInfo  string `json:"request_info"`
 }
 
 func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) ([]GetRequestBySenderIDRow, error) {
@@ -356,20 +332,7 @@ func (q *Queries) GetRequestBySenderID(ctx context.Context, senderID int32) ([]G
 	var items []GetRequestBySenderIDRow
 	for rows.Next() {
 		var i GetRequestBySenderIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Code,
-			&i.SenderID,
-			&i.RoomID,
-			&i.SuggestedPrice,
-			&i.NumOfPerson,
-			&i.BeginDate,
-			&i.EndDate,
-			&i.AdditionRequest,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		if err := rows.Scan(&i.RoomID, &i.RequestCount, &i.RequestInfo); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

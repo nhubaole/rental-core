@@ -73,7 +73,7 @@ func NewRouter(
 	billingRouter.GET("/get-by-month/:year/:month", middlewares.AuthenMiddleware, bc.GetBillByMonth)
 	billingRouter.GET("/:id", middlewares.AuthenMiddleware, bc.GetBillByID)
 	billingRouter.POST("/get-metrics", bc.GetBillMetric)
-	billingRouter.GET("/status/:statusID", bc.GetBillByStatusID)
+	billingRouter.GET("/status/:statusID", middlewares.AuthenMiddleware, bc.GetBillByStatusID)
 	billingRouter.GET("/get-bill-of-rented-rooms", middlewares.AuthenMiddleware, bc.GetBillOfRentedRoomByOwnerID)
 
 	contractRouter := baseRouter.Group("/contracts")

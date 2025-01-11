@@ -120,6 +120,8 @@ SELECT
     r.description, 
     r.room_type, 
     r.available_from,
+    r.gender,
+    r.capacity,
     r.owner, 
     r.area, 
     r.total_price, 
@@ -142,10 +144,15 @@ GROUP BY
     r.utilities, 
     r.description, 
     r.room_type, 
+    r.available_from,
+    r.gender,
+    r.capacity,
     r.owner, 
     r.area, 
     r.total_price, 
-    r.status;;  
+    r.status
+ORDER BY 
+    r.created_at DESC;
 
 
 -- name: LikeRoom :exec

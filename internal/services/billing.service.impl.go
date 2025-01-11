@@ -28,15 +28,26 @@ func NewBillingServiceImpl(blockchain BlockchainService, notification Notificati
 
 func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateBill) *responses.ResponseData {
 	param := dataaccess.GetAllMetric4BillByRoomIDParams{
-		RoomID: req.RoomID,
-		Month:  req.Month,
-		Year:   req.Year,
+		ID:    req.RoomID,
+		Month: req.Month,
+		Year:  req.Year,
 	}
 	metric, err := service.query.GetAllMetric4BillByRoomID(context.Background(), param)
 	if err != nil {
 		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
+			StatusCode: http.StatusBadRequest,
+			Message:    "Bạn cần ghi chỉ số điện nước trước khi tạo hoá đơn",
+			Data:       false,
+		}
+	}
+
+	if metric.PrevWater == nil ||
+		metric.PrevElectricity == nil ||
+		metric.CurrWater == nil ||
+		metric.CurrElectricity == nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Bạn cần ghi chỉ số điện nước trước khi tạo hoá đơn",
 			Data:       false,
 		}
 	}
@@ -295,7 +306,7 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 		}
 	}
 
-	contracts, err := service.query.ListContractByRoomId(context.Background(), &req.RoomID)
+	contracts, err := service.query.ListContractByRoomId(context.Background(), &req.ID)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -321,7 +332,7 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 		}
 	}
 
-	roomInfo, err := service.query.GetRoomByID(context.Background(), req.RoomID)
+	roomInfo, err := service.query.GetRoomByID(context.Background(), req.ID)
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -376,29 +387,43 @@ func (service *BillingServiceImpl) GetBillMetrics(req dataaccess.GetAllMetric4Bi
 }
 
 // GetBillByStatus implements BillingService.
-func (service *BillingServiceImpl) GetBillByStatus(statusID int32) *responses.ResponseData {
+func (service *BillingServiceImpl) GetBillByStatus(userID int32, statusID int32) *responses.ResponseData {
 	bills, err := service.query.GetBillByStatus(context.Background(), &statusID)
 
 	if err != nil {
-		if len(bills) == 0 {
-			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
-				Message:    responses.StatusNoData,
-				Data:       nil,
-			}
-		}
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
 			Message:    err.Error(),
 			Data:       nil,
 		}
 	}
+	if len(bills) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusNoData,
+			Data:       nil,
+		}
+	}
+
+	filteredBills := make([]interface{}, 0)
+	for _, bill := range bills {
+		contract, err := service.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
+		if err != nil {
+			continue
+		}
+
+		if contract.Tenant == int64(userID) || contract.Landlord == int64(userID) {
+			filteredBills = append(filteredBills, bill)
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       bills,
+		Data:       filteredBills,
 	}
 }
+
 
 // GetBillOfRentedRoomByOwnerID implements BillingService.
 func (service *BillingServiceImpl) GetBillOfRentedRoomByOwnerID(currentUser int) *responses.ResponseData {

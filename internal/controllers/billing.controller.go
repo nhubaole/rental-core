@@ -71,6 +71,13 @@ func (controller BillingController) GetBillMetric(ctx *gin.Context) {
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 func (controller BillingController) GetBillByStatusID(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+
 	id, err := strconv.Atoi(ctx.Param("statusID"))
 	if (id < 0 && id > 2) {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Status must be between 0 and 2", nil)
@@ -80,7 +87,8 @@ func (controller BillingController) GetBillByStatusID(ctx *gin.Context) {
 		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request", nil)
 		return
 	}
-	result := controller.service.GetBillByStatus(int32(id))
+
+	result := controller.service.GetBillByStatus(user.ID, int32(id))
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 

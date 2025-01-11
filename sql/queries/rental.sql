@@ -37,40 +37,48 @@ WHERE id = $1 and deleted_at is null;
 
 -- name: GetRequestBySenderID :many
 SELECT 
-    RR.id,
-    RR.code,
-    RR.sender_id,
-    RR.room_id,
-    RR.suggested_price,
-    RR.num_of_person,
-    RR.begin_date,
-    RR.end_date,
-    RR.addition_request,
-    RR.status,
-    RR.created_at,
-    RR.updated_at
-FROM PUBLIC.RENTAL_REQUESTS  RR
-WHERE sender_id = $1
-    AND RR.deleted_at is NULL;
+    r.id AS room_id,
+    COUNT(RR.id) AS request_count,
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id', RR.id,
+            'avatar', u.avatar_url,
+            'name', u.full_name,
+            'status', RR.status,
+            'created_at', RR.created_at
+        )
+    )::text AS request_info
+FROM PUBLIC.RENTAL_REQUESTS RR
+LEFT JOIN PUBLIC.ROOMS r
+    ON RR.room_id = r.id
+LEFT JOIN PUBLIC.USERS u
+    ON RR.sender_id = u.id
+WHERE RR.sender_id = $1
+    AND RR.deleted_at IS NULL
+GROUP BY r.id;
 
 -- name: GetRequestByOwnerID :many
-SELECT     
-    RR.id,
-    RR.code,
-    RR.sender_id,
-    RR.room_id,
-    RR.suggested_price,
-    RR.num_of_person,
-    RR.begin_date,
-    RR.end_date,
-    RR.addition_request,
-    RR.status,
-    RR.created_at,
-    RR.updated_at
-FROM PUBLIC.RENTAL_REQUESTS  RR left join PUBLIC.ROOMS r
-	on RR.room_id = r.id
-WHERE r.owner = $1 
-	and RR.deleted_at is NULL ;
+SELECT 
+    r.id AS room_id,
+    COUNT(RR.id) AS request_count,
+    JSON_AGG(
+        JSON_BUILD_OBJECT(
+            'id', RR.id,
+            'avatar', u.avatar_url,
+            'name', u.full_name,
+            'status', RR.status,
+            'created_at', RR.created_at
+        )
+    )::text AS request_info
+FROM PUBLIC.RENTAL_REQUESTS RR
+LEFT JOIN PUBLIC.ROOMS r
+    ON RR.room_id = r.id
+LEFT JOIN PUBLIC.USERS u
+    ON RR.sender_id = u.id
+WHERE r.owner = $1
+    AND RR.deleted_at IS NULL
+GROUP BY r.id;
+
 
 -- name: UpdateRequestStatusById :exec
 update PUBLIC.RENTAL_REQUESTS

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"smart-rental/global"
@@ -149,7 +150,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 		fmt.Println("ERROR Create process tracking failed!!")
 
 		// ignore error because it's already an error
-		rentalService.repo.DeleteRequest(context.Background(), res.ID)
+		// rentalService.repo.DeleteRequest(context.Background(), res.ID)
 
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -160,7 +161,7 @@ func (rentalService *RentalRequestServiceImpl) CreateRentalRequest(body *request
 
 	id := int(res.ID)
 	rentalService.notificationService.SendNotification(int(rs.Owner), "Bạn có một yêu cầu thuê phòng mới", &id, "rental_request")
-	
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
@@ -274,9 +275,11 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 			Data:       "nothing",
 		}
 	}
-	var result []responses.GetRentalRequestByIDRes
-	if user.Role == 1 {
 
+	var result []map[string]interface{}
+
+	if user.Role == 1 {
+		// Role = 1: Owner
 		requests, err := rentalService.repo.GetRequestByOwnerID(context.Background(), int32(userID))
 		if err != nil {
 			fmt.Println(err.Error())
@@ -287,8 +290,19 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 			}
 		}
 
-		for _, v := range requests {
-			room, err := rentalService.repo.GetRoomByID(context.Background(), v.RoomID)
+		for _, req := range requests {
+			// Decode request_info JSON
+			var requestInfo []map[string]interface{}
+			if err := json.Unmarshal([]byte(req.RequestInfo), &requestInfo); err != nil {
+				fmt.Println("Error decoding request_info:", err)
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    "Failed to decode request info",
+					Data:       nil,
+				}
+			}
+
+			room, err := rentalService.repo.GetRoomByID(context.Background(), *req.RoomID)
 			if err != nil {
 				return &responses.ResponseData{
 					StatusCode: http.StatusInternalServerError,
@@ -296,33 +310,21 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 					Data:       nil,
 				}
 			}
-			sender, err := rentalService.repo.GetUserByID(context.Background(), v.SenderID)
-			if err != nil {
-				return &responses.ResponseData{
-					StatusCode: http.StatusInternalServerError,
-					Message:    err.Error(),
-					Data:       "nothing",
-				}
-			}
-			req := responses.GetRentalRequestByIDRes{
-				ID:              v.ID,
-				Code:            v.Code,
-				Sender:          sender,
-				Room:            room,
-				SuggestedPrice:  v.SuggestedPrice,
-				NumOfPerson:     v.NumOfPerson,
-				BeginDate:       v.BeginDate,
-				EndDate:         v.EndDate,
-				AdditionRequest: v.AdditionRequest,
-				Status:          v.Status,
-				CreatedAt:       v.CreatedAt,
-				UpdatedAt:       v.UpdatedAt,
-			}
 
-			result = append(result, req)
-
+			// Build response for each room
+			result = append(result, map[string]interface{}{
+				"room": map[string]interface{}{
+					"id":      room.ID,
+					"title":   room.Title,
+					"price":   room.TotalPrice,
+					"address": room.Address,
+				},
+				"request_count": req.RequestCount,
+				"request_info":  requestInfo,
+			})
 		}
 	} else if user.Role == 0 {
+		// Role = 0: Sender
 		requests, err := rentalService.repo.GetRequestBySenderID(context.Background(), int32(userID))
 		if err != nil {
 			fmt.Println(err.Error())
@@ -333,8 +335,19 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 			}
 		}
 
-		for _, v := range requests {
-			room, err := rentalService.repo.GetRoomByID(context.Background(), v.RoomID)
+		for _, req := range requests {
+			// Decode request_info JSON
+			var requestInfo []map[string]interface{}
+			if err := json.Unmarshal([]byte(req.RequestInfo), &requestInfo); err != nil {
+				fmt.Println("Error decoding request_info:", err)
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    "Failed to decode request info",
+					Data:       nil,
+				}
+			}
+
+			room, err := rentalService.repo.GetRoomByID(context.Background(), *req.RoomID)
 			if err != nil {
 				return &responses.ResponseData{
 					StatusCode: http.StatusInternalServerError,
@@ -342,48 +355,42 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 					Data:       nil,
 				}
 			}
-			sender, err := rentalService.repo.GetUserByID(context.Background(), v.SenderID)
-			if err != nil {
-				return &responses.ResponseData{
-					StatusCode: http.StatusInternalServerError,
-					Message:    err.Error(),
-					Data:       "nothing",
-				}
-			}
-			req := responses.GetRentalRequestByIDRes{
-				ID:              v.ID,
-				Code:            v.Code,
-				Sender:          sender,
-				Room:            room,
-				SuggestedPrice:  v.SuggestedPrice,
-				NumOfPerson:     v.NumOfPerson,
-				BeginDate:       v.BeginDate,
-				EndDate:         v.EndDate,
-				AdditionRequest: v.AdditionRequest,
-				Status:          v.Status,
-				CreatedAt:       v.CreatedAt,
-				UpdatedAt:       v.UpdatedAt,
-			}
 
-			result = append(result, req)
-
+			// Build response for each room
+			result = append(result, map[string]interface{}{
+				"room": map[string]interface{}{
+					"id":      room.ID,
+					"title":   room.Title,
+					"price":   room.TotalPrice,
+					"address": room.Address,
+				},
+				"request_count": req.RequestCount,
+				"request_info":  requestInfo,
+			})
 		}
 	}
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    "Success",
-		Data: map[string]interface{}{
-			"count":    len(result),
-			"requests": result,
-		},
+		Data: result,
 	}
-
 }
 
 func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string, reqId int32, userid int32) *responses.ResponseData {
+	request, err := rentalService.repo.GetRequestByID(context.Background(), reqId)
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
 	var status int
 	var trackingParam dataaccess.CreateProcessTrackingParams
+	id := int(reqId)
+
 	if result == "approve" {
 		status = 2
 		trackingParam = dataaccess.CreateProcessTrackingParams{
@@ -391,12 +398,44 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 			Action:    "Chủ nhà đã chấp nhận yêu cầu thuê phòng",
 			RequestID: reqId,
 		}
+
+		rentalService.notificationService.SendNotification(int(request.SenderID), "Chủ nhà đã chấp nhận yêu cầu thuê phòng của bạn", &id, "rental_request")
 	} else if result == "decline" {
-		status = 3
-		trackingParam = dataaccess.CreateProcessTrackingParams{
-			Actor:     userid,
-			Action:    "Chủ nhà đã từ chối yêu cầu thuê phòng",
-			RequestID: reqId,
+		actor, err := rentalService.repo.GetUserByID(context.Background(), userid)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		if actor.Role == 1 {
+			status = 3
+			trackingParam = dataaccess.CreateProcessTrackingParams{
+				Actor:     userid,
+				Action:    "Chủ nhà đã từ chối yêu cầu thuê phòng",
+				RequestID: reqId,
+			}
+
+			rentalService.notificationService.SendNotification(int(request.SenderID), "Chủ nhà đã từ chối yêu cầu thuê phòng của bạn", &id, "rental_request")
+		} else {
+			status = 4
+			trackingParam = dataaccess.CreateProcessTrackingParams{
+				Actor:     userid,
+				Action:    "Người thuê đã huỷ yêu cầu thuê phòng",
+				RequestID: reqId,
+			}
+			roomDetail, err := rentalService.repo.GetRoomByID(context.Background(), request.RoomID)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+
+			rentalService.notificationService.SendNotification(int(roomDetail.Owner), "Người thuê đã huỷ yêu cầu thuê phòng", &id, "rental_request")
 		}
 	}
 
@@ -405,7 +444,7 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 		ID:     reqId,
 	}
 
-	err := rentalService.repo.UpdateRequestStatusById(context.Background(), param)
+	err = rentalService.repo.UpdateRequestStatusById(context.Background(), param)
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -415,12 +454,10 @@ func (rentalService *RentalRequestServiceImpl) ReviewRentalRequest(result string
 		}
 	}
 
-
 	_, er := rentalService.repo.CreateProcessTracking(context.Background(), trackingParam)
 	if er != nil {
-		fmt.Println("ERROR Create process tracking failed!!")
-
-		rentalService.repo.DeleteRequest(context.Background(), reqId)
+		// fmt.Println("ERROR Create process tracking failed!!")
+		// rentalService.repo.DeleteRequest(context.Background(), reqId)
 
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,

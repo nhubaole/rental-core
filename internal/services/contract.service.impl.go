@@ -167,12 +167,22 @@ func (c *ContractServiceImpl) CreateContract(req requests.CreateContractRequest,
 	}
 
 	id := int(contractId)
+
 	c.notificationService.SendNotification(int(req.PartyB), "Hợp đồng thuê trọ của bạn đã được chủ nhà tạo", &id, "contract")
+
+	trackingParam := dataaccess.CreateProcessTrackingParams{
+		Actor:     int32(userID),
+		Action:    "Chủ nhà đã tạo hợp đồng thuê trọ",
+		RequestID: req.RequestID,
+	}
+	_, er := c.repo.CreateProcessTracking(context.Background(), trackingParam)
+	if er != nil {
+	}
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
-		Data:       true,
+		Data:       contractId,
 	}
 }
 
@@ -233,7 +243,20 @@ func (c *ContractServiceImpl) GetContractByID(id int) *responses.ResponseData {
 		signatureB, _ = common.DecryptBase64AES(*contractDB.SignatureB, global.Config.JWT.AESKey)
 	}
 
+	var status int
+	switch contract.PreRentalStatus {
+	case 0, 1:
+		status = 0
+	case 2:
+		status = 1
+	case 3:
+		status = 2
+	default:
+		status = -1
+	}
+
 	responseData := map[string]interface{}{
+		"status":          status,
 		"date_created":    contract.CreatedAt,
 		"address_created": "Thành phố Hồ Chí Minh",
 		"party_a": map[string]string{
@@ -299,7 +322,6 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 			Data:       nil,
 		}
 	}
-	
 
 	if err != nil {
 		return &responses.ResponseData{
@@ -451,6 +473,8 @@ func (c *ContractServiceImpl) DeclineContract(id int, userID int) *responses.Res
 			Data:       false,
 		}
 	}
+
+	c.notificationService.SendNotification(int(contract.Landlord), "Người thuê đã từ chối ký hợp đồng thuê trọ", &id, "contract")
 
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,

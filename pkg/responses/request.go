@@ -54,6 +54,7 @@ type GetReturnRequestByIDRes struct {
 	ID                 int32                     `json:"id"`
 	Reason             *string                   `json:"reason"`
 	ContractID         *int32                    `json:"contract_id"`
+	ContractCode       string                    `json:"contract_code"`
 	Room               dataaccess.GetRoomByIDRow `json:"room"`
 	ReturnDate         pgtype.Timestamp          `json:"return_date"`
 	Status             *int32                    `json:"status"`

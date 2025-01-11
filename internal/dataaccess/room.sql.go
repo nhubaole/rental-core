@@ -531,6 +531,8 @@ SELECT
     r.description, 
     r.room_type, 
     r.available_from,
+    r.gender,
+    r.capacity,
     r.owner, 
     r.area, 
     r.total_price, 
@@ -553,10 +555,15 @@ GROUP BY
     r.utilities, 
     r.description, 
     r.room_type, 
+    r.available_from,
+    r.gender,
+    r.capacity,
     r.owner, 
     r.area, 
     r.total_price, 
     r.status
+ORDER BY 
+    r.created_at DESC
 `
 
 type SearchRoomByAddressRow struct {
@@ -569,6 +576,8 @@ type SearchRoomByAddressRow struct {
 	Description   string             `json:"description"`
 	RoomType      *string            `json:"room_type"`
 	AvailableFrom pgtype.Timestamptz `json:"available_from"`
+	Gender        *int32             `json:"gender"`
+	Capacity      int32              `json:"capacity"`
 	Owner         int32              `json:"owner"`
 	Area          float64            `json:"area"`
 	TotalPrice    *float64           `json:"total_price"`
@@ -596,6 +605,8 @@ func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]
 			&i.Description,
 			&i.RoomType,
 			&i.AvailableFrom,
+			&i.Gender,
+			&i.Capacity,
 			&i.Owner,
 			&i.Area,
 			&i.TotalPrice,

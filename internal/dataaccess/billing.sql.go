@@ -74,35 +74,46 @@ func (q *Queries) CreateBill(ctx context.Context, arg CreateBillParams) (int32, 
 }
 
 const getAllMetric4BillByRoomID = `-- name: GetAllMetric4BillByRoomID :one
-SELECT t.room_id,
-       t.prev_month,
-       t.curr_month,
-       t.prev_water,
-       t.curr_water,
-       t.prev_electricity,
-       t.curr_electricity, 
-       t.year
+SELECT 
+    ro.id AS room_id, 
+    t.id, 
+    t.prev_month, 
+    t.curr_month, 
+    t.prev_water, 
+    t.curr_water, 
+    t.prev_electricity, 
+    t.curr_electricity, 
+    t.year
 FROM (
-	SELECT id , LAG(i.month) OVER(ORDER BY month, year) AS prev_month , month as curr_month,
-	LAG(i.water_index) OVER(ORDER BY month, year) as prev_water , water_index as curr_water, 
-	LAG(i.electricity_index) OVER(ORDER BY month,year) as prev_electricity, electricity_index as curr_electricity, 
-	room_id, year
-	FROM public.index as i
+    SELECT 
+        id, 
+        LAG(i.month) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_month, 
+        i.month AS curr_month,
+        LAG(i.water_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_water, 
+        i.water_index AS curr_water, 
+        LAG(i.electricity_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_electricity, 
+        i.electricity_index AS curr_electricity, 
+        i.room_id, 
+        i.year
+    FROM public.index AS i
 ) AS t
-LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE idx.room_id = $1
-AND idx.month = $2
-AND idx.year = $3
+LEFT JOIN public.rooms AS ro ON t.room_id = ro.id
+LEFT JOIN public.index AS idx ON t.id = idx.id
+WHERE ro.id = $1
+  AND idx.month = $2
+  AND idx.year = $3
+ORDER BY t.year, t.curr_month
 `
 
 type GetAllMetric4BillByRoomIDParams struct {
-	RoomID int32 `json:"room_id"`
-	Month  int32 `json:"month"`
-	Year   int32 `json:"year"`
+	ID    int32 `json:"id"`
+	Month int32 `json:"month"`
+	Year  int32 `json:"year"`
 }
 
 type GetAllMetric4BillByRoomIDRow struct {
-	RoomID          int32       `json:"room_id"`
+	RoomID          *int32      `json:"room_id"`
+	ID              int32       `json:"id"`
 	PrevMonth       interface{} `json:"prev_month"`
 	CurrMonth       int32       `json:"curr_month"`
 	PrevWater       interface{} `json:"prev_water"`
@@ -113,10 +124,11 @@ type GetAllMetric4BillByRoomIDRow struct {
 }
 
 func (q *Queries) GetAllMetric4BillByRoomID(ctx context.Context, arg GetAllMetric4BillByRoomIDParams) (GetAllMetric4BillByRoomIDRow, error) {
-	row := q.db.QueryRow(ctx, getAllMetric4BillByRoomID, arg.RoomID, arg.Month, arg.Year)
+	row := q.db.QueryRow(ctx, getAllMetric4BillByRoomID, arg.ID, arg.Month, arg.Year)
 	var i GetAllMetric4BillByRoomIDRow
 	err := row.Scan(
 		&i.RoomID,
+		&i.ID,
 		&i.PrevMonth,
 		&i.CurrMonth,
 		&i.PrevWater,

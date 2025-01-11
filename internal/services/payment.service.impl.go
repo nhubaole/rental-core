@@ -130,7 +130,7 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 		}
 	}
 
-	// user, _ := p.repo.GetUserByID(context.Background(), int32(userID))
+	user, _ := p.repo.GetUserByID(context.Background(), int32(userID))
 	if payment.ContractID != nil {
 		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*payment.ContractID))
 		if err != nil {
@@ -140,21 +140,21 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
-		// if contract.PreRentalStatus != 1 {
-		// 	return &responses.ResponseData{
-		// 		StatusCode: http.StatusInternalServerError,
-		// 		Message:    "Trạng thái hợp đồng không hợp lệ",
-		// 		Data:       false,
-		// 	}
-		// }
-		// _, err = p.blockchain.PayDepositOnChain(*user.PrivateKeyHex, int64(*payment.ContractID))
-		// if err != nil {
-		// 	return &responses.ResponseData{
-		// 		StatusCode: http.StatusInternalServerError,
-		// 		Message:    err.Error(),
-		// 		Data:       false,
-		// 	}
-		// }
+		if contract.PreRentalStatus != 1 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Trạng thái hợp đồng không hợp lệ",
+				Data:       false,
+			}
+		}
+		_, err = p.blockchain.PayDepositOnChain(*user.PrivateKeyHex, int64(*payment.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
 		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch đặt cọc của bạn đã được xác nhận. Chúc mừng bạn đã hoàn tất thuê phòng!", &id, "payment")
 	} else if payment.BillID != nil {
 		bill, err := p.repo.GetBillByID(context.Background(), *payment.BillID)

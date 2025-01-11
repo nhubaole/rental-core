@@ -111,16 +111,16 @@ func (r *ReturnRequestServiceImpl) Create(req requests.CreateReturnRequestParams
 	// 		Data:       false,
 	// 	}
 	// }
-	
+
 	deductAmount := calculateDeductAmount(req.ReturnDate, int(contract.Deposit))
 
-	params := dataaccess.CreateReturnRequestParams {
-		ContractID: req.ContractID,
-		Reason: req.Reason,
-		ReturnDate: req.ReturnDate,
+	params := dataaccess.CreateReturnRequestParams{
+		ContractID:         req.ContractID,
+		Reason:             req.Reason,
+		ReturnDate:         req.ReturnDate,
 		TotalReturnDeposit: common.IntToFloat64Ptr(int(contract.Deposit)),
-		DeductAmount: &deductAmount,
-		CreatedUser:  &id,
+		DeductAmount:       &deductAmount,
+		CreatedUser:        &id,
 	}
 
 	returnRequestId, err := r.repo.CreateReturnRequest(context.Background(), params)
@@ -171,6 +171,15 @@ func (r *ReturnRequestServiceImpl) GetByID(id int) *responses.ResponseData {
 		}
 	}
 
+	contract, err := r.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       "nothing",
+		}
+	}
+
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
@@ -179,6 +188,7 @@ func (r *ReturnRequestServiceImpl) GetByID(id int) *responses.ResponseData {
 			Reason:             returnRequest.Reason,
 			Room:               room,
 			ContractID:         returnRequest.ContractID,
+			ContractCode:       contract.Code,
 			CreatedUser:        sender,
 			ReturnDate:         returnRequest.ReturnDate,
 			Status:             returnRequest.Status,
@@ -296,7 +306,6 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		Data:       true,
 	}
 }
-
 
 func calculateDeductAmount(returnDate pgtype.Timestamp, deposit int) float64 {
 	// Kiểm tra nếu ReturnDate có giá trị

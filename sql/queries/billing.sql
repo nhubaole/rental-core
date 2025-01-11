@@ -68,25 +68,35 @@ WHERE deleted_at IS NULL
       AND id = $1;
 
 -- name: GetAllMetric4BillByRoomID :one
-SELECT t.room_id,
-       t.prev_month,
-       t.curr_month,
-       t.prev_water,
-       t.curr_water,
-       t.prev_electricity,
-       t.curr_electricity, 
-       t.year
+SELECT 
+    ro.id AS room_id, 
+    t.id, 
+    t.prev_month, 
+    t.curr_month, 
+    t.prev_water, 
+    t.curr_water, 
+    t.prev_electricity, 
+    t.curr_electricity, 
+    t.year
 FROM (
-	SELECT id , LAG(i.month) OVER(ORDER BY month, year) AS prev_month , month as curr_month,
-	LAG(i.water_index) OVER(ORDER BY month, year) as prev_water , water_index as curr_water, 
-	LAG(i.electricity_index) OVER(ORDER BY month,year) as prev_electricity, electricity_index as curr_electricity, 
-	room_id, year
-	FROM public.index as i
+    SELECT 
+        id, 
+        LAG(i.month) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_month, 
+        i.month AS curr_month,
+        LAG(i.water_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_water, 
+        i.water_index AS curr_water, 
+        LAG(i.electricity_index) OVER (PARTITION BY i.room_id ORDER BY i.year, i.month) AS prev_electricity, 
+        i.electricity_index AS curr_electricity, 
+        i.room_id, 
+        i.year
+    FROM public.index AS i
 ) AS t
-LEFT JOIN public.INDEX idx ON t.id = idx.id
-WHERE idx.room_id = $1
-AND idx.month = $2
-AND idx.year = $3;
+LEFT JOIN public.rooms AS ro ON t.room_id = ro.id
+LEFT JOIN public.index AS idx ON t.id = idx.id
+WHERE ro.id = $1
+  AND idx.month = $2
+  AND idx.year = $3
+ORDER BY t.year, t.curr_month;
 
 -- name: GetBillByStatus :many
 SELECT  b.id,

@@ -224,6 +224,7 @@ SELECT
     COALESCE(AVG(rr.overall_rating), 0) AS avg_rating, -- Trung bình rating
     jsonb_agg(
         jsonb_build_object(
+            'rater_id', u.id,
             'rater_name', u.full_name,
             'rater_avatar', u.avatar_url,
             'created_at', rr.created_at,
