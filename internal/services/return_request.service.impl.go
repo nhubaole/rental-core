@@ -55,7 +55,7 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 				Data:       nil,
 			}
 		}
-		var user responses.UserResponse
+		var user responses.GetUserByIDRes
 		common.MapStruct(sender, &user)
 
 		detailedRequest := responses.GetReturnRequestByLandlordIDRes{

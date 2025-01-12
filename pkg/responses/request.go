@@ -30,7 +30,7 @@ type GetReturnRequestByLandlordIDRes struct {
 	Status             *int32           `json:"status"`
 	DeductAmount       *float64         `json:"deduct_amount"`
 	TotalReturnDeposit *float64         `json:"total_return_deposit"`
-	CreatedUser        UserResponse     `json:"created_user"`
+	CreatedUser        GetUserByIDRes     `json:"created_user"`
 	CreatedAt          pgtype.Timestamp `json:"created_at"`
 	UpdatedAt          pgtype.Timestamp `json:"updated_at"`
 }
