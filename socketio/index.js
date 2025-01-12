@@ -31,26 +31,31 @@ loadConfig()
       }
       
       socket.on('sendMessage', async (message) => {
-        const { sender_id, receiver_id,conversation_id, content, type,rent_auto_content } = message;
-
+        const { sender_id, receiver_id, conversation_id, content, type, rent_auto_content } = message;
+      
         try {
+          const normalizedRentAutoContent = rent_auto_content || {};
+      
           const result = await query(
-            'INSERT INTO messages (sender_id,conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [sender_id, conversation_id,content, type, rent_auto_content]
+            'INSERT INTO messages (sender_id, conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5::jsonb) RETURNING *',
+            [sender_id, conversation_id, content, type, JSON.stringify(normalizedRentAutoContent)]
           );
-          const savedMessage = result.rows[0]; 
-          console.log(savedMessage)
+      
+          const savedMessage = result.rows[0];
+          console.log(savedMessage);
+      
           io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
           io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
+      
           await query(
             'UPDATE conversations SET last_message_id = $1 WHERE id = $2',
             [savedMessage.id, savedMessage.conversation_id]
-          )
+          );
         } catch (error) {
           console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
         }
       });
-
+      
       socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         delete connectedClients[socket.id];

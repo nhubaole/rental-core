@@ -23,10 +23,10 @@ WHERE deleted_at IS NULL
 
 -- name: ApproveReturnRequest :exec
 UPDATE public.return_requests
-SET status = 2,
+SET status = $1,
     updated_at= now()
 WHERE deleted_at IS NULL
-    AND id = $1;
+    AND id = $2;
 
 -- name: GetReturnRequestByLandlordID :many
 SELECT rr.id, rr.contract_id, r.id as room_id, rr.reason, rr.return_date, rr.status, rr.deduct_amount, rr.total_return_deposit, rr.created_user, rr.created_at, rr.updated_at

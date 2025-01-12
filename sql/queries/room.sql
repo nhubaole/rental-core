@@ -231,3 +231,13 @@ FROM PUBLIC.rooms r
 LEFT JOIN public.contracts c ON r.id = c.room_id
 WHERE c.id = $1;
 
+-- name: UpdateRoomStatus :one
+UPDATE 
+    PUBLIC.rooms
+SET 
+    is_rent = $2, 
+    updated_at = NOW() 
+WHERE 
+    id = $1 
+    AND deleted_at IS NULL
+RETURNING id;

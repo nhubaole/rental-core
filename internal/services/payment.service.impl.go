@@ -78,6 +78,7 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 
 	fmt.Printf("Contract ID: %d\n", contractId)
 
+	//TODO: replace hardcode
 	userId := int32(1)
 
 	userBankInfo, err := p.repo.GetBankInfoByUserID(context.Background(), userId)
@@ -205,6 +206,56 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       nil,
 			}
 		}
+
+		status := int32(2)
+		params := dataaccess.ApproveReturnRequestParams{
+			Status: &status,
+			ID:     returnRequest.ID,
+		}
+
+		updateErr := p.repo.ApproveReturnRequest(context.Background(), params)
+		if updateErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// get room by contract
+		room, roomErr := p.repo.GetRoomByContractID(context.Background(), *returnRequest.ContractID)
+		if roomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    roomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// set room available
+		updateRoomParam := dataaccess.UpdateRoomStatusParams{
+			ID:     room.RoomID,
+			IsRent: false,
+		}
+		_, updateRoomErr := p.repo.UpdateRoomStatus(context.Background(), updateRoomParam)
+		if updateRoomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateRoomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// inactive contract
+		_, err = p.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       false,
+			}
+		}
+
 		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
 		if err != nil {
 			return &responses.ResponseData{
@@ -213,21 +264,6 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
-		// if contract.PostRentalStatus != 1 {
-		// 	return &responses.ResponseData{
-		// 		StatusCode: http.StatusInternalServerError,
-		// 		Message:    "Trạng thái hợp đồng không hợp lệ",
-		// 		Data:       false,
-		// 	}
-		// }
-		// _, err = p.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
-		// if err != nil {
-		// 	return &responses.ResponseData{
-		// 		StatusCode: http.StatusInternalServerError,
-		// 		Message:    err.Error(),
-		// 		Data:       false,
-		// 	}
-		// }
 		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", &id, "payment")
 	}
 

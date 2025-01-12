@@ -124,12 +124,14 @@ func (b *BlockchainServiceImpl) CreateMContractOnChain(privateKeyHex string, req
 		return "", fmt.Errorf("failed to suggest gas price: %w", err)
 	}
 
+	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(2)) // adjustedGasPrice = gasPrice * 2
+
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
 		return "", fmt.Errorf("failed to create transactor: %w", err)
 	}
 	auth.GasLimit = 3000000
-	auth.GasPrice = gasPrice
+	auth.GasPrice = adjustedGasPrice
 
 	// owner := crypto.PubkeyToAddress(privateKey.PublicKey)
 	roomContract, err := gen.NewContractManagement(b.contractManagementAddress, b.client)

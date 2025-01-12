@@ -719,3 +719,27 @@ func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (int32, 
 	err := row.Scan(&id)
 	return id, err
 }
+
+const updateRoomStatus = `-- name: UpdateRoomStatus :one
+UPDATE 
+    PUBLIC.rooms
+SET 
+    is_rent = $2, 
+    updated_at = NOW() 
+WHERE 
+    id = $1 
+    AND deleted_at IS NULL
+RETURNING id
+`
+
+type UpdateRoomStatusParams struct {
+	ID     int32 `json:"id"`
+	IsRent bool  `json:"is_rent"`
+}
+
+func (q *Queries) UpdateRoomStatus(ctx context.Context, arg UpdateRoomStatusParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateRoomStatus, arg.ID, arg.IsRent)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}

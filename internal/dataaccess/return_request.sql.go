@@ -13,14 +13,19 @@ import (
 
 const approveReturnRequest = `-- name: ApproveReturnRequest :exec
 UPDATE public.return_requests
-SET status = 2,
+SET status = $1,
     updated_at= now()
 WHERE deleted_at IS NULL
-    AND id = $1
+    AND id = $2
 `
 
-func (q *Queries) ApproveReturnRequest(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, approveReturnRequest, id)
+type ApproveReturnRequestParams struct {
+	Status *int32 `json:"status"`
+	ID     int32  `json:"id"`
+}
+
+func (q *Queries) ApproveReturnRequest(ctx context.Context, arg ApproveReturnRequestParams) error {
+	_, err := q.db.Exec(ctx, approveReturnRequest, arg.Status, arg.ID)
 	return err
 }
 

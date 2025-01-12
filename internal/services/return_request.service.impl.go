@@ -212,24 +212,58 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-	if returnRequest.TotalReturnDeposit != nil && *returnRequest.TotalReturnDeposit == float64(0) {
-		contract, err := r.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       false,
-			}
-		}
-		if contract.PostRentalStatus != 1 {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    "Trạng thái hợp đồng không hợp lệ",
-				Data:       false,
-			}
-		}
+	if *returnRequest.TotalReturnDeposit - *returnRequest.DeductAmount == 0 {
 		user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
-		_, err = r.blockchain.ApproveReturnRequestOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
+
+		status := int32(2)
+		params := dataaccess.ApproveReturnRequestParams{
+			Status: &status,
+			ID:     returnRequest.ID,
+		}
+
+		updateErr := r.repo.ApproveReturnRequest(context.Background(), params)
+		if updateErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// get room by contract
+		room, roomErr := r.repo.GetRoomByContractID(context.Background(), *returnRequest.ContractID)
+		if roomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    roomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		if room.Owner != int32(userID) {
+			return &responses.ResponseData{
+				StatusCode: http.StatusForbidden,
+				Message:    "Bạn không có quyền thực hiện thao tác này",
+				Data:       false,
+			}
+		}
+
+		// set room available
+		updateRoomParam := dataaccess.UpdateRoomStatusParams{
+			ID:     room.RoomID,
+			IsRent: false,
+		}
+		_, updateRoomErr := r.repo.UpdateRoomStatus(context.Background(), updateRoomParam)
+		if updateRoomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateRoomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// inactive contract
+		_, err = r.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(*returnRequest.ContractID))
 		if err != nil {
 			return &responses.ResponseData{
 				StatusCode: http.StatusInternalServerError,
@@ -237,69 +271,23 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 				Data:       false,
 			}
 		}
-	}
+	} else {
+		status := int32(1)
+		params := dataaccess.ApproveReturnRequestParams{
+			Status: &status,
+			ID:     returnRequest.ID,
+		}
 
-	// update status = 2 in return request table
-	updateErr := r.repo.ApproveReturnRequest(context.Background(), returnRequest.ID)
-	if updateErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    updateErr.Error(),
-			Data:       false,
+		updateErr := r.repo.ApproveReturnRequest(context.Background(), params)
+		if updateErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateErr.Error(),
+				Data:       false,
+			}
 		}
 	}
 
-	// get room by contract
-	room, roomErr := r.repo.GetRoomByContractID(context.Background(), *returnRequest.ContractID)
-	if roomErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    roomErr.Error(),
-			Data:       false,
-		}
-	}
-
-	if room.Owner != int32(userID) {
-		return &responses.ResponseData{
-			StatusCode: http.StatusForbidden,
-			Message:    "Bạn không có quyền thực hiện thao tác này",
-			Data:       false,
-		}
-	}
-
-	// set room available
-	updateRoomParam := dataaccess.UpdateRoomParams{
-		ID:     room.RoomID,
-		IsRent: false,
-	}
-	_, updateRoomErr := r.repo.UpdateRoom(context.Background(), updateRoomParam)
-	if updateRoomErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    updateRoomErr.Error(),
-			Data:       false,
-		}
-	}
-
-	user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
-	_, err = r.blockchain.DeclineMContractOnChain(*user.PrivateKeyHex, int64(id))
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
-
-	// update tenants table
-	updateTenantErr := r.repo.DeleteTenantByRoomID(context.Background(), room.RoomID)
-	if updateTenantErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    updateTenantErr.Error(),
-			Data:       false,
-		}
-	}
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,

@@ -149,77 +149,86 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 }
 
 func (service *BillingServiceImpl) GetBillByMonth(userID int32, month int32, year int32) *responses.ResponseData {
-	param := dataaccess.GetBillByMonthParams{
-		Year:  year,
-		Month: month,
-		Owner: userID,
-	}
+    fmt.Println("Starting GetBillByMonth with parameters:", userID, month, year)
 
-	bills, err := service.query.GetBillByMonth(context.Background(), param)
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+    param := dataaccess.GetBillByMonthParams{
+        Year:  year,
+        Month: month,
+        Owner: userID,
+    }
 
-	result := make([]map[string]interface{}, 0)
+    bills, err := service.query.GetBillByMonth(context.Background(), param)
+    if err != nil {
+        fmt.Println("Error fetching bills:", err)
+        return &responses.ResponseData{
+            StatusCode: http.StatusBadRequest,
+            Message:    err.Error(),
+            Data:       false,
+        }
+    }
 
-	addressMap := make(map[string][]map[string]interface{})
-	for _, bill := range bills {
-		if bill.ContractID == nil {
-			continue
-		}
+    fmt.Println("Bills fetched:", bills)
 
-		contract, err := service.blockchain.GetMContractByIDOnChain(int64(*bill.ContractID))
-		if err != nil {
-			continue
-		}
+    result := make([]map[string]interface{}, 0)
+    addressMap := make(map[string][]map[string]interface{})
 
-		if contract.PreRentalStatus != 2 {
-			continue
-		}
+    for _, bill := range bills {
+        if bill.ContractID == nil {
+            continue
+        }
 
-		tenant, err := service.query.GetUserByID(context.Background(), int32(contract.Tenant))
-		if err != nil {
-			continue
-		}
+        contract, err := service.blockchain.GetMContractByIDOnChain(int64(*bill.ContractID))
+        if err != nil {
+            continue
+        }
 
-		tenantName := tenant.FullName
-		tenantAvt := ""
-		if tenant.AvatarUrl != nil {
-			tenantAvt = *tenant.AvatarUrl
-		}
+        if contract.PreRentalStatus != 2 && !(contract.PreRentalStatus == 3 && bill.BillStatus != -1) {
+            continue
+        }
 
-		billData := map[string]interface{}{
-			"id":           bill.BillID,
-			"avatar":       tenantAvt,
-			"status":       bill.BillStatus,
-			"room_number":  bill.RoomNumber,
-			"room_id":      bill.RoomID,
-			"tenant_name":  tenantName,
-			"payment_id":   bill.PaymentID,
-			"total_amount": bill.TotalAmount,
-		}
+        tenant, err := service.query.GetUserByID(context.Background(), int32(contract.Tenant))
+        if err != nil {
+            fmt.Println("Error fetching tenant for Tenant ID:", contract.Tenant, "Error:", err)
+            continue
+        }
 
-		address := strings.Join(bill.Address, ", ")
-		addressMap[address] = append(addressMap[address], billData)
-	}
+        tenantName := tenant.FullName
+        tenantAvt := ""
+        if tenant.AvatarUrl != nil {
+            tenantAvt = *tenant.AvatarUrl
+        }
 
-	for address, listBill := range addressMap {
-		result = append(result, map[string]interface{}{
-			"address":   address,
-			"list_bill": listBill,
-		})
-	}
+        billData := map[string]interface{}{
+            "id":           bill.BillID,
+            "avatar":       tenantAvt,
+            "status":       bill.BillStatus,
+            "room_number":  bill.RoomNumber,
+            "room_id":      bill.RoomID,
+            "tenant_name":  tenantName,
+            "payment_id":   bill.PaymentID,
+            "total_amount": bill.TotalAmount,
+        }
 
-	return &responses.ResponseData{
-		StatusCode: http.StatusOK,
-		Message:    responses.StatusSuccess,
-		Data:       result,
-	}
+
+        address := strings.Join(bill.Address, ", ")
+        addressMap[address] = append(addressMap[address], billData)
+    }
+
+    for address, listBill := range addressMap {
+        result = append(result, map[string]interface{}{
+            "address":   address,
+            "list_bill": listBill,
+        })
+    }
+
+
+    return &responses.ResponseData{
+        StatusCode: http.StatusOK,
+        Message:    responses.StatusSuccess,
+        Data:       result,
+    }
 }
+
 
 // GetBillByID implements BillingService.
 func (service *BillingServiceImpl) GetBillByID(id int32) *responses.ResponseData {
