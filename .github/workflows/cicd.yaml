@@ -21,6 +21,7 @@ jobs:
           mkdir -p configs
           touch configs/local.yaml
           echo '${{ secrets.CONFIG }}' > configs/local.yaml
+          mkdir -p socketio/configs
           echo '${{ secrets.CONFIG }}' > socketio/configs/local.yaml
 
       - name: Set up Docker Buildx
