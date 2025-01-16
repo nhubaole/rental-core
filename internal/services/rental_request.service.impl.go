@@ -30,7 +30,7 @@ func (rentalService *RentalRequestServiceImpl) GetRentalRequestByRoomID(roomID i
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusResourceNotFound,
 			Data:       nil,
 		}
@@ -188,7 +188,7 @@ func (rentalService *RentalRequestServiceImpl) DeleteRentalRequest(rentid int32,
 	}
 	if result.DeletedAt.Valid {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    "Already Deleted",
 			Data:       "nothing",
 		}
@@ -204,7 +204,7 @@ func (rentalService *RentalRequestServiceImpl) DeleteRentalRequest(rentid int32,
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusNoContent,
+		StatusCode: http.StatusOK,
 		Message:    "Deleted",
 		Data:       "nothing",
 	}

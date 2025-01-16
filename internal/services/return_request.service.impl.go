@@ -33,7 +33,7 @@ func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.Respon
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}

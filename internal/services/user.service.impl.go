@@ -36,7 +36,7 @@ func (u *UserServiceImpl) GetBankInfo(userID int32) *responses.ResponseData {
 	bankInfo, err := u.repo.GetBankInfoByUserID(context.Background(), userID)
 	if (bankInfo == dataaccess.GetBankInfoByUserIDRow{}) {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -420,7 +420,7 @@ func (u *UserServiceImpl) UpdateDeviceToken(userId int, deviceToken string) *res
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusNoContent,
+		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
 		Data:       nil,
 	}

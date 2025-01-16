@@ -191,7 +191,7 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	if err != nil {
 		if roomData.ID == 0 {
 			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
+				StatusCode: http.StatusOK,
 				Message:    "Phòng không tồn tại",
 				Data:       false,
 			}

@@ -43,7 +43,7 @@ func (n *NotificationServiceImpl) GetByUserID(userID int) *responses.ResponseDat
 
 	if len(notifications) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}

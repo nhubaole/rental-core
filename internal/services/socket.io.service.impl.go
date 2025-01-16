@@ -26,7 +26,7 @@ func (s *SocketIOServiceImpl) GetMessageByConversationID(conversationID int) *re
 	messages, err := s.repo.GetMessageByConversationID(context.Background(), int32(conversationID))
 	if len(messages) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -50,7 +50,7 @@ func (s *SocketIOServiceImpl) GetMessageByID(id int) *responses.ResponseData {
 	message, err := s.repo.GetMessageByID(context.Background(), int32(id))
 	if (message == dataaccess.GetMessageByIDRow{}) {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -74,7 +74,7 @@ func (s *SocketIOServiceImpl) GetMessages() *responses.ResponseData {
 	messages, err := s.repo.GetMessages(context.Background())
 	if len(messages) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}

@@ -37,7 +37,7 @@ loadConfig()
           const normalizedRentAutoContent = rent_auto_content || {};
       
           const result = await query(
-            'INSERT INTO messages (sender_id, conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5::jsonb) RETURNING *',
+            'INSERT INTO messages (sender_id, conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [sender_id, conversation_id, content, type, JSON.stringify(normalizedRentAutoContent)]
           );
       
