@@ -78,6 +78,17 @@ func (controller RentalRequestController) GetAllRentalRequest(ctx *gin.Context) 
 	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
 }
 
+func (controller RentalRequestController) GetAllRentalRequestForProccessTracking(ctx *gin.Context) {
+	user, errr := common.GetCurrentUser(ctx)
+	if errr != nil {
+		responses.APIResponse(ctx, http.StatusBadRequest, "Invalid request body", nil)
+		return
+	}
+
+	result := controller.rentalService.GetAllRentalRequestForProccessTracking(int(user.ID))
+	responses.APIResponse(ctx, result.StatusCode, result.Message, result.Data)
+}
+
 func (controller RentalRequestController) UpdateRentalRequestStatus(ctx *gin.Context) {
 	myuser, errr := common.GetCurrentUser(ctx)
 	if errr != nil {

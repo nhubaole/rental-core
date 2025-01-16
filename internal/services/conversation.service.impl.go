@@ -78,7 +78,7 @@ func (c *ConversationServiceImpl) GetByUserID(userID int) *responses.ResponseDat
 
 	if len(conversations) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}

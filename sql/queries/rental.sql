@@ -80,6 +80,17 @@ WHERE r.owner = $1
 GROUP BY r.id;
 
 
+-- name: GetRequestBySenderIDForProccessTracking :many
+SELECT *
+FROM PUBLIC.RENTAL_REQUESTS 
+WHERE sender_id = $1 and deleted_at is null;
+
+-- name: GetRequestByOwnerIDForProccessTracking :many
+SELECT *
+FROM PUBLIC.RENTAL_REQUESTS rr
+LEFT JOIN public.rooms r ON rr.room_id = r.id
+WHERE r.owner = $1 and rr.deleted_at is null;
+
 -- name: UpdateRequestStatusById :exec
 update PUBLIC.RENTAL_REQUESTS
 set status = $1 WHERE id = $2 and status = 1;

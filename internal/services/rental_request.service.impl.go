@@ -30,7 +30,7 @@ func (rentalService *RentalRequestServiceImpl) GetRentalRequestByRoomID(roomID i
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusResourceNotFound,
 			Data:       nil,
 		}
@@ -188,7 +188,7 @@ func (rentalService *RentalRequestServiceImpl) DeleteRentalRequest(rentid int32,
 	}
 	if result.DeletedAt.Valid {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    "Already Deleted",
 			Data:       "nothing",
 		}
@@ -204,7 +204,7 @@ func (rentalService *RentalRequestServiceImpl) DeleteRentalRequest(rentid int32,
 		}
 	}
 	return &responses.ResponseData{
-		StatusCode: http.StatusNoContent,
+		StatusCode: http.StatusOK,
 		Message:    "Deleted",
 		Data:       "nothing",
 	}
@@ -373,7 +373,101 @@ func (rentalService *RentalRequestServiceImpl) GetAllRentalRequest(userID int) *
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    "Success",
-		Data: result,
+		Data:       result,
+	}
+}
+
+func (rentalService *RentalRequestServiceImpl) GetAllRentalRequestForProccessTracking(userID int) *responses.ResponseData {
+	user, err := rentalService.repo.GetUserByID(context.Background(), int32(userID))
+	if err != nil {
+		fmt.Println(err.Error())
+		return &responses.ResponseData{
+			StatusCode: http.StatusOK,
+			Message:    "Nothing found",
+			Data:       "nothing",
+		}
+	}
+
+	var result []responses.GetRentalRequestByIDRes
+
+	if user.Role == 1 {
+		// Role = 1: Owner
+		requests, err := rentalService.repo.GetRequestByOwnerIDForProccessTracking(context.Background(), int32(userID))
+		if err != nil {
+			fmt.Println(err.Error())
+			return &responses.ResponseData{
+				StatusCode: http.StatusOK,
+				Message:    "Nothing found",
+				Data:       "nothing",
+			}
+		}
+
+		for _, req := range requests {
+			room, err := rentalService.repo.GetRoomByID(context.Background(), req.RoomID)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+
+			// Build response for each room
+			requestDetail := responses.GetRentalRequestByIDRes{
+				ID:             req.ID,
+				Code:           req.Code,
+				Room:           room,
+				SuggestedPrice: req.SuggestedPrice,
+				NumOfPerson:    req.NumOfPerson,
+				BeginDate:      req.BeginDate,
+				EndDate:        req.EndDate,
+				CreatedAt:      req.CreatedAt,
+			}
+
+			result = append(result, requestDetail)
+		}
+	} else if user.Role == 0 {
+		// Role = 0: Sender
+		requests, err := rentalService.repo.GetRequestBySenderIDForProccessTracking(context.Background(), int32(userID))
+		if err != nil {
+			fmt.Println(err.Error())
+			return &responses.ResponseData{
+				StatusCode: http.StatusOK,
+				Message:    "Nothing found",
+				Data:       "nothing",
+			}
+		}
+
+		for _, req := range requests {
+
+			room, err := rentalService.repo.GetRoomByID(context.Background(), req.RoomID)
+			if err != nil {
+				return &responses.ResponseData{
+					StatusCode: http.StatusInternalServerError,
+					Message:    err.Error(),
+					Data:       nil,
+				}
+			}
+			requestDetail := responses.GetRentalRequestByIDRes{
+				ID:             req.ID,
+				Code:           req.Code,
+				Room:           room,
+				SuggestedPrice: req.SuggestedPrice,
+				NumOfPerson:    req.NumOfPerson,
+				BeginDate:      req.BeginDate,
+				EndDate:        req.EndDate,
+				CreatedAt:      req.CreatedAt,
+			}
+
+			// Build response for each room
+			result = append(result, requestDetail)
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    "Success",
+		Data:       result,
 	}
 }
 

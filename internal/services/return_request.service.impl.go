@@ -27,13 +27,66 @@ func NewReturnRequestServiceImpl(blockchain BlockchainService, notification Noti
 	}
 }
 
+// GetByTenantID implements ReturnRequestService.
+func (r *ReturnRequestServiceImpl) GetByTenantID(userID int) *responses.ResponseData {
+	userIDPtr := int32(userID)
+	requests, err := r.repo.GetReturnRequestByTenantID(context.Background(), &userIDPtr)
+
+	if len(requests) == 0 {
+		return &responses.ResponseData{
+			StatusCode: http.StatusNoContent,
+			Message:    responses.StatusNoData,
+			Data:       nil,
+		}
+	}
+	if err != nil {
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       false,
+		}
+	}
+	var detailedRequests []responses.GetReturnRequestByTenantIDRes
+	for _, request := range requests {
+		room, err := r.repo.GetRoomByID(context.Background(), *request.RoomID)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+
+		detailedRequest := responses.GetReturnRequestByTenantIDRes{
+			ID:                 request.ID,
+			ContractID:         request.ContractID,
+			Room:               room,
+			Reason:             request.Reason,
+			ReturnDate:         request.ReturnDate,
+			Status:             request.Status,
+			DeductAmount:       request.DeductAmount,
+			TotalReturnDeposit: request.TotalReturnDeposit,
+			CreatedAt:          request.CreatedAt,
+			UpdatedAt:          request.UpdatedAt,
+		}
+
+		detailedRequests = append(detailedRequests, detailedRequest)
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       detailedRequests,
+	}
+}
+
 // GetByLandlordID implements ReturnRequestService.
 func (r *ReturnRequestServiceImpl) GetByLandlordID(userID int) *responses.ResponseData {
 	requests, err := r.repo.GetReturnRequestByLandlordID(context.Background(), int32(userID))
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -212,7 +265,7 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 		}
 	}
 
-	if *returnRequest.TotalReturnDeposit - *returnRequest.DeductAmount == 0 {
+	if *returnRequest.TotalReturnDeposit-*returnRequest.DeductAmount == 0 {
 		user, _ := r.repo.GetUserByID(context.Background(), int32(userID))
 
 		status := int32(2)

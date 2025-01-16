@@ -78,7 +78,7 @@ func (c *ContractServiceImpl) GetTemplateByAddress(address requests.GetTemplateB
 	if err != nil {
 		if template.ID == 0 {
 			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
+				StatusCode: http.StatusOK,
 				Message:    responses.StatusNoData,
 				Data:       nil,
 			}
@@ -333,7 +333,7 @@ func (c *ContractServiceImpl) ListContractByStatus(statusID int, userId int, isL
 
 	if len(contracts) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}

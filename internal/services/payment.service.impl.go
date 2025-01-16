@@ -288,7 +288,7 @@ func (p *PaymentServiceImpl) GetAll() *responses.ResponseData {
 	payments, err := p.repo.GetAllPayments(context.Background())
 	if len(payments) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -390,7 +390,7 @@ func (p *PaymentServiceImpl) GetByID(id int) *responses.ResponseData {
 	if err != nil {
 		if payment.ID == 0 {
 			return &responses.ResponseData{
-				StatusCode: http.StatusNoContent,
+				StatusCode: http.StatusOK,
 				Message:    responses.StatusNoData,
 				Data:       nil,
 			}
