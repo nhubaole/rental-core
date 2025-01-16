@@ -70,7 +70,7 @@ func NewRouter(
 	billingRouter := baseRouter.Group("/billings", middlewares.CORSMiddleware())
 	billingRouter.GET("/index/:year/:month/:type", middlewares.AuthenMiddleware, ic.GetIndexFromOwner)
 	billingRouter.POST("/index", middlewares.AuthenMiddleware, ic.CreateIndex)
-	billingRouter.POST("/", middlewares.AuthenMiddleware, bc.CreateBill)
+	billingRouter.POST("", middlewares.AuthenMiddleware, bc.CreateBill)
 	billingRouter.GET("/get-by-month/:year/:month", middlewares.AuthenMiddleware, bc.GetBillByMonth)
 	billingRouter.GET("/:id", middlewares.AuthenMiddleware, bc.GetBillByID)
 	billingRouter.POST("/get-metrics", bc.GetBillMetric)

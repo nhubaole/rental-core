@@ -324,6 +324,12 @@ func (r *ReturnRequestServiceImpl) Aprrove(id int, userID int) *responses.Respon
 				Data:       false,
 			}
 		}
+
+		contract, _ := r.blockchain.GetMContractByIDOnChain(int64(id))
+		returnRequestId := common.ConvertInt32ToPointerInt(returnRequest.ID)
+
+		r.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng!", returnRequestId, "return_request")
+		r.notificationService.SendNotification(int(contract.Tenant), "Bạn đã hoàn tất trả phòng!", returnRequestId, "return_request")
 	} else {
 		status := int32(1)
 		params := dataaccess.ApproveReturnRequestParams{

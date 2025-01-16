@@ -219,7 +219,7 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
 	roomData.Deposit = float64(roomOnChain.Deposit)
 	roomData.Status = int32(roomOnChain.Status)
-	roomData.IsRent = roomOnChain.IsRent
+	// roomData.IsRent = roomOnChain.IsRent
 	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
 	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
 

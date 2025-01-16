@@ -408,7 +408,7 @@ func (service *BillingServiceImpl) GetBillByStatus(userID int32, statusID int32)
 	}
 	if len(bills) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusOK,
+			StatusCode: http.StatusNoContent,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
@@ -440,7 +440,7 @@ func (service *BillingServiceImpl) GetBillOfRentedRoomByOwnerID(currentUser int)
 	if err != nil {
 		if len(bills) == 0 {
 			return &responses.ResponseData{
-				StatusCode: http.StatusOK,
+				StatusCode: http.StatusNoContent,
 				Message:    responses.StatusNoData,
 				Data:       nil,
 			}

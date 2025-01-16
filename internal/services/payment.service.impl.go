@@ -37,6 +37,7 @@ func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService,
 func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *responses.ResponseData {
 	var amount = 0.0
 	contractId := int32(0)
+	userId := int32(1)
 
 	if typeOfPayment == "contract" {
 		contractId = id
@@ -72,14 +73,17 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 			Data:       false,
 		}
 	}
+
 	if typeOfPayment == "contract" {
 		amount = float64(contract.Deposit)
+		userId = int32(contract.Landlord)
+	} else if typeOfPayment == "bill" {
+		userId = int32(contract.Landlord)
+	} else if typeOfPayment == "return" {
+		userId = int32(contract.Tenant)
 	}
 
 	fmt.Printf("Contract ID: %d\n", contractId)
-
-	//TODO: replace hardcode
-	userId := int32(1)
 
 	userBankInfo, err := p.repo.GetBankInfoByUserID(context.Background(), userId)
 
@@ -156,6 +160,30 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+
+		room, roomErr := p.repo.GetRoomByContractID(context.Background(), *payment.ContractID)
+		if roomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    roomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// set room available
+		updateRoomParam := dataaccess.UpdateRoomStatusParams{
+			ID:     room.RoomID,
+			IsRent: true,
+		}
+		_, updateRoomErr := p.repo.UpdateRoomStatus(context.Background(), updateRoomParam)
+		if updateRoomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateRoomErr.Error(),
+				Data:       false,
+			}
+		}
+
 		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch đặt cọc của bạn đã được xác nhận. Chúc mừng bạn đã hoàn tất thuê phòng!", &id, "payment")
 	} else if payment.BillID != nil {
 		bill, err := p.repo.GetBillByID(context.Background(), *payment.BillID)
@@ -264,7 +292,10 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
-		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", &id, "payment")
+		returnRequestId := common.ConvertInt32ToPointerInt(returnRequest.ID)
+
+		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", returnRequestId, "return_request")
+		p.notificationService.SendNotification(int(contract.Tenant), "Bạn đã hoàn tất trả phòng!", returnRequestId, "return_request")
 	}
 
 	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
