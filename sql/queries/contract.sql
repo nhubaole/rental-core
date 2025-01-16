@@ -32,6 +32,13 @@ INSERT INTO PUBLIC.contract_templates
 )
 RETURNING id;
 
+
+-- name: GetListContractTemplateByOwner :many
+SELECT DISTINCT r.address, ct.*  
+FROM contract_templates ct 
+    RIGHT JOIN rooms r ON ct.address::text[] = r.address 
+WHERE r."owner" = $1 ;
+
 -- name: CreateContract :one
 INSERT INTO PUBLIC.contracts
 (
