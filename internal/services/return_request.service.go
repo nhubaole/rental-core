@@ -10,4 +10,5 @@ type ReturnRequestService interface {
 	GetByID(id int) *responses.ResponseData
 	Aprrove(id int, userID int) *responses.ResponseData
 	GetByLandlordID(userID int) *responses.ResponseData
+	GetByTenantID(userID int) *responses.ResponseData
 }

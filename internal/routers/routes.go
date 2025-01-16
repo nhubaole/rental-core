@@ -59,6 +59,7 @@ func NewRouter(
 	rentalRequestRouter.POST("", middlewares.AuthenMiddleware, rrc.Create)
 	rentalRequestRouter.DELETE("/:id", middlewares.AuthenMiddleware, rrc.Delete)
 	rentalRequestRouter.GET("", middlewares.AuthenMiddleware, rrc.GetAllRentalRequest)
+	rentalRequestRouter.GET("/process-tracking", middlewares.AuthenMiddleware, rrc.GetAllRentalRequestForProccessTracking)
 	rentalRequestRouter.GET("/:id", middlewares.AuthenMiddleware, rrc.GetRentalRequestById)
 	rentalRequestRouter.GET("/:id/review", middlewares.AuthenMiddleware, rrc.UpdateRentalRequestStatus)
 	rentalRequestRouter.GET("/:id/tracking-process", middlewares.AuthenMiddleware, ptc.GetProcessTrackingByRentalId)
@@ -90,6 +91,7 @@ func NewRouter(
 	returnRequestRouter.POST("", middlewares.AuthenMiddleware, returnRequestController.Create)
 	returnRequestRouter.GET("/:id", middlewares.AuthenMiddleware, returnRequestController.GetReturnRequestByID)
 	returnRequestRouter.GET("/landlord/:id", middlewares.AuthenMiddleware, returnRequestController.GetReturnRequestByLandlordID)
+	returnRequestRouter.GET("/tenant/:id", middlewares.AuthenMiddleware, returnRequestController.GetReturnRequestByTenantID)
 	returnRequestRouter.GET("/confirm/:id", middlewares.AuthenMiddleware, returnRequestController.ApproveReturnRequest)
 
 	ratingRouter := baseRouter.Group("/ratings")
