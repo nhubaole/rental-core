@@ -144,7 +144,7 @@ func (service *BillingServiceImpl) CreateBill(userID int32, req requests.CreateB
 	return &responses.ResponseData{
 		StatusCode: http.StatusOK,
 		Message:    responses.StatusSuccess,
-		Data:       true,
+		Data:       id,
 	}
 }
 
