@@ -15,4 +15,5 @@ type ContractService interface {
 	SignContract(req requests.SignContractParams, userID int) *responses.ResponseData
 	DeclineContract(id int, userID int) *responses.ResponseData
 	GetContractByUser(userID int) *responses.ResponseData
+	GetTemplateByOwner(userID int32) *responses.ResponseData
 }

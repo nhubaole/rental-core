@@ -80,6 +80,7 @@ func NewRouter(
 	contractRouter := baseRouter.Group("/contracts")
 	contractRouter.POST("/template", middlewares.AuthenMiddleware, cc.CreateTemplate)
 	contractRouter.POST("/template/get-by-address", middlewares.AuthenMiddleware, cc.GetTemplateByAddress)
+	contractRouter.GET("/template/get-by-owner", middlewares.AuthenMiddleware, cc.GetTemplateByOwner)
 	contractRouter.POST("", middlewares.AuthenMiddleware, cc.Create)
 	contractRouter.GET("/:id", middlewares.AuthenMiddleware, cc.GetByID)
 	contractRouter.GET("/status/:statusID", middlewares.AuthenMiddleware, cc.GetByStatus)

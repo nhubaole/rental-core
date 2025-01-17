@@ -43,6 +43,18 @@ func(cc ContractController) GetTemplateByAddress(ctx *gin.Context) {
 	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
 }
 
+func(cc ContractController) GetTemplateByOwner(ctx *gin.Context) {
+	user, err := common.GetCurrentUser(ctx)
+	if err != nil {
+		responses.APIResponse(ctx, 401, "Unauthorized", nil)
+		return
+
+	}
+
+	result := cc.services.GetTemplateByOwner(user.ID)
+	responses.APIResponse(ctx, result.StatusCode,result.Message, result.Data)
+}
+
 func(cc ContractController) Create(ctx *gin.Context) {
 	var req	requests.CreateContractRequest
 	user, err := common.GetCurrentUser(ctx)

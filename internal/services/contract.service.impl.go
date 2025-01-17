@@ -20,11 +20,38 @@ type ContractServiceImpl struct {
 	notificationService NotificationService
 }
 
+
 func NewContractServiceImpl(blockchain BlockchainService, notification NotificationService) ContractService {
 	return &ContractServiceImpl{
 		repo:                dataaccess.New(global.Db),
 		blockchain:          blockchain,
 		notificationService: notification,
+	}
+}
+
+
+// GetTemplateByOwner implements ContractService.
+func (c *ContractServiceImpl) GetTemplateByOwner(userID int32) *responses.ResponseData {
+	template, err := c.repo.GetListContractTemplateByOwner(context.TODO(), userID)
+	if err != nil {
+		if len(template) == 0 {
+			return &responses.ResponseData{
+				StatusCode: http.StatusOK,
+				Message:    responses.StatusNoData,
+				Data:       nil,
+			}
+		}
+		return &responses.ResponseData{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Data:       nil,
+		}
+	}
+
+	return &responses.ResponseData{
+		StatusCode: http.StatusOK,
+		Message:    responses.StatusSuccess,
+		Data:       template,
 	}
 }
 

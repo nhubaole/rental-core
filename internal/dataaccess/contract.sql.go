@@ -7,6 +7,8 @@ package dataaccess
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createContract = `-- name: CreateContract :one
@@ -160,6 +162,69 @@ func (q *Queries) GetContractTemplateByAddress(ctx context.Context, dollar_1 []s
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getListContractTemplateByOwner = `-- name: GetListContractTemplateByOwner :many
+SELECT DISTINCT r.address, ct.id, ct.party_a, ct.address, ct.electricity_method, ct.electricity_cost, ct.water_method, ct.water_cost, ct.internet_cost, ct.parking_fee, ct.responsibility_a, ct.responsibility_b, ct.general_responsibility, ct.created_at, ct.updated_at, ct.deleted_at  
+FROM contract_templates ct 
+    RIGHT JOIN rooms r ON ct.address::text[] = r.address 
+WHERE r."owner" = $1
+`
+
+type GetListContractTemplateByOwnerRow struct {
+	Address               []string           `json:"address"`
+	ID                    *int32             `json:"id"`
+	PartyA                *int32             `json:"party_a"`
+	Address_2             []string           `json:"address_2"`
+	ElectricityMethod     *string            `json:"electricity_method"`
+	ElectricityCost       *float64           `json:"electricity_cost"`
+	WaterMethod           *string            `json:"water_method"`
+	WaterCost             *float64           `json:"water_cost"`
+	InternetCost          *float64           `json:"internet_cost"`
+	ParkingFee            *float64           `json:"parking_fee"`
+	ResponsibilityA       *string            `json:"responsibility_a"`
+	ResponsibilityB       *string            `json:"responsibility_b"`
+	GeneralResponsibility *string            `json:"general_responsibility"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt             pgtype.Timestamptz `json:"deleted_at"`
+}
+
+func (q *Queries) GetListContractTemplateByOwner(ctx context.Context, owner int32) ([]GetListContractTemplateByOwnerRow, error) {
+	rows, err := q.db.Query(ctx, getListContractTemplateByOwner, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetListContractTemplateByOwnerRow
+	for rows.Next() {
+		var i GetListContractTemplateByOwnerRow
+		if err := rows.Scan(
+			&i.Address,
+			&i.ID,
+			&i.PartyA,
+			&i.Address_2,
+			&i.ElectricityMethod,
+			&i.ElectricityCost,
+			&i.WaterMethod,
+			&i.WaterCost,
+			&i.InternetCost,
+			&i.ParkingFee,
+			&i.ResponsibilityA,
+			&i.ResponsibilityB,
+			&i.GeneralResponsibility,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listContractByRoomId = `-- name: ListContractByRoomId :many
