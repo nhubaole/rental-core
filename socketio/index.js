@@ -69,7 +69,7 @@ loadConfig()
       
           const result = await query(
             'INSERT INTO messages (sender_id, conversation_id, content, type, rent_auto_content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [sender_id, conversation_id, savedContent, type, JSON.stringify(normalizedRentAutoContent)]
+            [sender_id, conversation_id, savedContent, type, normalizedRentAutoContent]
           );
       
           const savedMessage = result.rows[0];
@@ -78,6 +78,8 @@ loadConfig()
           io.to(connectedClients[receiver_id]).emit('receiveMessage', savedMessage);
           io.to(connectedClients[sender_id]).emit('receiveMessage', savedMessage);
       
+
+          
           await query(
             'UPDATE conversations SET last_message_id = $1 WHERE id = $2',
             [savedMessage.id, savedMessage.conversation_id]
@@ -89,7 +91,7 @@ loadConfig()
         } catch (error) {
           console.error(`Failed to save message from ${sender_id} to ${receiver_id}:`, error);
         }
-      });
+      }); 
       
       socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
