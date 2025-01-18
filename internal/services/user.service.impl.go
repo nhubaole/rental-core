@@ -196,6 +196,7 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 			rating.Comment = *v.Comments
 			rating.CreatedAt = pgtype.Timestamptz(v.CreatedAt)
 			rating.RaterName = user.FullName
+			rating.RaterAvatar = *user.AvatarUrl
 			rating.Rate = int(*v.OverallRating)
 			rating.Happy = happyString
 			rating.UnHappy = unhappyString
@@ -282,6 +283,7 @@ func (userRepo *UserServiceImpl) GetUserByID(id int) *responses.ResponseData {
 			rating.Comment = *v.Comments
 			rating.CreatedAt = pgtype.Timestamptz(v.CreatedAt)
 			rating.RaterName = user.FullName
+			rating.RaterAvatar = *user.AvatarUrl
 			rating.Rate = int(*v.OverallRating)
 			rating.Happy = happyString
 			rating.UnHappy = unhappyString

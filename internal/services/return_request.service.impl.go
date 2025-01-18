@@ -34,7 +34,7 @@ func (r *ReturnRequestServiceImpl) GetByTenantID(userID int) *responses.Response
 
 	if len(requests) == 0 {
 		return &responses.ResponseData{
-			StatusCode: http.StatusNoContent,
+			StatusCode: http.StatusOK,
 			Message:    responses.StatusNoData,
 			Data:       nil,
 		}
