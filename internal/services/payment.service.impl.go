@@ -37,6 +37,7 @@ func NewPaymentServiceImpl(storage StorageSerivce, blockchain BlockchainService,
 func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *responses.ResponseData {
 	var amount = 0.0
 	contractId := int32(0)
+	userId := int32(1)
 
 	if typeOfPayment == "contract" {
 		contractId = id
@@ -72,14 +73,17 @@ func (p *PaymentServiceImpl) GetDetailInfo(typeOfPayment string, id int32) *resp
 			Data:       false,
 		}
 	}
+
 	if typeOfPayment == "contract" {
 		amount = float64(contract.Deposit)
+		userId = int32(contract.Landlord)
+	} else if typeOfPayment == "bill" {
+		userId = int32(contract.Landlord)
+	} else if typeOfPayment == "return" {
+		userId = int32(contract.Tenant)
 	}
 
 	fmt.Printf("Contract ID: %d\n", contractId)
-
-	//TODO: replace hardcode
-	userId := int32(1)
 
 	userBankInfo, err := p.repo.GetBankInfoByUserID(context.Background(), userId)
 
@@ -156,6 +160,30 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
+
+		room, roomErr := p.repo.GetRoomByContractID(context.Background(), *payment.ContractID)
+		if roomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    roomErr.Error(),
+				Data:       false,
+			}
+		}
+
+		// set room available
+		updateRoomParam := dataaccess.UpdateRoomStatusParams{
+			ID:     room.RoomID,
+			IsRent: true,
+		}
+		_, updateRoomErr := p.repo.UpdateRoomStatus(context.Background(), updateRoomParam)
+		if updateRoomErr != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    updateRoomErr.Error(),
+				Data:       false,
+			}
+		}
+
 		p.notificationService.SendNotification(int(contract.Tenant), "Giao dịch đặt cọc của bạn đã được xác nhận. Chúc mừng bạn đã hoàn tất thuê phòng!", &id, "payment")
 	} else if payment.BillID != nil {
 		bill, err := p.repo.GetBillByID(context.Background(), *payment.BillID)
@@ -264,7 +292,10 @@ func (p *PaymentServiceImpl) Confirm(id int, userID int) *responses.ResponseData
 				Data:       false,
 			}
 		}
-		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", &id, "payment")
+		returnRequestId := common.ConvertInt32ToPointerInt(returnRequest.ID)
+
+		p.notificationService.SendNotification(int(contract.Landlord), "Bạn đã hoàn tất trả phòng! Giao dịch hoàn cọc của bạn đã được xác nhận.", returnRequestId, "return_request")
+		p.notificationService.SendNotification(int(contract.Tenant), "Bạn đã hoàn tất trả phòng!", returnRequestId, "return_request")
 	}
 
 	paymentIdUPdated, err := p.repo.ConfirmPayment(context.Background(), int32(id))
@@ -331,8 +362,18 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 	params.Status = 0
 	params.Code = common.GenerateCode("P")
 
-	paymentId, createErr := p.repo.CreatePayment(context.Background(), params)
+	zero := int32(0)
+	if (*params.ContractID == zero) {
+		params.ContractID = nil
+	}
+	if *params.BillID == zero {
+		params.BillID = nil
+	}
+	if (*params.ReturnRequestID == zero) {
+		params.ReturnRequestID = nil
+	}
 
+	paymentId, createErr := p.repo.CreatePayment(context.Background(), params)
 	if createErr != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -346,6 +387,8 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 		contract, err := p.blockchain.GetMContractByIDOnChain(int64(*params.ContractID))
 		if err == nil {
 			p.notificationService.SendNotification(int(contract.Landlord), "Bạn có giao dịch đặt cọc trọ mới. Vui lòng kiểm tra và xác nhận", &id, "payment")
+		} else {
+			fmt.Printf("Error fetching contract from blockchain: %v\n", err)
 		}
 	} else if params.BillID != nil {
 		bill, err := p.repo.GetBillByID(context.Background(), *params.BillID)
@@ -353,7 +396,11 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 			contract, err := p.blockchain.GetMContractByIDOnChain(int64(bill.ContractID))
 			if err == nil {
 				p.notificationService.SendNotification(int(contract.Landlord), "Bạn có giao dịch thanh toán hoá đơn. Vui lòng kiểm tra và xác nhận", &id, "payment")
+			} else {
+				fmt.Printf("Error fetching contract from blockchain: %v\n", err)
 			}
+		} else {
+			fmt.Printf("Error fetching bill: %v\n", err)
 		}
 		param := dataaccess.UpdatePaymentIDByBillIDParams{
 			ID:        *params.BillID,
@@ -363,16 +410,20 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 
 		status := int32(1)
 		_ = p.repo.UpdateBillStatus(context.Background(), dataaccess.UpdateBillStatusParams{
-			ID:     bill.ID,
+			ID:     *params.BillID,
 			Status: &status,
 		})
-	} else if params.ReturnRequestID != nil {
+	} else if params.ReturnRequestID != nil{
 		returnRequest, err := p.repo.GetReturnRequestByID(context.Background(), *params.ReturnRequestID)
 		if err == nil {
 			contract, err := p.blockchain.GetMContractByIDOnChain(int64(*returnRequest.ContractID))
 			if err == nil {
 				p.notificationService.SendNotification(int(contract.Tenant), "Bạn có giao dịch hoàn tiền đặt cọc. Vui lòng kiểm tra và xác nhận", &id, "payment")
+			} else {
+				fmt.Printf("Error fetching contract from blockchain: %v\n", err)
 			}
+		} else {
+			fmt.Printf("Error fetching ReturnRequest: %v\n", err)
 		}
 	}
 
@@ -381,7 +432,6 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 		Message:    responses.StatusSuccess,
 		Data:       paymentId,
 	}
-
 }
 
 // GetByID implements PaymentService.

@@ -116,3 +116,8 @@ func ConvertIntToPointerInt32(input *int) *int32 {
 	value := int32(*input)
 	return &value
 }
+
+func ConvertInt32ToPointerInt (i int32) *int {
+	v := int(i)
+	return &v
+}

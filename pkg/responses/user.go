@@ -16,12 +16,13 @@ type UserResponse struct {
 }
 
 type RatingInfo struct {
-	RaterName string             `json:"rater_name"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	Rate      int                `json:"rate"`
-	Comment   string             `json:"comment"`
-	Happy     string             `json:"happy"`
-	UnHappy   string             `json:"unhappy"`
+	RaterName   string             `json:"rater_name"`
+	RaterAvatar string             `json:"rater_avatar"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Rate        int                `json:"rate"`
+	Comment     string             `json:"comment"`
+	Happy       string             `json:"happy"`
+	UnHappy     string             `json:"unhappy"`
 }
 
 type GetUserByIDRes struct {
