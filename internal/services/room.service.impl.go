@@ -80,14 +80,14 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 		}
 	}
 
-	user, err := r.repo.GetUserByID(context.Background(), int32(userID))
-	if err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+	// user, err := r.repo.GetUserByID(context.Background(), int32(userID))
+	// if err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 	// Add to blockchain
 	// privateKeyHex := "e5a0d26cd7866afbea195c376b75a76d86d65e458c25f4702c46f1378ea0ce42"
 	// if err != nil {
@@ -97,21 +97,21 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 	// 		Data:       false,
 	// 	}
 	// }
-	paramsOnChain := &requests.CreateRoomOnChainReq{
-		RoomID:     int64(id),
-		TotalPrice: int(*req.TotalPrice),
-		Deposit:    int64(req.Deposit),
-		Status:     int64(req.Status),
-		IsRent:     req.IsRent,
-	}
+	// paramsOnChain := &requests.CreateRoomOnChainReq{
+	// 	RoomID:     int64(id),
+	// 	TotalPrice: int(*req.TotalPrice),
+	// 	Deposit:    int64(req.Deposit),
+	// 	Status:     int64(req.Status),
+	// 	IsRent:     req.IsRent,
+	// }
 
-	if _, err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+	// if _, err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 
 	// update images url
 	var urls []string

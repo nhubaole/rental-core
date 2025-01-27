@@ -228,7 +228,7 @@ func (q *Queries) GetRequestByOwnerID(ctx context.Context, owner int32) ([]GetRe
 }
 
 const getRequestByOwnerIDForProccessTracking = `-- name: GetRequestByOwnerIDForProccessTracking :many
-SELECT rr.id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, rr.status, rr.created_at, rr.updated_at, rr.deleted_at, r.id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, r.status, is_rent, r.created_at, r.updated_at, r.deleted_at, available_from
+SELECT rr.id, code, sender_id, room_id, suggested_price, num_of_person, begin_date, end_date, addition_request, rr.status, rr.created_at, rr.updated_at, rr.deleted_at, r.id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, r.status, is_rent, r.created_at, r.updated_at, r.deleted_at, available_from, latitude, longitude
 FROM PUBLIC.RENTAL_REQUESTS rr
 LEFT JOIN public.rooms r ON rr.room_id = r.id
 WHERE r.owner = $1 and rr.deleted_at is null
@@ -273,6 +273,8 @@ type GetRequestByOwnerIDForProccessTrackingRow struct {
 	UpdatedAt_2     pgtype.Timestamptz `json:"updated_at_2"`
 	DeletedAt_2     pgtype.Timestamptz `json:"deleted_at_2"`
 	AvailableFrom   pgtype.Timestamptz `json:"available_from"`
+	Latitude        *float64           `json:"latitude"`
+	Longitude       *float64           `json:"longitude"`
 }
 
 func (q *Queries) GetRequestByOwnerIDForProccessTracking(ctx context.Context, owner int32) ([]GetRequestByOwnerIDForProccessTrackingRow, error) {
@@ -323,6 +325,8 @@ func (q *Queries) GetRequestByOwnerIDForProccessTracking(ctx context.Context, ow
 			&i.UpdatedAt_2,
 			&i.DeletedAt_2,
 			&i.AvailableFrom,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}
