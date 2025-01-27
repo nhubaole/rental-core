@@ -203,6 +203,8 @@ type Room struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	AvailableFrom   pgtype.Timestamptz `json:"available_from"`
+	Latitude        *float64           `json:"latitude"`
+	Longitude       *float64           `json:"longitude"`
 }
 
 type RoomRating struct {

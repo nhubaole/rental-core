@@ -27,6 +27,8 @@ type CreateRoomForm struct {
 	ParkingFee      *float64                `form:"parking_fee"`
 	Status          int32                   `form:"status"`
 	IsRent          bool                    `form:"is_rent"`
+	Latitude        *float64                `form:"latitude"`
+	Longitude       *float64                `form:"longitude"`
 }
 
 type UpdateRoomRequest struct {

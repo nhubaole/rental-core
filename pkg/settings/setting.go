@@ -14,6 +14,7 @@ type Config struct {
 	ElasticSearch ElasticSearch `mapstructure:"elasticsearch"`
 	SmartContract SmartContract `mapstructure:"smart_contract"`
 	FCM           FCM           `mapstructure:"fcm"`
+	GGMap         GGMap         `mapstructure:"google_map"`
 }
 
 type Database struct {
@@ -67,4 +68,8 @@ type SmartContract struct {
 type FCM struct {
 	ProjectID          string `mapstructure:"project_id"`
 	ServiceAccountPath string `mapstructure:"service_account_path"`
+}
+type GGMap struct {
+	APIKey string `mapstructure:"api_key"`
+	Url    string `mapstructure:"url"`
 }

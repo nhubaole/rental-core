@@ -52,12 +52,14 @@ INSERT INTO "rooms"
   "parking_fee", 
   "status", 
   "is_rent", 
+  "latitude",
+    "longitude",
   "created_at", 
   "updated_at"
 ) 
 VALUES 
 (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, now(), now()
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,$21, $22, now(), now()
 )
 RETURNING id
 `
@@ -83,6 +85,8 @@ type CreateRoomParams struct {
 	ParkingFee      *float64 `json:"parking_fee"`
 	Status          int32    `json:"status"`
 	IsRent          bool     `json:"is_rent"`
+	Latitude        *float64 `json:"latitude"`
+	Longitude       *float64 `json:"longitude"`
 }
 
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int32, error) {
@@ -107,6 +111,8 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int32, 
 		arg.ParkingFee,
 		arg.Status,
 		arg.IsRent,
+		arg.Latitude,
+		arg.Longitude,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -114,7 +120,7 @@ func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) (int32, 
 }
 
 const getLikedRooms = `-- name: GetLikedRooms :many
-SELECT r.id, r.title, r.address, r.room_number, r.room_images, r.utilities, r.description, r.room_type, r.owner, r.capacity, r.gender, r.area, r.total_price, r.deposit, r.electricity_cost, r.water_cost, r.internet_cost, r.is_parking, r.parking_fee, r.status, r.is_rent, r.created_at, r.updated_at, r.deleted_at, r.available_from
+SELECT r.id, r.title, r.address, r.room_number, r.room_images, r.utilities, r.description, r.room_type, r.owner, r.capacity, r.gender, r.area, r.total_price, r.deposit, r.electricity_cost, r.water_cost, r.internet_cost, r.is_parking, r.parking_fee, r.status, r.is_rent, r.created_at, r.updated_at, r.deleted_at, r.available_from, r.latitude, r.longitude
 FROM PUBLIC."like" l
 JOIN PUBLIC.rooms r ON l.room_id = r.id
 WHERE l.user_id = $1 AND l.deleted_at IS NULL
@@ -155,6 +161,8 @@ func (q *Queries) GetLikedRooms(ctx context.Context, userID int32) ([]Room, erro
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.AvailableFrom,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}
@@ -394,7 +402,7 @@ func (q *Queries) GetRooms(ctx context.Context, userID int32) ([]GetRoomsRow, er
 }
 
 const getRoomsByOwner = `-- name: GetRoomsByOwner :many
-SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from
+SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from, latitude, longitude
 FROM PUBLIC.rooms
 where owner = $1
 `
@@ -434,6 +442,8 @@ func (q *Queries) GetRoomsByOwner(ctx context.Context, owner int32) ([]Room, err
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.AvailableFrom,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}
@@ -446,7 +456,7 @@ func (q *Queries) GetRoomsByOwner(ctx context.Context, owner int32) ([]Room, err
 }
 
 const getRoomsByStatus = `-- name: GetRoomsByStatus :many
-SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from
+SELECT id, title, address, room_number, room_images, utilities, description, room_type, owner, capacity, gender, area, total_price, deposit, electricity_cost, water_cost, internet_cost, is_parking, parking_fee, status, is_rent, created_at, updated_at, deleted_at, available_from, latitude, longitude
 FROM PUBLIC.rooms
 WHERE status = $1
 `
@@ -486,6 +496,8 @@ func (q *Queries) GetRoomsByStatus(ctx context.Context, status int32) ([]Room, e
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.AvailableFrom,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}

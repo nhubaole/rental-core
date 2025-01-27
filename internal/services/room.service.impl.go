@@ -25,7 +25,6 @@ type RoomServiceImpl struct {
 	blockchainService BlockchainService
 }
 
-
 func NewRoomServiceImpl(storage StorageSerivce, blockchain BlockchainService) RoomService {
 	return &RoomServiceImpl{
 		repo:              dataaccess.New(global.Db),
