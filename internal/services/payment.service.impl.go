@@ -362,16 +362,16 @@ func (p *PaymentServiceImpl) Create(req requests.CreatePaymentReq, userID int32)
 	params.Status = 0
 	params.Code = common.GenerateCode("P")
 
-	zero := int32(0)
-	if (*params.ContractID == zero) {
-		params.ContractID = nil
-	}
-	if *params.BillID == zero {
-		params.BillID = nil
-	}
-	if (*params.ReturnRequestID == zero) {
-		params.ReturnRequestID = nil
-	}
+	// zero := int32(0)
+	// if (*params.ContractID == zero) {
+	// 	params.ContractID = nil
+	// }
+	// if *params.BillID == zero {
+	// 	params.BillID = nil
+	// }
+	// if (*params.ReturnRequestID == zero) {
+	// 	params.ReturnRequestID = nil
+	// }
 
 	paymentId, createErr := p.repo.CreatePayment(context.Background(), params)
 	if createErr != nil {
