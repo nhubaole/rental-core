@@ -7,8 +7,8 @@ import (
 )
 
 type BlockchainService interface {
-	GetRoomByIDOnChain(roomID int64)(*responses.RoomOnChainRes, error)
-	CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error)
+	// GetRoomByIDOnChain(roomID int64)(*responses.RoomOnChainRes, error)
+	// CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error)
 
 	GetMContractByIDOnChain(roomID int64)(*responses.MContractOnChainRes, error)
 	GetListMContractByStatus(contractIds []int32, statusID int64, userId int64, isLandlord bool)([]gen.ContractManagementMContract, error)

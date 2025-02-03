@@ -46,6 +46,8 @@ SELECT
     r.area, 
     r.total_price, 
     r.status, 
+    r.latitude,
+    r.longitude,
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
     COALESCE(COUNT(rt.id), 0) AS total_rating,  -- Đếm tổng số lượng rating
      EXISTS (
@@ -101,6 +103,8 @@ SELECT
     r.internet_cost, 
     r.is_parking, 
     r.parking_fee, 
+    r.latitude,
+    r.longitude,
     r.status, 
     r.is_rent, 
     r.created_at, 
@@ -127,6 +131,8 @@ SELECT
     r.owner, 
     r.area, 
     r.total_price, 
+    r.latitude,
+    r.longitude,
     r.status, 
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
     COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
@@ -152,6 +158,8 @@ GROUP BY
     r.owner, 
     r.area, 
     r.total_price, 
+    r.latitude,
+    r.longitude,
     r.status
 ORDER BY 
     r.created_at DESC;

@@ -231,6 +231,8 @@ SELECT
     r.internet_cost, 
     r.is_parking, 
     r.parking_fee, 
+    r.latitude,
+    r.longitude,
     r.status, 
     r.is_rent, 
     r.created_at, 
@@ -264,6 +266,8 @@ type GetRoomByIDRow struct {
 	InternetCost    float64            `json:"internet_cost"`
 	IsParking       bool               `json:"is_parking"`
 	ParkingFee      *float64           `json:"parking_fee"`
+	Latitude        *float64           `json:"latitude"`
+	Longitude       *float64           `json:"longitude"`
 	Status          int32              `json:"status"`
 	IsRent          bool               `json:"is_rent"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
@@ -295,6 +299,8 @@ func (q *Queries) GetRoomByID(ctx context.Context, id int32) (GetRoomByIDRow, er
 		&i.InternetCost,
 		&i.IsParking,
 		&i.ParkingFee,
+		&i.Latitude,
+		&i.Longitude,
 		&i.Status,
 		&i.IsRent,
 		&i.CreatedAt,
@@ -317,6 +323,8 @@ SELECT
     r.area, 
     r.total_price, 
     r.status, 
+    r.latitude,
+    r.longitude,
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
     COALESCE(COUNT(rt.id), 0) AS total_rating,  -- Đếm tổng số lượng rating
      EXISTS (
@@ -360,6 +368,8 @@ type GetRoomsRow struct {
 	Area        float64     `json:"area"`
 	TotalPrice  *float64    `json:"total_price"`
 	Status      int32       `json:"status"`
+	Latitude    *float64    `json:"latitude"`
+	Longitude   *float64    `json:"longitude"`
 	AvgRating   interface{} `json:"avg_rating"`
 	TotalRating interface{} `json:"total_rating"`
 	IsLiked     bool        `json:"is_liked"`
@@ -387,6 +397,8 @@ func (q *Queries) GetRooms(ctx context.Context, userID int32) ([]GetRoomsRow, er
 			&i.Area,
 			&i.TotalPrice,
 			&i.Status,
+			&i.Latitude,
+			&i.Longitude,
 			&i.AvgRating,
 			&i.TotalRating,
 			&i.IsLiked,
@@ -548,6 +560,8 @@ SELECT
     r.owner, 
     r.area, 
     r.total_price, 
+    r.latitude,
+    r.longitude,
     r.status, 
     COALESCE(AVG(rt.overall_rating), 0) AS avg_rating,  -- Tính trung bình rating
     COALESCE(COUNT(rt.id), 0) AS total_rating  -- Đếm tổng số lượng rating
@@ -573,6 +587,8 @@ GROUP BY
     r.owner, 
     r.area, 
     r.total_price, 
+    r.latitude,
+    r.longitude,
     r.status
 ORDER BY 
     r.created_at DESC
@@ -593,6 +609,8 @@ type SearchRoomByAddressRow struct {
 	Owner         int32              `json:"owner"`
 	Area          float64            `json:"area"`
 	TotalPrice    *float64           `json:"total_price"`
+	Latitude      *float64           `json:"latitude"`
+	Longitude     *float64           `json:"longitude"`
 	Status        int32              `json:"status"`
 	AvgRating     interface{}        `json:"avg_rating"`
 	TotalRating   interface{}        `json:"total_rating"`
@@ -622,6 +640,8 @@ func (q *Queries) SearchRoomByAddress(ctx context.Context, dollar_1 *string) ([]
 			&i.Owner,
 			&i.Area,
 			&i.TotalPrice,
+			&i.Latitude,
+			&i.Longitude,
 			&i.Status,
 			&i.AvgRating,
 			&i.TotalRating,

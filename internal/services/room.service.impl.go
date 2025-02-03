@@ -79,7 +79,6 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 		}
 	}
 
-	user, err := r.repo.GetUserByID(context.Background(), int32(userID))
 	if err != nil {
 		return &responses.ResponseData{
 			StatusCode: http.StatusInternalServerError,
@@ -96,21 +95,21 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 	// 		Data:       false,
 	// 	}
 	// }
-	paramsOnChain := &requests.CreateRoomOnChainReq{
-		RoomID:     int64(id),
-		TotalPrice: int(*req.TotalPrice),
-		Deposit:    int64(req.Deposit),
-		Status:     int64(req.Status),
-		IsRent:     req.IsRent,
-	}
+	// paramsOnChain := &requests.CreateRoomOnChainReq{
+	// 	RoomID:     int64(id),
+	// 	TotalPrice: int(*req.TotalPrice),
+	// 	Deposit:    int64(req.Deposit),
+	// 	Status:     int64(req.Status),
+	// 	IsRent:     req.IsRent,
+	// }
 
-	if _, err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    err.Error(),
-			Data:       false,
-		}
-	}
+	// if _, err := r.blockchainService.CreateRoomOnBlockchain(*user.PrivateKeyHex, *paramsOnChain); err != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    err.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 
 	// update images url
 	var urls []string
@@ -203,7 +202,7 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	}
 
 	//Fetch room details from the blockchain
-	roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
+	// roomOnChain, err := r.blockchainService.GetRoomByIDOnChain(int64(id))
 	if err != nil {
 		if roomData.ID == 0 {
 			return &responses.ResponseData{
@@ -215,12 +214,12 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 	}
 
 	// Override attribute on chain to response
-	roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
-	roomData.Deposit = float64(roomOnChain.Deposit)
-	roomData.Status = int32(roomOnChain.Status)
+	// roomData.TotalPrice = common.IntToFloat64Ptr(roomOnChain.TotalPrice)
+	// roomData.Deposit = float64(roomOnChain.Deposit)
+	// roomData.Status = int32(roomOnChain.Status)
 	// roomData.IsRent = roomOnChain.IsRent
-	roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
-	roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
+	// roomData.CreatedAt = c.Int64ToPgTimestamptz(roomOnChain.CreatedAt, true)
+	// roomData.UpdatedAt = c.Int64ToPgTimestamptz(roomOnChain.UpdatedAt, true)
 
 	owner, err := r.repo.GetUserByID(context.Background(), roomData.Owner)
 	if err != nil {
@@ -256,6 +255,8 @@ func (r *RoomServiceImpl) GetRoomByID(id int) *responses.ResponseData {
 		InternetCost:    roomData.InternetCost,
 		IsParking:       roomData.IsParking,
 		ParkingFee:      roomData.ParkingFee,
+		Latitude:        roomData.Latitude,
+		Longitude:       roomData.Longitude,
 		Status:          roomData.Status,
 		IsRent:          roomData.IsRent,
 		CreatedAt:       roomData.CreatedAt,

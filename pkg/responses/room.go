@@ -38,6 +38,8 @@ type GetRoomByIDRes struct {
 	InternetCost    float64                   `json:"internet_cost"`
 	IsParking       bool                      `json:"is_parking"`
 	ParkingFee      *float64                  `json:"parking_fee"`
+	Latitude        *float64                  `json:"latitude"`
+	Longitude       *float64                  `json:"longitude"`
 	Status          int32                     `json:"status"`
 	IsRent          bool                      `json:"is_rent"`
 	CreatedAt       pgtype.Timestamptz        `json:"created_at"`

@@ -32,80 +32,80 @@ func NewBlockchainServiceImpl() BlockchainService {
 }
 
 // CreateRoomOnBlockchain implements BlockchainService.
-func (b *BlockchainServiceImpl) CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error) {
-	chainID, err := b.client.NetworkID(context.Background())
-	if err != nil {
-		return "", fmt.Errorf("failed to get network ID: %w", err)
-	}
+// func (b *BlockchainServiceImpl) CreateRoomOnBlockchain(privateKeyHex string, req requests.CreateRoomOnChainReq) (string, error) {
+// 	chainID, err := b.client.NetworkID(context.Background())
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to get network ID: %w", err)
+// 	}
 
-	// Parse the private key provided by the user
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse private key: %w", err)
-	}
+// 	// Parse the private key provided by the user
+// 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to parse private key: %w", err)
+// 	}
 
-	gasPrice, err := b.client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return "", fmt.Errorf("failed to suggest gas price: %w", err)
-	}
+// 	gasPrice, err := b.client.SuggestGasPrice(context.Background())
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to suggest gas price: %w", err)
+// 	}
 
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		return "", fmt.Errorf("failed to create transactor: %w", err)
-	}
-	auth.GasLimit = 3000000
-	auth.GasPrice = gasPrice
+// 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to create transactor: %w", err)
+// 	}
+// 	auth.GasLimit = 3000000
+// 	auth.GasPrice = gasPrice
 
-	owner := crypto.PubkeyToAddress(privateKey.PublicKey)
-	roomContract, err := gen.NewListingContract(b.listingContractAddress, b.client)
-	if err != nil {
-		return "", fmt.Errorf("failed to create room contract instance: %w", err)
-	}
+// 	owner := crypto.PubkeyToAddress(privateKey.PublicKey)
+// 	roomContract, err := gen.NewListingContract(b.listingContractAddress, b.client)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to create room contract instance: %w", err)
+// 	}
 
-	// Prepare parameters for the room creation
-	tx, err := roomContract.CreateRoom(
-		auth,
-		big.NewInt(req.RoomID),
-		owner.Big(),
-		big.NewInt(int64(req.TotalPrice)),
-		big.NewInt(req.Deposit),
-		big.NewInt(req.Deposit),
-		req.IsRent,
-	)
-	if err != nil {
-		return "", fmt.Errorf("failed to create room on blockchain: %w", err)
-	}
+// 	// Prepare parameters for the room creation
+// 	tx, err := roomContract.CreateRoom(
+// 		auth,
+// 		big.NewInt(req.RoomID),
+// 		owner.Big(),
+// 		big.NewInt(int64(req.TotalPrice)),
+// 		big.NewInt(req.Deposit),
+// 		big.NewInt(req.Deposit),
+// 		req.IsRent,
+// 	)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to create room on blockchain: %w", err)
+// 	}
 
-	fmt.Print("Transaction hash: " + tx.Hash().Hex())
+// 	fmt.Print("Transaction hash: " + tx.Hash().Hex())
 
-	return tx.Hash().Hex(), nil
-}
+// 	return tx.Hash().Hex(), nil
+// }
 
-// GetRoomFromBlockchain implements BlockchainService.
-func (b *BlockchainServiceImpl) GetRoomByIDOnChain(roomID int64) (*responses.RoomOnChainRes, error) {
-	roomContract, err := gen.NewListingContract(b.listingContractAddress, b.client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create room contract instance: %w", err)
-	}
+// // GetRoomFromBlockchain implements BlockchainService.
+// func (b *BlockchainServiceImpl) GetRoomByIDOnChain(roomID int64) (*responses.RoomOnChainRes, error) {
+// 	roomContract, err := gen.NewListingContract(b.listingContractAddress, b.client)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to create room contract instance: %w", err)
+// 	}
 
-	// Fetch room details
-	bigRoomID := big.NewInt(roomID)
-	out0, _, out2, out3, out4, out5, out6, _, err := roomContract.GetRoom(&bind.CallOpts{}, bigRoomID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve room data from blockchain: %w", err)
-	}
+// 	// Fetch room details
+// 	bigRoomID := big.NewInt(roomID)
+// 	out0, _, out2, out3, out4, out5, out6, _, err := roomContract.GetRoom(&bind.CallOpts{}, bigRoomID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to retrieve room data from blockchain: %w", err)
+// 	}
 
-	// Format data for the response
-	blockchainRoom := &responses.RoomOnChainRes{
-		ID:         out0.Int64(),
-		TotalPrice: int(out2.Int64()),
-		Deposit:    out3.Int64(),
-		Status:     out4.Int64(),
-		IsRent:     out5,
-		CreatedAt:  out6.Int64(),
-	}
-	return blockchainRoom, nil
-}
+// 	// Format data for the response
+// 	blockchainRoom := &responses.RoomOnChainRes{
+// 		ID:         out0.Int64(),
+// 		TotalPrice: int(out2.Int64()),
+// 		Deposit:    out3.Int64(),
+// 		Status:     out4.Int64(),
+// 		IsRent:     out5,
+// 		CreatedAt:  out6.Int64(),
+// 	}
+// 	return blockchainRoom, nil
+// }
 
 func (b *BlockchainServiceImpl) CreateMContractOnChain(privateKeyHex string, req requests.CreateMContractOnChainReq) (string, error) {
 	chainID, err := b.client.NetworkID(context.Background())
