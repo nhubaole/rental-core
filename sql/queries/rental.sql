@@ -68,7 +68,7 @@ SELECT
             'name', u.full_name,
             'status', RR.status,
             'created_at', RR.created_at
-        )
+        ) ORDER BY RR.created_at DESC
     )::text AS request_info
 FROM PUBLIC.RENTAL_REQUESTS RR
 LEFT JOIN PUBLIC.ROOMS r
@@ -77,7 +77,8 @@ LEFT JOIN PUBLIC.USERS u
     ON RR.sender_id = u.id
 WHERE r.owner = $1
     AND RR.deleted_at IS NULL
-GROUP BY r.id;
+GROUP BY r.id
+ORDER BY MAX(RR.created_at) DESC;
 
 
 -- name: GetRequestBySenderIDForProccessTracking :many
