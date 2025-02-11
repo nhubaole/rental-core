@@ -11,7 +11,6 @@ import (
 	"smart-rental/global"
 	"smart-rental/internal/constants"
 	"smart-rental/internal/dataaccess"
-	"smart-rental/pkg/common"
 	c "smart-rental/pkg/common"
 	"smart-rental/pkg/requests"
 	"smart-rental/pkg/responses"
@@ -70,6 +69,27 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 	}
 	var params dataaccess.CreateRoomParams
 	c.MapStruct(req, &params)
+	var urls []string
+	for _, fileName := range req.RoomImages {
+		f, _ := fileName.Open()
+		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+		fileExt := filepath.Ext(fileName.Filename)
+		contentType := mime.TypeByExtension(fileExt)
+		objKey := fmt.Sprintf("%s/%d%s", constants.ROOM_OBJ, timestamp, fileExt)
+
+		url, err := r.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
+		if err != nil {
+			return &responses.ResponseData{
+				StatusCode: http.StatusInternalServerError,
+				Message:    err.Error(),
+				Data:       nil,
+			}
+		}
+		urls = append(urls, url)
+
+	}
+	params.RoomImages = urls
+
 	id, err := r.repo.CreateRoom(context.Background(), params)
 	if err != nil {
 		return &responses.ResponseData{
@@ -112,39 +132,20 @@ func (r *RoomServiceImpl) CreateRoom(req requests.CreateRoomForm, userID int) *r
 	// }
 
 	// update images url
-	var urls []string
-	for _, fileName := range req.RoomImages {
-		f, _ := fileName.Open()
-		timestamp := time.Now().UnixNano() / int64(time.Millisecond)
-		fileExt := filepath.Ext(fileName.Filename)
-		contentType := mime.TypeByExtension(fileExt)
-		roomID := fmt.Sprintf("room_%d", id)
-		objKey := fmt.Sprintf("%s/%s/%d%s", constants.ROOM_OBJ, roomID, timestamp, fileExt)
+	
 
-		url, err := r.storageService.UploadFile(constants.BUCKET_NAME, objKey, f, contentType)
-		if err != nil {
-			return &responses.ResponseData{
-				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
-				Data:       nil,
-			}
-		}
-		urls = append(urls, url)
-
-	}
-
-	room, _ := r.repo.GetRoomByID(context.Background(), int32(id))
-	var updateRoom dataaccess.UpdateRoomParams
-	common.MapStruct(room, &updateRoom)
-	updateRoom.RoomImages = urls
-	_, updateErr := r.repo.UpdateRoom(context.Background(), updateRoom)
-	if updateErr != nil {
-		return &responses.ResponseData{
-			StatusCode: http.StatusInternalServerError,
-			Message:    updateErr.Error(),
-			Data:       false,
-		}
-	}
+	// room, _ := r.repo.GetRoomByID(context.Background(), int32(id))
+	// var updateRoom dataaccess.UpdateRoomParams
+	// common.MapStruct(room, &updateRoom)
+	// updateRoom.RoomImages = urls
+	// _, updateErr := r.repo.UpdateRoom(context.Background(), updateRoom)
+	// if updateErr != nil {
+	// 	return &responses.ResponseData{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Message:    updateErr.Error(),
+	// 		Data:       false,
+	// 	}
+	// }
 	return &responses.ResponseData{
 		StatusCode: http.StatusCreated,
 		Message:    responses.StatusSuccess,
