@@ -4,7 +4,6 @@ import http from 'http';
 import loadConfig from './config/config.js';
 import AWS from 'aws-sdk';
 import {query } from "./config/database.js";
-import multer from 'multer';
 
 const app = express();
 const server = http.createServer(app);  
@@ -29,7 +28,6 @@ loadConfig()
       secretAccessKey: config.s3.aws_secret_access_key,
       region: config.s3.region,
     });
-    const upload = multer({ storage: multer.memoryStorage() });
 
     console.log(s3)
     io.on('connection', (socket) => {
