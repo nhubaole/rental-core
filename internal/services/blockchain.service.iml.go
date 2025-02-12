@@ -124,7 +124,7 @@ func (b *BlockchainServiceImpl) CreateMContractOnChain(privateKeyHex string, req
 		return "", fmt.Errorf("failed to suggest gas price: %w", err)
 	}
 
-	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(3)) // adjustedGasPrice = gasPrice * 2
+	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(10)) // adjustedGasPrice = gasPrice * 2
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
@@ -308,7 +308,7 @@ func (b *BlockchainServiceImpl) SignMContractOnChain(privateKeyHex string, req r
 	if err != nil {
 		return "", fmt.Errorf("failed to suggest gas price: %w", err)
 	}
-	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(3))
+	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(10))
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
@@ -355,7 +355,7 @@ func (b *BlockchainServiceImpl) PayDepositOnChain(privateKeyHex string, Contract
 	if err != nil {
 		return "", fmt.Errorf("failed to suggest gas price: %w", err)
 	}
-	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(3))
+	adjustedGasPrice := new(big.Int).Mul(gasPrice, big.NewInt(10))
 
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
